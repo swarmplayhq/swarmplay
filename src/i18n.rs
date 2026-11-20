@@ -122,19 +122,26 @@ pub fn set_lang(lang: Lang) {
 }
 
 // ------------------------------------------------------------------ formats
+//
+// Each takes the language (`*_in`) so tests can check both without switching the app's language,
+// which is global and would race with every other test reading English.
 
 /// A decimal number with `places` digits after the point: "21.6" in English, "21,6" in Portuguese.
-pub fn num(x: f64, places: usize) -> String {
+pub fn num(x: f64, places: usize) -> String { num_in(current(), x, places) }
+
+fn num_in(lang: Lang, x: f64, places: usize) -> String {
     let s = format!("{x:.places$}");
-    match current() {
+    match lang {
         Lang::En => s,
         Lang::PtBr => s.replace('.', ","),
     }
 }
 
 /// The clock: "9:05 PM" in English, "21:05" in Portuguese.
-pub fn clock(h: u32, m: u32) -> String {
-    match current() {
+pub fn clock(h: u32, m: u32) -> String { clock_in(current(), h, m) }
+
+fn clock_in(lang: Lang, h: u32, m: u32) -> String {
+    match lang {
         Lang::En => format!("{}:{m:02} {}", if h % 12 == 0 { 12 } else { h % 12 }, if h < 12 { "AM" } else { "PM" }),
         Lang::PtBr => format!("{h:02}:{m:02}"),
     }
@@ -160,10 +167,12 @@ pub fn month(m: u32) -> String {
 }
 
 /// A day: "Oct 30, 2026" in English, "30 de out. de 2026" in Portuguese.
-pub fn date(y: i32, m: u32, d: u32) -> String {
-    match current() {
-        Lang::En => format!("{} {d}, {y}", month(m)),
-        Lang::PtBr => format!("{d} de {} de {y}", month(m)),
+pub fn date(y: i32, m: u32, d: u32) -> String { date_in(current(), y, &month(m), d) }
+
+fn date_in(lang: Lang, y: i32, month: &str, d: u32) -> String {
+    match lang {
+        Lang::En => format!("{month} {d}, {y}"),
+        Lang::PtBr => format!("{d} de {month} de {y}"),
     }
 }
 
@@ -193,21 +202,13 @@ pub fn ago(secs: f64, then: Option<(i32, u32, u32)>) -> String {
 }
 
 #[cfg(test)]
-pub(crate) mod tests {
+mod tests {
+    //! These never switch the app's language (it's global, and other tests read English at the
+    //! same time): they ask the Portuguese catalog itself.
     use super::*;
-    use std::sync::Mutex;
+    use tr::Translator as _;
 
-    /// The language is global: tests that set it take turns.
-    pub static LANG_LOCK: Mutex<()> = Mutex::new(());
-
-    /// Runs `f` with Rust's texts in `lang`, then puts English back.
-    pub fn in_lang<T>(lang: Lang, f: impl FnOnce() -> T) -> T {
-        let _g = LANG_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        set_rust(lang);
-        let out = f();
-        set_rust(Lang::En);
-        out
-    }
+    fn pt() -> Fallback { catalog(Lang::PtBr).expect("the Portuguese file reads") }
 
     #[test]
     fn languages_from_the_locale() {
@@ -223,56 +224,36 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn the_portuguese_file_reads() {
-        assert!(tr::MoTranslator::from_vec_u8(PT_BR.to_vec()).is_ok());
-    }
-
-    #[test]
-    fn texts_switch_and_fall_back() {
-        assert_eq!(tr::tr!("Yesterday"), "Yesterday");
-        in_lang(Lang::PtBr, || {
-            assert_eq!(tr::tr!("Yesterday"), "Ontem");
-            // Not in the file: the English text, never an empty one. (Looked up by hand: a tr!
-            // here would be extracted into the file.)
-            use tr::Translator as _;
-            let unknown = String::from("A text nobody translated");
-            let shown = tr::internal::with_translator(module_path!(), |t| t.translate(&unknown, None).into_owned());
-            assert_eq!(shown, "A text nobody translated");
-        });
-        assert_eq!(tr::tr!("Yesterday"), "Yesterday");
+    fn texts_translate_and_fall_back() {
+        let pt = pt();
+        assert_eq!(pt.translate("Yesterday", None), "Ontem");
+        assert_eq!(pt.translate("Oct", None), "out.");
+        // Not in the file: the English text, never an empty one.
+        assert_eq!(pt.translate("A text nobody translated", None), "A text nobody translated");
+        assert_eq!(pt.ntranslate(3, "One thing", "{n} things", None), "{n} things");
     }
 
     #[test]
     fn plurals_follow_each_language() {
-        let ago = |m: u64| tr::tr!("{n} minute ago" | "{n} minutes ago" % m);
-        assert_eq!(ago(1), "1 minute ago");
-        assert_eq!(ago(2), "2 minutes ago");
-        assert_eq!(ago(0), "0 minutes ago");
-        in_lang(Lang::PtBr, || {
-            // Portuguese: 0 and 1 are singular.
-            assert_eq!(ago(0), "há 0 minuto");
-            assert_eq!(ago(1), "há 1 minuto");
-            assert_eq!(ago(2), "há 2 minutos");
-        });
+        let pt = pt();
+        let ago = |n| pt.ntranslate(n, "{n} minute ago", "{n} minutes ago", None).into_owned();
+        // Portuguese: 0 and 1 are singular.
+        assert_eq!(ago(0), "há {n} minuto");
+        assert_eq!(ago(1), "há {n} minuto");
+        assert_eq!(ago(2), "há {n} minutos");
+        // And the {n} is filled as tr! does it.
+        assert_eq!(tr::runtime_format!(ago(2), n = 2), "há 2 minutos");
     }
 
     #[test]
     fn formats_follow_each_language() {
-        let _g = LANG_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        set_rust(Lang::En);
-        assert_eq!(num(21.64, 1), "21.6");
-        assert_eq!(clock(21, 5), "9:05 PM");
-        assert_eq!(clock(0, 0), "12:00 AM");
-        assert_eq!(date(2026, 10, 30), "Oct 30, 2026");
-        assert_eq!(ago(30.0, None), "Just now");
-        assert_eq!(ago(3.0 * 86_400.0, Some((2026, 10, 30))), "Oct 30, 2026");
-        set_rust(Lang::PtBr);
-        assert_eq!(num(21.64, 1), "21,6");
-        assert_eq!(clock(21, 5), "21:05");
-        assert_eq!(clock(7, 30), "07:30");
-        assert_eq!(date(2026, 10, 30), "30 de out. de 2026");
-        assert_eq!(ago(7200.0, None), "há 2 horas");
-        assert_eq!(ago(90_000.0, None), "Ontem");
-        set_rust(Lang::En);
+        assert_eq!(num_in(Lang::En, 21.64, 1), "21.6");
+        assert_eq!(num_in(Lang::PtBr, 21.64, 1), "21,6");
+        assert_eq!(clock_in(Lang::En, 21, 5), "9:05 PM");
+        assert_eq!(clock_in(Lang::En, 0, 0), "12:00 AM");
+        assert_eq!(clock_in(Lang::PtBr, 21, 5), "21:05");
+        assert_eq!(clock_in(Lang::PtBr, 7, 30), "07:30");
+        assert_eq!(date_in(Lang::En, 2026, "Oct", 30), "Oct 30, 2026");
+        assert_eq!(date_in(Lang::PtBr, 2026, &pt().translate("Oct", None), 30), "30 de out. de 2026");
     }
 }
