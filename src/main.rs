@@ -42,6 +42,7 @@ mod download_ui;
 mod setup_ui;
 mod downloads;
 mod gamepad;
+mod i18n;
 mod game_groups;
 mod images;
 mod installer;

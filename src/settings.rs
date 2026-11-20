@@ -73,6 +73,7 @@ pub enum SId {
     ThemeAccent,
     // Launcher
     Display,
+    Language,
     Sounds,
     Share,
     // Advanced
@@ -304,6 +305,9 @@ impl App {
         rows.extend(self.theme_rows());
 
         header(&mut rows, "LAUNCHER");
+        let mut r = row(3, "Language");
+        r.value = crate::i18n::current().name().into();
+        rows.push((SId::Language, r));
         let mut r = row(3, "Display");
         r.value = match self.monitors.iter().find(|m| m.name == cfg.monitor) {
             Some(m) => format!("{} · {}×{}", m.name, m.w, m.h),
@@ -648,6 +652,19 @@ impl App {
         self.ui().set_settings_y(-(target - view * 0.35).clamp(0.0, max) * self.scale);
     }
 
+    /// The language changed: everything already handed to the window is written again in it (the
+    /// window's own texts switched by themselves). Panels that are closed build in it when opened.
+    pub fn relocalize(&mut self) {
+        self.push_settings_nav();
+        self.refresh_settings();
+        self.push_all();
+        self.push_welcome();
+        self.push_downloads();
+        self.push_ring();
+        self.push_notes();
+        self.push_controller_status();
+    }
+
     fn save_cfg(&mut self, f: impl FnOnce(&mut crate::config::Config)) {
         let mut c = self.cfg.lock().unwrap();
         f(&mut c);
@@ -723,6 +740,14 @@ impl App {
                 let pos = PRESENT_MODES.iter().position(|(k, _)| *k == cur).unwrap_or(0) as i32;
                 let next = PRESENT_MODES[(pos + dir).rem_euclid(PRESENT_MODES.len() as i32) as usize].0.to_string();
                 self.save_cfg(|c| c.present_mode = next);
+            }
+            SId::Language => {
+                use crate::i18n::Lang;
+                let pos = Lang::ALL.iter().position(|l| *l == crate::i18n::current()).unwrap_or(0) as i32;
+                let next = Lang::ALL[(pos + dir).rem_euclid(Lang::ALL.len() as i32) as usize];
+                self.save_cfg(|c| c.language = next.code().into());
+                crate::i18n::set_lang(next);
+                self.relocalize();
             }
             SId::Display => {
                 let names: Vec<String> = std::iter::once(String::new()).chain(self.monitors.iter().map(|m| m.name.clone())).collect();
@@ -813,7 +838,7 @@ impl App {
                 let on = self.settings_rows[i].on;
                 self.settings_change(i, if on { -1 } else { 1 });
             }
-            SId::Resolution | SId::Present | SId::Display | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
+            SId::Resolution | SId::Present | SId::Display | SId::Language | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
             // A press turns it up a step (◂ ▸ go both ways).
             SId::SoundVolume => self.settings_change(i, 1),
             // A press goes round Off, Low, Medium, High.

@@ -38,12 +38,15 @@ anyhow = "1"
 unrar_sys = "0.5.8"
 url = "2"
 data-encoding = "2"
+tr = { version = "0.1.11", default-features = false, features = ["mo-translator"] }
 
 [dev-dependencies]
 tempfile = "3"
 
 [build-dependencies]
 slint-build = "1.18"
+# The translations (i18n/*.po) compiled to .mo for Rust's tr! (see build.rs).
+rspolib = "0.1.2"
 
 [profile.release]
 opt-level = 3

@@ -67,6 +67,8 @@ pub struct Config {
     pub notify_dnd_until: f64,
     pub notify_off: Vec<String>,
     pub last_digest_day: i64,
+    /// The interface's language (src/i18n.rs): "en", "pt_BR", or empty for the system's.
+    pub language: String,
 }
 
 impl Default for Config {
@@ -111,6 +113,7 @@ impl Default for Config {
             notify_dnd_until: 0.0,
             notify_off: Vec::new(),
             last_digest_day: 0,
+            language: String::new(),
         }
     }
 }

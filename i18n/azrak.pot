@@ -1,0 +1,87 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2026-11-20 20:37+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/i18n.rs
+msgid "Apr"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Aug"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Dec"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Feb"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Jan"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Jul"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Jun"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Just now"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Mar"
+msgstr ""
+
+#: src/i18n.rs
+msgid "May"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Nov"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Oct"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Sep"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Yesterday"
+msgstr ""
+
+#: src/i18n.rs
+msgid "{n} day ago"
+msgid_plural "{n} days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/i18n.rs
+msgid "{n} hour ago"
+msgid_plural "{n} hours ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/i18n.rs
+msgid "{n} minute ago"
+msgid_plural "{n} minutes ago"
+msgstr[0] ""
+msgstr[1] ""

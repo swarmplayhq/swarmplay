@@ -607,6 +607,8 @@ pub fn watch_exit_signals() {
 
 pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor>, windowed: bool) {
     let cfg = Arc::new(Mutex::new(Config::load()));
+    // Before anything is written for the window: every text from here on is in this language.
+    crate::i18n::set_lang(crate::i18n::Lang::from_config(&cfg.lock().unwrap().language));
     audio::init();
     audio::set_enabled(cfg.lock().unwrap().sounds);
     audio::set_level(cfg.lock().unwrap().sounds_level);

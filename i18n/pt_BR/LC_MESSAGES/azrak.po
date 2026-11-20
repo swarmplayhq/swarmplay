@@ -1,0 +1,85 @@
+# SwarmPlay — Português (Brasil).
+# Os termos seguem i18n/GLOSSARY.md. Gerado e atualizado por scripts/i18n.sh extract.
+msgid ""
+msgstr ""
+"Project-Id-Version: SwarmPlay\n"
+"POT-Creation-Date: 2026-11-20 20:37+0000\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/i18n.rs
+msgid "Apr"
+msgstr "abr."
+
+#: src/i18n.rs
+msgid "Aug"
+msgstr "ago."
+
+#: src/i18n.rs
+msgid "Dec"
+msgstr "dez."
+
+#: src/i18n.rs
+msgid "Feb"
+msgstr "fev."
+
+#: src/i18n.rs
+msgid "Jan"
+msgstr "jan."
+
+#: src/i18n.rs
+msgid "Jul"
+msgstr "jul."
+
+#: src/i18n.rs
+msgid "Jun"
+msgstr "jun."
+
+#: src/i18n.rs
+msgid "Just now"
+msgstr "Agora mesmo"
+
+#: src/i18n.rs
+msgid "Mar"
+msgstr "mar."
+
+#: src/i18n.rs
+msgid "May"
+msgstr "mai."
+
+#: src/i18n.rs
+msgid "Nov"
+msgstr "nov."
+
+#: src/i18n.rs
+msgid "Oct"
+msgstr "out."
+
+#: src/i18n.rs
+msgid "Sep"
+msgstr "set."
+
+#: src/i18n.rs
+msgid "Yesterday"
+msgstr "Ontem"
+
+#: src/i18n.rs
+msgid "{n} day ago"
+msgid_plural "{n} days ago"
+msgstr[0] "há {n} dia"
+msgstr[1] "há {n} dias"
+
+#: src/i18n.rs
+msgid "{n} hour ago"
+msgid_plural "{n} hours ago"
+msgstr[0] "há {n} hora"
+msgstr[1] "há {n} horas"
+
+#: src/i18n.rs
+msgid "{n} minute ago"
+msgid_plural "{n} minutes ago"
+msgstr[0] "há {n} minuto"
+msgstr[1] "há {n} minutos"
