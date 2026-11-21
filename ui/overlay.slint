@@ -1,7 +1,8 @@
-// The in-game overlay (src/overlay_ui.rs): a second, see-through window over a running game.
-// The PS button brings the panel up from the bottom, as on a console; notifications show in the
-// top right corner without taking the game's input. Laid out on the same 1920×1080 canvas as
-// the launcher (S.k), in the theme's colours.
+// The in-game overlay (src/overlay_ui.rs): a second, see-through window the size of the screen over
+// a running game, with the game itself playing behind the panel (only a scrim between the two).
+// The PS button brings the panel up from the bottom, as on a console; notifications show in a little
+// window of their own in the top right corner, without taking the game's input. Laid out on the same
+// 1920×1080 canvas as the launcher (S.k), in the theme's colours.
 
 import { S, Theme, Icons, ToastData } from "theme.slint";
 import { FocusRing } from "widgets.slint";
@@ -14,6 +15,8 @@ export component OverlayWindow inherits Window {
 
     // The panel is up (else only a notification, or nothing, shows).
     in property <bool> open;
+    // The window is only a notification's card, in the corner: no panel, no scrim.
+    in property <bool> compact: false;
     // Focus: 0 Back to game, 1 Close game, 2 Downloads, 3 Capture | 4 Home, 5 Sound, 6 Settings, 7 Power.
     in property <int> idx;
     in property <bool> pad-hints: true;
@@ -41,12 +44,21 @@ export component OverlayWindow inherits Window {
         key-pressed(e) => { root.key(e.text); accept }
     }
 
-    // The game, dimmed behind the panel.
+    // The game behind the panel, dimmed: the window is see-through, so this alone is what keeps the
+    // panel readable over whatever the game is showing.
     Rectangle {
         background: #04060e;
-        opacity: root.open ? 0.55 : 0;
+        opacity: root.open ? 0.5 : 0;
         animate opacity { duration: 240ms; easing: ease-out-quad; }
         TouchArea { enabled: root.open; clicked => { root.click(-1); } }
+    }
+    // Darker towards the bottom, under the panel.
+    Rectangle {
+        y: root.height - (640px * S.k);
+        height: (640px * S.k);
+        background: @linear-gradient(180deg, #04060e00 0%, #04060ee6 100%);
+        opacity: root.open ? 1 : 0;
+        animate opacity { duration: 300ms; easing: ease-out-quad; }
     }
 
     // ---- The panel, from the bottom.
@@ -203,10 +215,11 @@ export component OverlayWindow inherits Window {
     // ---- A notification, top right (the game keeps its input: see src/overlay_ui.rs).
     toast-card := Rectangle {
         property <color> tone: root.toast.kind == 1 ? Theme.ok : root.toast.kind == 2 ? Theme.warn : root.toast.kind == 3 ? Theme.danger : Theme.accent;
-        width: min((480px * S.k), root.width - (64px * S.k));
-        height: (84px * S.k);
-        x: root.width - self.width - (root.toast-shown ? (64px * S.k) : (16px * S.k));
-        y: (48px * S.k);
+        // In its own little window it is the window; over the panel, the card slides in.
+        width: root.compact ? root.width : min((480px * S.k), root.width - (64px * S.k));
+        height: root.compact ? root.height : (84px * S.k);
+        x: root.compact ? 0px : root.width - self.width - (root.toast-shown ? (64px * S.k) : (16px * S.k));
+        y: root.compact ? 0px : (48px * S.k);
         opacity: root.toast-shown ? 1 : 0;
         animate x { duration: 420ms; easing: ease-out-expo; }
         animate opacity { duration: 240ms; easing: ease-out-quad; }
@@ -214,7 +227,7 @@ export component OverlayWindow inherits Window {
         background: #1a1e2bf5;
         border-width: 1px;
         border-color: #ffffff1f;
-        drop-shadow-blur: (32px * S.k);
+        drop-shadow-blur: root.compact ? 0px : (32px * S.k);
         drop-shadow-color: #00000099;
         HorizontalLayout {
             padding-left: (18px * S.k); padding-right: (22px * S.k);

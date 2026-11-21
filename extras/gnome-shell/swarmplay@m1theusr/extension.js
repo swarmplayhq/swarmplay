@@ -17,6 +17,7 @@ const IFACE = `<node>
     <method name="Raise">
       <arg type="s" name="title" direction="in"/>
       <arg type="b" name="focus" direction="in"/>
+      <arg type="s" name="shape" direction="in"/>
       <arg type="b" direction="out"/>
     </method>
     <method name="Focus">
@@ -69,21 +70,51 @@ export default class SwarmPlayHelper extends Extension {
         return this._windows().find(w => w.get_title() === title) ?? null;
     }
 
+    // The overlay's protocol version, from the code and not metadata.json: GNOME keeps an
+    // extension's metadata from when the session started, and SwarmPlay compares this to say
+    // whether the running helper does what it needs (src/overlay.rs).
     Version() {
-        return `${this.metadata.version}`;
+        return '4';
     }
 
     // The overlay above everything, on the game's screen; with `focus` it also takes the keyboard
     // and mouse, without (a notification) the game keeps them.
-    Raise(title, focus) {
+    //
+    // `shape` is 'screen' for the panel (a window the size of the screen, raised over the game as it
+    // plays: SwarmPlay sees the game through it) or 'corner' for a notification's card (its own
+    // little window, top right).
+    Raise(title, focus, shape) {
         const w = this._byTitle(title);
         if (!w)
             return false;
         const game = this._last;
-        if (game && game !== w)
-            w.move_to_monitor(game.get_monitor());
-        if (!w.is_fullscreen())
-            w.make_fullscreen();
+        const mon = game && game !== w ? game.get_monitor() : w.get_monitor();
+        const geom = Main.layoutManager.monitors[mon] ?? Main.layoutManager.primaryMonitor;
+        if (shape === 'screen') {
+            // On the game's screen, the whole of it, but not in the full-screen state: Mutter (43
+            // and later) paints an opaque black backdrop behind a full-screen Wayland window,
+            // which would hide the game. Raised and focused, a window the size of the screen shows
+            // the game playing behind it (SwarmPlay sizes itself to the monitor).
+            try {
+                if (mon !== w.get_monitor())
+                    w.move_to_monitor(mon);
+                if (w.is_fullscreen())
+                    w.unmake_fullscreen();
+            } catch (e) {
+                logError(e, 'SwarmPlay overlay placement');
+            }
+        } else {
+            const r = w.get_frame_rect();
+            if (w.is_fullscreen())
+                w.unmake_fullscreen();
+            if (geom) {
+                try {
+                    w.move_resize_frame(true, geom.x + geom.width - r.width, geom.y, r.width, r.height);
+                } catch (e) {
+                    logError(e, 'SwarmPlay overlay placement');
+                }
+            }
+        }
         w.make_above();
         const time = global.get_current_time();
         if (focus)
