@@ -3,6 +3,11 @@
 //! goes to SwarmPlay's Home; Share takes a screenshot. Notifications show over the game too,
 //! without taking its input. How the window gets above the game depends on the desktop
 //! (src/overlay.rs); where it can't, PS brings the launcher up instead.
+//!
+//! The panel's window is see-through and the size of the screen, but not in the full-screen state:
+//! Mutter (43 and later) paints an opaque black backdrop behind a full-screen Wayland window, which
+//! would hide the game, while a normal window raised over it shows it live, as it plays, behind the
+//! panel. Notifications show in a little window of their own, in the corner.
 
 use crate::app::*;
 use crate::audio::{self, Sound};
@@ -17,6 +22,11 @@ use std::time::Duration;
 /// Items of the panel: the top row, then the bottom row (ui/overlay.slint's order).
 const TOP: usize = 4;
 const ITEMS: usize = 8;
+
+/// A notification's card at scale 1 (ui/overlay.slint's toast card): while the panel is down the
+/// window is that size, in the corner of the screen, so nothing of it covers the game.
+const TOAST_W: f32 = 480.0;
+const TOAST_H: f32 = 84.0;
 
 impl App {
     /// A game is in front: one runs, and its window is the focused one (what X11 and Gamescope
@@ -50,6 +60,18 @@ impl App {
         w
     }
 
+    /// The notification's window: the card, in the corner, the game going on under it. A window of
+    /// its own because the panel's is full screen, and a window doesn't go back to a small size
+    /// happily once it has been full screen.
+    fn ov_note_window(&mut self) -> OverlayWindow {
+        if let Some(w) = &self.ov_note { return w.clone_strong(); }
+        let w = OverlayWindow::new().expect("overlay window");
+        w.set_compact(true);
+        self.ov_note = Some(w.clone_strong());
+        self.ov_style();
+        w
+    }
+
     /// The overlay's own copy of the scale and the theme (each window has its own).
     pub fn ov_style(&self) {
         let Some(w) = &self.ov else { return };
@@ -61,18 +83,17 @@ impl App {
         w.global::<crate::Theme>().set_glow(t.get_glow());
     }
 
-    /// PS tapped (or `swarmplay --overlay`, `keyboard`): the panel over the game, or away again.
-    /// From the controller the game keeps the focus (the controller reaches SwarmPlay anyway, and
-    /// many full-screen games stop drawing, or minimise, once they lose it); from the keyboard the
-    /// panel takes it, for the keys.
-    pub fn ov_ps(&mut self, keyboard: bool) {
+    /// PS tapped (or `swarmplay --overlay`): the panel over the game, or away again. The panel takes
+    /// the focus (the game behind it keeps running, and that is what lets the game show through it
+    /// on GNOME); the controller reaches SwarmPlay anyway.
+    pub fn ov_ps(&mut self, _keyboard: bool) {
         crate::log!("overlay: PS · open {} · in game {} · {:?} · {:?}", self.ov_open, self.in_game(), overlay::desktop(), self.ov_helper);
         if self.ov_open { return self.ov_close(true); }
         if !self.in_game() { return self.cc_from_pad(); }
         match (overlay::desktop(), self.ov_helper) {
             // Steam's Game Mode: the PS button is Steam's.
             (Desktop::SteamGameMode, _) => {}
-            (_, Helper::Ready) => self.ov_show(keyboard),
+            (_, Helper::Ready) => self.ov_show(),
             // No way above the game here: the launcher comes up, its Control Center open.
             (_, h) => {
                 if matches!(h, Helper::Missing | Helper::NeedsLogin) {
@@ -108,8 +129,9 @@ impl App {
         audio::play(Sound::Select);
     }
 
-    fn ov_show(&mut self, focus: bool) {
-        let w = self.ov_window();
+    fn ov_show(&mut self) {
+        if self.ov_open { return; }
+        self.ov_window();
         self.ov_style();
         self.ov_open = true;
         self.ov_idx = 0;
@@ -117,30 +139,48 @@ impl App {
         self.ov_vol_edit = false;
         self.ov_game = self.live.first().map(|s| s.pid);
         self.ov_push();
+        audio::play(Sound::Open);
+        self.ov_present(true);
+    }
+
+    /// The panel's window over the game: the screen's size, above it, the game paused if asked.
+    fn ov_present(&mut self, focus: bool) {
+        let w = self.ov_window();
+        self.ov_style();
         w.set_open(false);
         let _ = w.show();
-        Self::ov_fullscreen(&w);
+        Self::ov_area(&w);
         w.window().with_winit_window(|win: &winit::window::Window| {
             let _ = win.set_cursor_hittest(true);
             // X11 window managers keep it on top when asked (Wayland ones ignore this: helpers).
             win.set_window_level(winit::window::WindowLevel::AlwaysOnTop);
         });
-        // In next frame, so the panel slides up from below.
+        // The panel slides up once the window is in place. On GNOME the helper raises it over the
+        // game first: until then it sits wherever the compositor put it.
+        let gnome = overlay::desktop() == Desktop::Gnome;
         let w2 = w.as_weak();
-        slint::Timer::single_shot(Duration::from_millis(30), move || { if let Some(w) = w2.upgrade() { w.set_open(true); } });
+        std::thread::spawn(move || {
+            // Mapped first: the desktop finds it by its title.
+            std::thread::sleep(Duration::from_millis(if gnome { 80 } else { 60 }));
+            let raised = overlay::raise_overlay(focus, overlay::Shape::Screen);
+            crate::log!("overlay: shown · above the game: {raised} · focus: {focus}");
+            if gnome {
+                let _ = slint::invoke_from_event_loop(move || with_app(move |app| {
+                    if app.ov_open { if let Some(w) = w2.upgrade() { w.set_open(true); } }
+                }));
+            }
+        });
+        if !gnome {
+            // In next frame, so the panel slides up from below.
+            let w2 = w.as_weak();
+            slint::Timer::single_shot(Duration::from_millis(30), move || { if let Some(w) = w2.upgrade() { w.set_open(true); } });
+        }
         crate::gamepad::GRAB.store(true, Ordering::Relaxed);
         if self.cfg.lock().unwrap().overlay_pause {
             if let Some(pid) = self.ov_game { unsafe { libc::killpg(pid as i32, libc::SIGSTOP) }; self.ov_paused = Some(pid); }
         }
         // Over the game: the same sounds, a little quieter.
         audio::set_over_game(true);
-        audio::play(Sound::Open);
-        std::thread::spawn(move || {
-            // Mapped first: the desktop finds it by its title.
-            std::thread::sleep(Duration::from_millis(60));
-            let raised = overlay::raise_overlay(focus);
-            crate::log!("overlay: shown · above the game: {raised} · focus: {focus}");
-        });
     }
 
     /// The panel down; `to_game` gives the game its focus back.
@@ -164,17 +204,48 @@ impl App {
         }
     }
 
-    /// Full screen once shown, and again a moment later: asked while it's hidden or still being
-    /// mapped, X11 window managers drop it, and Slint skips asking again for the state it thinks
-    /// the window has. (On GNOME and KDE the helpers make it full screen themselves.)
-    fn ov_fullscreen(w: &OverlayWindow) {
+    /// The window as the panel: the whole screen, as a console's overlay — sized to the monitor
+    /// but, on GNOME, not in the full-screen state, which the compositor fills with black (see
+    /// src/overlay.rs). The desktop keeps a normal window inside the work area, so the top bar stays
+    /// out of it; the panel is against the bottom of the screen anyway.
+    fn ov_area(w: &OverlayWindow) {
+        w.set_compact(false);
+        // Asked again a moment later: right after `show` the window may not be mapped yet, and the
+        // monitor it is on is only known then.
+        for ms in [0u64, 120, 320] {
+            let w = w.as_weak();
+            slint::Timer::single_shot(Duration::from_millis(ms), move || {
+                let Some(w) = w.upgrade() else { return };
+                w.window().with_winit_window(|win: &winit::window::Window| {
+                    let Some(mon) = win.current_monitor().or_else(|| win.available_monitors().next()) else { return };
+                    let s = mon.size();
+                    let sf = win.scale_factor();
+                    let _ = win.request_inner_size(winit::dpi::LogicalSize::new(s.width as f64 / sf, s.height as f64 / sf));
+                });
+            });
+        }
+    }
+
+    /// The notification's window: the card's size, in the top right corner of the screen (else the
+    /// whole screen would show whenever a download finishes over a game).
+    fn ov_corner(&self, w: &OverlayWindow) {
+        let k = self.ui().global::<crate::S>().get_k();
+        let (cw, ch) = (TOAST_W * k, TOAST_H * k);
+        // Asked more than once: right after `show` the window may not be mapped yet, and the
+        // monitor is only known then.
         for ms in [0u64, 80, 300] {
             let w = w.as_weak();
             slint::Timer::single_shot(Duration::from_millis(ms), move || {
-                if let Some(w) = w.upgrade() {
-                    w.window().set_fullscreen(false);
-                    w.window().set_fullscreen(true);
-                }
+                let Some(w) = w.upgrade() else { return };
+                w.window().with_winit_window(move |win: &winit::window::Window| {
+                    let sf = win.scale_factor();
+                    let _ = win.request_inner_size(winit::dpi::LogicalSize::new(cw, ch));
+                    // X11 places it here; on Wayland the GNOME helper moves it (src/overlay.rs).
+                    let Some(mon) = win.current_monitor().or_else(|| win.available_monitors().next()) else { return };
+                    let pos = mon.position();
+                    let x = pos.x + mon.size().width as i32 - (cw * sf as f32) as i32;
+                    win.set_outer_position(winit::dpi::PhysicalPosition::new(x, pos.y));
+                });
             });
         }
     }
@@ -305,14 +376,14 @@ impl App {
             return false;
         }
         crate::log!("overlay: notification over the game: {}", toast.title);
-        let w = self.ov_window();
+        // Over the panel's window when the panel is up, else in a card of its own.
+        let w = if self.ov_open { self.ov_window() } else { self.ov_note_window() };
         self.ov_style();
         w.set_toast(toast.clone());
         w.set_toast_shown(true);
         if !self.ov_open {
-            w.set_open(false);
             let _ = w.show();
-            Self::ov_fullscreen(&w);
+            self.ov_corner(&w);
             // Clicks go to the game.
             w.window().with_winit_window(|win: &winit::window::Window| {
                 let _ = win.set_cursor_hittest(false);
@@ -320,15 +391,17 @@ impl App {
             });
             std::thread::spawn(|| {
                 std::thread::sleep(Duration::from_millis(60));
-                overlay::raise_overlay(false);
+                overlay::raise_overlay(false, overlay::Shape::Corner);
             });
         }
+        let weak = w.as_weak();
         slint::Timer::single_shot(Duration::from_secs(5), move || with_app(move |app| {
             if app.toast_seq != seq { return; }
-            if let Some(w) = &app.ov {
+            if let Some(w) = weak.upgrade() {
                 w.set_toast_shown(false);
                 let w2 = w.as_weak();
-                // Gone once it has slid away, unless the panel opened meanwhile.
+                // Gone once it has slid away, unless the panel opened meanwhile (it shares the
+                // panel's window then).
                 slint::Timer::single_shot(Duration::from_millis(400), move || with_app(move |app| {
                     if !app.ov_open && app.toast_seq == seq { if let Some(w) = w2.upgrade() { let _ = w.hide(); } }
                 }));
@@ -369,7 +442,10 @@ impl App {
                 }
                 Err(e) => self.note_setting(SId::OverlayHelper, &format!("Couldn't install it: {e}"), 2),
             },
-            Helper::NeedsLogin => self.note_setting(SId::OverlayHelper, "GNOME loads it at the next login: log out and in once", 0),
+            Helper::NeedsLogin => match overlay::install_gnome_helper() {
+                Ok(()) => self.note_setting(SId::OverlayHelper, "GNOME loads it at the next login: log out and in once", 0),
+                Err(e) => self.note_setting(SId::OverlayHelper, &format!("Couldn't install it: {e}"), 2),
+            },
             Helper::Ready => self.note_setting(SId::OverlayHelper, "Ready: press PS while a game runs", 1),
             Helper::Steam => self.note_setting(SId::OverlayHelper, "In Steam's Game Mode, the PS button opens Steam's overlay", 0),
             Helper::Unsupported => self.note_setting(SId::OverlayHelper, &format!("{} has no way to show it over games: PS brings SwarmPlay up instead", overlay::desktop().label()), 0),

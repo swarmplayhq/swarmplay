@@ -432,6 +432,8 @@ pub struct App {
     /// chosen, "Close game" pressed once, the game it's over, paused or not, whether it can show
     /// here, and the last screenshot's name.
     pub ov: Option<crate::OverlayWindow>,
+    /// A notification's own little window, in the corner (the panel's window is full screen).
+    pub ov_note: Option<crate::OverlayWindow>,
     pub ov_open: bool,
     pub ov_idx: i32,
     pub ov_confirm: bool,
@@ -765,6 +767,7 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         sound_polling: false,
         sound_polled: 0.0,
         ov: None,
+        ov_note: None,
         ov_open: false,
         ov_idx: 0,
         ov_confirm: false,

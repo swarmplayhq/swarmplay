@@ -2,7 +2,11 @@
 //! a running game, gets focus, and gives it back. A normal Wayland program can do none of that,
 //! so each desktop has its own way:
 //!
-//! - GNOME: the `swarmplay@m1theusr` Shell extension (extras/gnome-shell), over D-Bus.
+//! - GNOME: the `swarmplay@m1theusr` Shell extension (extras/gnome-shell), over D-Bus. It puts the
+//!   overlay on the game's own screen and above the game — not full screen: Mutter (43 and later)
+//!   paints an opaque black backdrop behind a full-screen Wayland window, which would hide the
+//!   game, while a window the size of the screen, raised and given the focus, shows it live behind
+//!   the panel (src/overlay_ui.rs sizes it).
 //! - KDE Plasma: a small KWin script, loaded through KWin's D-Bus for each step.
 //! - AzrakOS (its own Gamescope): Gamescope's overlay window property.
 //! - Steam's Game Mode: Steam owns the PS button and has its own overlay; ours stays off.
@@ -83,6 +87,28 @@ fn gnome(method: &str, args: &[&str]) -> Option<String> {
     run("gdbus", &a)
 }
 
+/// What the overlay window is: the panel (the screen's size, over the game) or a notification's
+/// card (in the top right corner, the game's input going on).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Shape {
+    Screen,
+    Corner,
+}
+
+impl Shape {
+    /// What the GNOME helper calls it.
+    fn name(self) -> &'static str {
+        match self {
+            Self::Screen => "screen",
+            Self::Corner => "corner",
+        }
+    }
+}
+
+/// The helper's version this binary needs (extras/gnome-shell/swarmplay@m1theusr/metadata.json).
+/// 4: the panel is raised, not made full screen (the game shows through it), on the game's screen.
+const GNOME_HELPER_VERSION: u32 = 4;
+
 /// Where the helper stands on this desktop.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Helper {
@@ -102,7 +128,15 @@ pub enum Helper {
 pub fn helper() -> Helper {
     match desktop() {
         Desktop::Gnome => {
-            if gnome("Version", &[]).is_some() { return Helper::Ready; }
+            // An older helper is replaced with the binary's copy; the session keeps the code it
+            // loaded (GNOME has no way to reload an extension on Wayland), so the next login loads
+            // it. Switching it off and on again only makes it run the same old code.
+            let version = gnome("Version", &[]).map_or(0, |v| extension_version(&v));
+            if version >= GNOME_HELPER_VERSION { return Helper::Ready; }
+            if version > 0 {
+                let _ = install_gnome_helper();
+                return Helper::NeedsLogin;
+            }
             let installed = dirs_home().map(|h| h.join(".local/share/gnome-shell/extensions").join(GNOME_UUID).join("extension.js").is_file()).unwrap_or(false);
             if installed { Helper::NeedsLogin } else { Helper::Missing }
         }
@@ -111,6 +145,11 @@ pub fn helper() -> Helper {
         Desktop::SteamGameMode => Helper::Steam,
         Desktop::Other => Helper::Unsupported,
     }
+}
+
+/// `gdbus` prints the answer as `('2',)`: its digits are the helper's version.
+fn extension_version(answer: &str) -> u32 {
+    answer.chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0)
 }
 
 fn dirs_home() -> Option<std::path::PathBuf> {
@@ -173,12 +212,20 @@ fn x_windows_named(title: &str) -> Vec<String> {
 
 /// The overlay window over everything: `focus` also gives it the keyboard and the mouse (the
 /// panel); without, it only shows (a notification) and the game keeps them.
-pub fn raise_overlay(focus: bool) -> bool {
+pub fn raise_overlay(focus: bool, shape: Shape) -> bool {
     match desktop() {
-        Desktop::Gnome => gnome("Raise", &[&format!("'{OVERLAY_TITLE}'"), if focus { "true" } else { "false" }]).is_some(),
-        Desktop::Kde => kwin(&format!(
-            "for (const w of workspace.windowList()) {{ if (w.caption === {t}) {{ w.keepAbove = true; w.skipTaskbar = true; w.fullScreen = true; {f} }} }}",
-            t = js_str(OVERLAY_TITLE), f = if focus { "workspace.activeWindow = w;" } else { "" })),
+        Desktop::Gnome => gnome("Raise", &[&format!("'{OVERLAY_TITLE}'"), if focus { "true" } else { "false" }, &format!("'{}'", shape.name())]).is_some(),
+        Desktop::Kde => {
+            let place = match shape {
+                Shape::Screen => "w.fullScreen = true;",
+                // A notification's card: the top right corner of the screen it is on.
+                Shape::Corner => "const g = w.output.geometry ?? workspace.activeScreen.geometry; \
+                    w.frameGeometry = Qt.rect(g.x + g.width - w.frameGeometry.width, g.y, w.frameGeometry.width, w.frameGeometry.height);",
+            };
+            kwin(&format!(
+                "for (const w of workspace.windowList()) {{ if (w.caption === {t}) {{ w.keepAbove = true; w.skipTaskbar = true; {p} {f} }} }}",
+                t = js_str(OVERLAY_TITLE), p = place, f = if focus { "workspace.activeWindow = w;" } else { "" }))
+        }
         Desktop::Gamescope => {
             // Gamescope draws a window with this property above the game, and gives it input.
             for w in x_windows_named(OVERLAY_TITLE) {
@@ -252,6 +299,19 @@ mod tests {
         assert_eq!(detect(env(&[("GAMESCOPE_WAYLAND_DISPLAY", "gamescope-0"), ("SteamGamepadUI", "1")])), Desktop::SteamGameMode);
         assert_eq!(detect(env(&[("DISPLAY", ":0"), ("XDG_CURRENT_DESKTOP", "XFCE")])), Desktop::X11);
         assert_eq!(detect(env(&[("WAYLAND_DISPLAY", "wayland-1"), ("XDG_CURRENT_DESKTOP", "sway")])), Desktop::Other);
+    }
+
+    #[test]
+    fn reads_the_gnome_helper_version() {
+        assert_eq!(extension_version("('3',)"), 3);
+        assert_eq!(extension_version("('10',)"), 10);
+        assert_eq!(extension_version(""), 0, "no answer, no version");
+    }
+
+    #[test]
+    fn needs_the_helper_this_binary_ships() {
+        let version = GNOME_METADATA.split("\"version\"").nth(1).and_then(|v| v.split(':').nth(1)).map(|v| extension_version(v)).unwrap_or(0);
+        assert_eq!(version, GNOME_HELPER_VERSION, "extras/gnome-shell/swarmplay@m1theusr/metadata.json");
     }
 
     #[test]
