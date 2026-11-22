@@ -299,7 +299,7 @@ export component AppWindow inherits Window {
     in property <image> launch-bg;
     in property <image> launch-icon;
     in property <string> launch-name;
-    in property <string> launch-sub: "Starting with KytyPS5…";
+    in property <string> launch-sub: @tr("Starting with KytyPS5…");
     // Which controller the game will get; without one, the keyboard layout is shown.
     in property <string> launch-controller;
     in property <bool> launch-keyboard;
@@ -623,7 +623,7 @@ export component AppWindow inherits Window {
                     Rectangle { height: (18px * S.k); }
                     Text { text: h.desc; font-size: (30px * S.k); color: Theme.text2; wrap: word-wrap; }
                     Rectangle { height: (10px * S.k); }
-                    Text { text: "Already have games on this PC? Add the folder they're in."; font-size: (21px * S.k); color: Theme.text3; wrap: word-wrap; }
+                    Text { text: @tr("Already have games on this PC? Add the folder they're in."); font-size: (21px * S.k); color: Theme.text3; wrap: word-wrap; }
                     Rectangle { height: (40px * S.k); }
                     HorizontalLayout {
                         spacing: (16px * S.k);
@@ -924,7 +924,7 @@ export component AppWindow inherits Window {
                                     border-radius: self.width / 2;
                                     background: c.availability-kind == 1 ? Theme.ok : c.availability-kind == 2 ? Theme.warn : Theme.text3;
                                 }
-                                Text { text: "Availability"; font-size: (16px * root.library-type-scale); color: Theme.text3; overflow: elide; }
+                                Text { text: @tr("Availability"); font-size: (16px * root.library-type-scale); color: Theme.text3; overflow: elide; }
                                 Text {
                                     text: c.availability;
                                     font-size: (16px * root.library-type-scale);
@@ -983,7 +983,7 @@ export component AppWindow inherits Window {
                         }
                         if root.query == "": Text {
                             x: (62px * S.k);
-                            text: "Search games";
+                            text: @tr("Search games");
                             font-size: (22px * root.library-type-scale);
                             color: Theme.text3;
                             vertical-alignment: center;
@@ -1013,7 +1013,7 @@ export component AppWindow inherits Window {
                         border-radius: (31px * S.k); background: #ffffff0f;
                         density-row := HorizontalLayout {
                             padding: (5px * S.k); spacing: (4px * S.k);
-                            for label[i] in [root.width < 1000px ? "Roomy" : "Comfortable", "Compact"]: Rectangle {
+                            for label[i] in [root.width < 1000px ? @tr("Roomy") : @tr("Comfortable"), @tr("Compact")]: Rectangle {
                                 width: dt.preferred-width + (28px * S.k);
                                 border-radius: (26px * S.k);
                                 property <bool> chosen: root.library-compact == (i == 1);
@@ -1054,7 +1054,7 @@ export component AppWindow inherits Window {
                 Rectangle {
                     x: (96px * S.k); y: (254px * S.k); width: root.width - (192px * S.k);
                     height: (52px * S.k);
-                    Text { x: 0; y: 0; height: parent.height; text: "Genre"; font-size: (17px * root.library-type-scale); font-weight: 500; color: Theme.hint; width: (76px * S.k); horizontal-alignment: left; vertical-alignment: center; }
+                    Text { x: 0; y: 0; height: parent.height; text: @tr("Genre"); font-size: (17px * root.library-type-scale); font-weight: 500; color: Theme.hint; width: (76px * S.k); horizontal-alignment: left; vertical-alignment: center; }
                     Rectangle {
                         x: (80px * S.k); y: (6px * S.k); width: (36px * S.k); height: (36px * S.k);
                         border-radius: (18px * S.k); background: root.genres-x < 0 ? #ffffff14 : transparent;
@@ -1099,7 +1099,7 @@ export component AppWindow inherits Window {
                 height: (104px * S.k);
                 spacing: (44px * S.k);
                 alignment: start;
-                for tab[i] in ["Games", "Library"]: Rectangle {
+                for tab[i] in [@tr("Games"), @tr("Library")]: Rectangle {
                     width: tt.preferred-width + (8px * S.k);
                     property <bool> active: root.view == i;
                     property <bool> f: root.zone == Zone.tabs && root.idx == i && root.overlay == 0;
@@ -1154,7 +1154,7 @@ export component AppWindow inherits Window {
                         // Cut short, so the top bar never reaches the tabs.
                         Text { text: root.running.name; max-width: (320px * S.k); overflow: elide; font-size: (18px * S.k); font-weight: 600; color: Theme.text; vertical-alignment: center; }
                         Text { text: root.running.note != "" ? root.running.note : root.running.time; max-width: (420px * S.k); overflow: elide; font-size: (18px * S.k); color: root.running.note != "" ? Theme.warn : Theme.text2; vertical-alignment: center; }
-                        for b[i] in ["Resume", "Stop"]: Rectangle {
+                        for b[i] in [@tr("Resume"), @tr("Stop")]: Rectangle {
                             y: (7px * S.k);
                             height: (38px * S.k);
                             width: bt.preferred-width + (28px * S.k);
@@ -1404,18 +1404,18 @@ export component AppWindow inherits Window {
                 alignment: center;
                 // Only keys that do something on the current screen.
                 for h in root.overlay == 0 && (!root.home-has-game || (root.view == 0 && root.home-welcome))
-                    ? (root.pad-hints ? [{k: "✕", l: "Select", c: #8fb6ff, r: true}] : [{k: "Enter", l: "Select", c: #ffffff, r: false}])
+                    ? (root.pad-hints ? [{k: "✕", l: @tr("Select"), c: #8fb6ff, r: true}] : [{k: "Enter", l: @tr("Select"), c: #ffffff, r: false}])
                     : root.overlay == 0
                     ? (root.pad-hints
-                        ? [{k: "✕", l: "Select", c: #8fb6ff, r: true}, {k: "□", l: "Trailer", c: #f5a3e6, r: true}, {k: "△", l: "Search", c: #6ee7c8, r: true}, {k: "☰", l: "Options", c: #ffffff, r: false}, {k: "Guide", l: "Control Center", c: #ffffff, r: false}]
-                        : [{k: "Enter", l: "Select", c: #ffffff, r: false}, {k: "T", l: "Trailer", c: #ffffff, r: false}, {k: "/", l: "Search", c: #ffffff, r: false}, {k: "O", l: "Options", c: #ffffff, r: false}, {k: "F1", l: "Control Center", c: #ffffff, r: false}])
+                        ? [{k: "✕", l: @tr("Select"), c: #8fb6ff, r: true}, {k: "□", l: @tr("Trailer"), c: #f5a3e6, r: true}, {k: "△", l: @tr("Search"), c: #6ee7c8, r: true}, {k: "☰", l: @tr("Options"), c: #ffffff, r: false}, {k: "Guide", l: @tr("Control Center"), c: #ffffff, r: false}]
+                        : [{k: "Enter", l: @tr("Select"), c: #ffffff, r: false}, {k: "T", l: @tr("Trailer"), c: #ffffff, r: false}, {k: "/", l: @tr("Search"), c: #ffffff, r: false}, {k: "O", l: @tr("Options"), c: #ffffff, r: false}, {k: "F1", l: @tr("Control Center"), c: #ffffff, r: false}])
                     : root.overlay == 1
                     ? (root.pad-hints
-                        ? [{k: "✕", l: "Select", c: #8fb6ff, r: true}, {k: "○", l: "Back", c: #ff8f9c, r: true}, {k: "□", l: "Trailer", c: #f5a3e6, r: true}, {k: "☰", l: "Options", c: #ffffff, r: false}]
-                        : [{k: "Enter", l: "Select", c: #ffffff, r: false}, {k: "Esc", l: "Back", c: #ffffff, r: false}, {k: "T", l: "Trailer", c: #ffffff, r: false}, {k: "O", l: "Options", c: #ffffff, r: false}])
+                        ? [{k: "✕", l: @tr("Select"), c: #8fb6ff, r: true}, {k: "○", l: @tr("Back"), c: #ff8f9c, r: true}, {k: "□", l: @tr("Trailer"), c: #f5a3e6, r: true}, {k: "☰", l: @tr("Options"), c: #ffffff, r: false}]
+                        : [{k: "Enter", l: @tr("Select"), c: #ffffff, r: false}, {k: "Esc", l: @tr("Back"), c: #ffffff, r: false}, {k: "T", l: @tr("Trailer"), c: #ffffff, r: false}, {k: "O", l: @tr("Options"), c: #ffffff, r: false}])
                     : (root.pad-hints
-                        ? [{k: "✕", l: "Select", c: #8fb6ff, r: true}, {k: "○", l: "Back", c: #ff8f9c, r: true}]
-                        : [{k: "Enter", l: "Select", c: #ffffff, r: false}, {k: "Esc", l: "Back", c: #ffffff, r: false}])
+                        ? [{k: "✕", l: @tr("Select"), c: #8fb6ff, r: true}, {k: "○", l: @tr("Back"), c: #ff8f9c, r: true}]
+                        : [{k: "Enter", l: @tr("Select"), c: #ffffff, r: false}, {k: "Esc", l: @tr("Back"), c: #ffffff, r: false}])
                     : HorizontalLayout {
                         spacing: (10px * S.k);
                         KeyCap { text: h.k; round: h.r; fg: h.c; y: (10px * S.k); }
@@ -1493,7 +1493,7 @@ export component AppWindow inherits Window {
                     if root.hub.subtitle != "": Text { text: root.hub.subtitle; font-size: (20px * S.k); color: Theme.text2; wrap: word-wrap; }
                     if root.hub.subtitle != "" && root.hub.release-name != "": Rectangle { height: (8px * S.k); }
                     // What Download gets, when the title (a store's name) doesn't say it all.
-                    if root.hub.release-name != "": Text { text: "Release: " + root.hub.release-name; font-size: (18px * S.k); color: Theme.text3; wrap: word-wrap; }
+                    if root.hub.release-name != "": Text { text: @tr("Release: {}", root.hub.release-name); font-size: (18px * S.k); color: Theme.text3; wrap: word-wrap; }
                     if root.hub.subtitle != "" || root.hub.release-name != "": Rectangle { height: (16px * S.k); }
                     HorizontalLayout {
                         spacing: (10px * S.k);
@@ -1526,7 +1526,7 @@ export component AppWindow inherits Window {
                     sec-compat := VerticalLayout {
                         padding-top: root.hub.verdict != "" ? (56px * S.k) : 0;
                         spacing: (18px * S.k);
-                        if root.hub.verdict != "": Text { text: "Compatibility"; font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
+                        if root.hub.verdict != "": Text { text: @tr("Compatibility"); font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
                         if root.hub.verdict != "": Rectangle {
                             border-radius: (20px * S.k);
                             background: #0a0f1d8c;
@@ -1568,7 +1568,7 @@ export component AppWindow inherits Window {
                         changed y => { root.hub-at-versions = self.y; }
                         padding-top: (root.hub.versions.length > 0 || root.hub.release-count > 1) ? (56px * S.k) : 0;
                         spacing: (18px * S.k);
-                        if (root.hub.versions.length > 0 || root.hub.release-count > 1): Text { text: "Versions"; font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
+                        if (root.hub.versions.length > 0 || root.hub.release-count > 1): Text { text: @tr("Versions"); font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
                         // The game on each platform: how it should play here, how easy it is to get,
                         // and which to pick. Choosing one shows the game there.
                         if root.hub.versions.length > 0: VerticalLayout {
@@ -1606,10 +1606,10 @@ export component AppWindow inherits Window {
                                                 background: Theme.ok.with-alpha(0.18);
                                                 border-width: 1px;
                                                 border-color: Theme.ok.with-alpha(0.45);
-                                                best-text := Text { text: "Best for this PC"; font-size: (14px * S.k); font-weight: 700; color: Theme.ok; }
+                                                best-text := Text { text: @tr("Best for this PC"); font-size: (14px * S.k); font-weight: 700; color: Theme.ok; }
                                             }
                                             Rectangle { horizontal-stretch: 1; }
-                                            if v.current: Text { text: "Showing"; font-size: (14px * S.k); font-weight: 600; color: Theme.text3; vertical-alignment: center; }
+                                            if v.current: Text { text: @tr("Showing"); font-size: (14px * S.k); font-weight: 600; color: Theme.text3; vertical-alignment: center; }
                                         }
                                         Text {
                                             text: v.verdict;
@@ -1623,7 +1623,7 @@ export component AppWindow inherits Window {
                                     TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.versions, i); } }
                                 }
                             }
-                            Text { text: "Each version has its own saves and updates."; font-size: (15px * S.k); color: Theme.text3; }
+                            Text { text: @tr("Each version has its own saves and updates."); font-size: (15px * S.k); color: Theme.text3; }
                         }
                         // Other releases of this version (editions, regions, updates): big arrows, plain words.
                         if root.hub.release-count > 1: Rectangle {
@@ -1646,7 +1646,7 @@ export component AppWindow inherits Window {
                                     Text { text: root.hub.release-label; font-size: (20px * S.k); font-weight: 600; color: Theme.text; overflow: elide; }
                                     if root.hub.release-detail != "": Text { text: root.hub.release-detail; font-size: (16px * S.k); color: Theme.text3; overflow: elide; }
                                 }
-                                Text { text: "Choose another release"; font-size: (17px * S.k); color: root.zone == Zone.releases ? Theme.text : Theme.text2; vertical-alignment: center; }
+                                Text { text: @tr("Choose another release"); font-size: (17px * S.k); color: root.zone == Zone.releases ? Theme.text : Theme.text2; vertical-alignment: center; }
                                 Rectangle {
                                     width: (52px * S.k);
                                     Rectangle {
@@ -1665,7 +1665,7 @@ export component AppWindow inherits Window {
                         changed y => { root.hub-at-shots = self.y; }
                         padding-top: root.hub.shots.length > 0 ? (56px * S.k) : 0;
                         spacing: (18px * S.k);
-                        if root.hub.shots.length > 0: Text { text: "Trailers & screenshots"; font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
+                        if root.hub.shots.length > 0: Text { text: @tr("Trailers & screenshots"); font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
                         if root.hub.shots.length > 0: VerticalLayout {
                             padding-top: 0;
                             spacing: (14px * S.k);
@@ -1713,7 +1713,7 @@ export component AppWindow inherits Window {
                         changed y => { root.hub-at-details = self.y; }
                         padding-top: true ? (56px * S.k) : 0;
                         spacing: (18px * S.k);
-                        if true: Text { text: "Details"; font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
+                        if true: Text { text: @tr("Details"); font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
                         for fr in root.hub.facts: HorizontalLayout {
                             spacing: (14px * S.k);
                             padding-bottom: (14px * S.k);
@@ -1740,7 +1740,7 @@ export component AppWindow inherits Window {
                             background: root.zone == Zone.hub-details ? #ffffff1f : #ffffff08;
                             border-width: root.zone == Zone.hub-details ? (2px * S.k) : 1px;
                             border-color: root.zone == Zone.hub-details ? Theme.text : Theme.line;
-                            Text { text: root.hub-details-open ? "−  Hide technical details" : "+  Technical details & installed game"; font-size: (18px * S.k); color: Theme.text2; }
+                            Text { text: root.hub-details-open ? @tr("−  Hide technical details") : @tr("+  Technical details & installed game"); font-size: (18px * S.k); color: Theme.text2; }
                             TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.hub-details, 0); } }
                         }
                         if root.hub-details-open: VerticalLayout {
@@ -1761,7 +1761,7 @@ export component AppWindow inherits Window {
                         changed y => { root.hub-at-about = self.y; }
                         padding-top: root.hub.about.length > 0 ? (56px * S.k) : 0;
                         spacing: (18px * S.k);
-                        if root.hub.about.length > 0: Text { text: "About"; font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
+                        if root.hub.about.length > 0: Text { text: @tr("About"); font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
                         if root.hub.about.length > 0: VerticalLayout {
                             spacing: (16px * S.k);
                             for p in root.hub.about: Text {
@@ -1825,7 +1825,7 @@ export component AppWindow inherits Window {
                 animate opacity { duration: 220ms; easing: ease-out-quad; }
                 animate x { duration: 420ms; easing: ease-out-expo; }
                 Image { source: Icons.gear; colorize: Theme.text; width: (36px * S.k); height: self.width; y: (14px * S.k); }
-                Text { text: "Settings"; font-size: (36px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
+                Text { text: @tr("Settings"); font-size: (36px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
             }
             HorizontalLayout {
                 x: (96px * S.k) + (root.settings-root ? (40px * S.k) : 0); y: (40px * S.k);
@@ -2112,7 +2112,7 @@ export component AppWindow inherits Window {
                                             width: (20px * S.k); height: self.width;
                                         }
                                         if s.kind == 1 || (s.kind == 4 && s.value != ""): Text {
-                                            text: s.kind == 1 && s.value == "" ? (s.secret ? "Not set" : "—") : s.value;
+                                            text: s.kind == 1 && s.value == "" ? (s.secret ? @tr("Not set") : "—") : s.value;
                                             font-size: (19px * S.t);
                                             font-family: s.kind == 1 ? "DejaVu Sans Mono" : "";
                                             font-weight: s.value-kind == 3 ? 600 : 400;
@@ -2222,8 +2222,8 @@ export component AppWindow inherits Window {
                                         spacing: (5px * S.k);
                                         horizontal-stretch: 1;
                                         Text { text: "SwarmPlay"; font-size: (21px * S.t); font-weight: 600; color: Theme.text; }
-                                        Text { text: "Version " + root.app-version + " · Linux"; font-size: (17px * S.t); color: #9ba6c0; }
-                                        Text { text: "PS5 games on KytyPS5 · PS4 games on shadPS4"; font-size: (17px * S.t); color: #9ba6c0; }
+                                        Text { text: @tr("Version {} · Linux", root.app-version); font-size: (17px * S.t); color: #9ba6c0; }
+                                        Text { text: @tr("PS5 games on KytyPS5 · PS4 games on shadPS4"); font-size: (17px * S.t); color: #9ba6c0; }
                                     }
                                     VerticalLayout { alignment: center; AboutSlint { width: (200px * S.k); } }
                                 }
@@ -2246,17 +2246,17 @@ export component AppWindow inherits Window {
                 // About has no rows to open: only Close there.
                 // What Enter does: open a section, change a row, or (on Quit, Restart…) that.
                 for h in (root.zone == Zone.settings-nav && (root.settings-root || root.idx >= root.settings-sections.length)) ? [
-                    { glyph: root.pad-hints ? "✕" : "Enter", label: "Select", tint: #8dbaff, back: false },
-                    { glyph: root.pad-hints ? "○" : "Esc", label: "Close", tint: #ff8a9a, back: true },
+                    { glyph: root.pad-hints ? "✕" : "Enter", label: @tr("Select"), tint: #8dbaff, back: false },
+                    { glyph: root.pad-hints ? "○" : "Esc", label: @tr("Close"), tint: #ff8a9a, back: true },
                 ] : (!in-rows && root.settings-section == root.settings-sections.length - 1) ? [
-                    { glyph: root.pad-hints ? "○" : "Esc", label: "Back", tint: #ff8a9a, back: true },
+                    { glyph: root.pad-hints ? "○" : "Esc", label: @tr("Back"), tint: #ff8a9a, back: true },
                 ] : (in-rows && root.settings[root.idx].removable) ? [
-                    { glyph: root.pad-hints ? "✕" : "Enter", label: "Select", tint: #8dbaff, back: false },
-                    { glyph: root.pad-hints ? "□" : "T", label: "Remove", tint: #f5a9e0, back: false },
-                    { glyph: root.pad-hints ? "○" : "Esc", label: "Back", tint: #ff8a9a, back: true },
+                    { glyph: root.pad-hints ? "✕" : "Enter", label: @tr("Select"), tint: #8dbaff, back: false },
+                    { glyph: root.pad-hints ? "□" : "T", label: @tr("Remove"), tint: #f5a9e0, back: false },
+                    { glyph: root.pad-hints ? "○" : "Esc", label: @tr("Back"), tint: #ff8a9a, back: true },
                 ] : [
-                    { glyph: root.pad-hints ? "✕" : "Enter", label: !in-rows ? "Open" : root.settings[root.idx].kind >= 4 ? "Select" : "Change", tint: #8dbaff, back: false },
-                    { glyph: root.pad-hints ? "○" : "Esc", label: root.settings-root ? "Close" : "Back", tint: #ff8a9a, back: true },
+                    { glyph: root.pad-hints ? "✕" : "Enter", label: !in-rows ? @tr("Open") : root.settings[root.idx].kind >= 4 ? @tr("Select") : @tr("Change"), tint: #8dbaff, back: false },
+                    { glyph: root.pad-hints ? "○" : "Esc", label: root.settings-root ? @tr("Close") : @tr("Back"), tint: #ff8a9a, back: true },
                 ]: Rectangle {
                     width: hint-row.preferred-width;
                     hint-row := HorizontalLayout {
@@ -2523,13 +2523,13 @@ export component AppWindow inherits Window {
                         VerticalLayout {
                             padding: (22px * S.k);
                             spacing: (6px * S.k);
-                            Text { text: "NOW PLAYING · " + root.running.time; font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
+                            Text { text: @tr("NOW PLAYING · {}", root.running.time); font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
                             Text { text: root.running.name; font-size: (26px * S.k); font-weight: 600; color: Theme.text; overflow: elide; }
                             Rectangle { vertical-stretch: 1; }
                             HorizontalLayout {
                                 spacing: (12px * S.k);
                                 alignment: start;
-                                for b[i] in [{ label: "Back to game", danger: false }, { label: "Close game", danger: true }]: Rectangle {
+                                for b[i] in [{ label: @tr("Back to game"), danger: false }, { label: @tr("Close game"), danger: true }]: Rectangle {
                                     property <bool> f: root.zone == Zone.control-center && root.idx == i;
                                     width: cc-btn-label.preferred-width + (40px * S.k);
                                     height: (48px * S.k);
@@ -2553,16 +2553,16 @@ export component AppWindow inherits Window {
                         VerticalLayout {
                             padding: (22px * S.k);
                             spacing: (8px * S.k);
-                            Text { text: "DOWNLOADS"; font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
+                            Text { text: @tr("DOWNLOADS"); font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
                             Text {
-                                text: root.ring-kind > 0 ? root.ring-label + root.ring-suffix : "Nothing downloading";
+                                text: root.ring-kind > 0 ? root.ring-label + root.ring-suffix : @tr("Nothing downloading");
                                 font-size: (24px * S.k);
                                 font-weight: 600;
                                 color: root.ring-kind == 3 ? Theme.warn : root.ring-kind == 5 ? Theme.ok : Theme.text;
                                 overflow: elide;
                             }
                             Rectangle { vertical-stretch: 1; }
-                            Text { text: "Open Downloads"; font-size: (17px * S.k); color: Theme.hint; }
+                            Text { text: @tr("Open Downloads"); font-size: (17px * S.k); color: Theme.hint; }
                         }
                         TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.control-center, o); } }
                     }
@@ -2578,7 +2578,7 @@ export component AppWindow inherits Window {
                             HorizontalLayout {
                                 spacing: (10px * S.k);
                                 alignment: start;
-                                Text { text: "NOTIFICATIONS"; font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
+                                Text { text: @tr("NOTIFICATIONS"); font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
                                 if root.notif-count > 0: Rectangle {
                                     width: max(self.height, nc.preferred-width + (14px * S.k)); height: (22px * S.k);
                                     border-radius: self.height / 2;
@@ -2588,7 +2588,7 @@ export component AppWindow inherits Window {
                             }
                             Text { text: root.notif-last; font-size: (22px * S.k); font-weight: 600; color: Theme.text; overflow: elide; }
                             Rectangle { vertical-stretch: 1; }
-                            Text { text: "Open notifications"; font-size: (17px * S.k); color: Theme.hint; }
+                            Text { text: @tr("Open notifications"); font-size: (17px * S.k); color: Theme.hint; }
                         }
                         TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.control-center, o + 1); } }
                     }
@@ -2600,8 +2600,8 @@ export component AppWindow inherits Window {
                     height: (128px * S.k);
                     spacing: (18px * S.k);
                     alignment: start;
-                    for t[i] in [{ label: "Library", icon: "grid" }, { label: "Settings", icon: "gear" }, { label: "Controls", icon: "info" },
-                                 { label: root.on-os ? "Power" : "Quit", icon: "power" }]: Rectangle {
+                    for t[i] in [{ label: @tr("Library"), icon: "grid" }, { label: @tr("Settings"), icon: "gear" }, { label: @tr("Controls"), icon: "info" },
+                                 { label: root.on-os ? @tr("Power") : @tr("Quit"), icon: "power" }]: Rectangle {
                         property <bool> f: root.zone == Zone.control-center && root.idx == o + 2 + i;
                         width: (128px * S.k);
                         border-radius: (20px * S.k);
@@ -2685,17 +2685,17 @@ export component AppWindow inherits Window {
                             padding-top: (20px * S.k);
                             padding-bottom: (20px * S.k);
                             spacing: (14px * S.k);
-                            Text { text: "No controller connected: you'll play with the keyboard."; font-size: (18px * S.k); font-weight: 600; color: Theme.text; horizontal-alignment: center; }
-                            Text { text: "Games play best with a controller. Connect one before starting a game."; font-size: (16px * S.k); color: Theme.text2; horizontal-alignment: center; }
+                            Text { text: @tr("No controller connected: you'll play with the keyboard."); font-size: (18px * S.k); font-weight: 600; color: Theme.text; horizontal-alignment: center; }
+                            Text { text: @tr("Games play best with a controller. Connect one before starting a game."); font-size: (16px * S.k); color: Theme.text2; horizontal-alignment: center; }
                             HorizontalLayout {
                                 alignment: center;
                                 height: (30px * S.k);
                                 spacing: (8px * S.k);
                                 for k in (root.launch-ps4
                                         ? [{ key: "N", what: "✕" }, { key: "C", what: "△" }, { key: "V", what: "□" }, { key: "B", what: "○" },
-                                           { key: "W A S D", what: "Move" }, { key: "Arrows", what: "D-pad" }, { key: "Enter", what: "Options" }]
+                                           { key: "W A S D", what: @tr("Move") }, { key: @tr("Arrows"), what: @tr("D-pad") }, { key: "Enter", what: @tr("Options") }]
                                         : [{ key: "J", what: "✕" }, { key: "I", what: "△" }, { key: "K", what: "□" }, { key: "L", what: "○" },
-                                           { key: "W A S D", what: "Move" }, { key: "Arrows", what: "D-pad" }, { key: "Enter", what: "Options" }]): HorizontalLayout {
+                                           { key: "W A S D", what: @tr("Move") }, { key: @tr("Arrows"), what: @tr("D-pad") }, { key: "Enter", what: @tr("Options") }]): HorizontalLayout {
                                     spacing: (6px * S.k);
                                     padding-right: (10px * S.k);
                                     KeyCap { text: k.key; }
@@ -2812,7 +2812,7 @@ export component AppWindow inherits Window {
                     }
                     Rectangle { height: (26px * S.k); }
                     Text {
-                        text: root.user-name != "" ? "Welcome back, " + root.user-name : "Welcome back";
+                        text: root.user-name != "" ? @tr("Welcome back, {}", root.user-name) : @tr("Welcome back");
                         font-size: (40px * S.k); font-weight: 600; color: Theme.text;
                         horizontal-alignment: center;
                     }
@@ -2820,21 +2820,21 @@ export component AppWindow inherits Window {
                 }
                 Rectangle { height: (18px * S.k); }
                 if root.boot-first: Text {
-                    text: root.boot-stick ? "Getting AzrakOS ready" : "Welcome";
+                    text: root.boot-stick ? @tr("Getting AzrakOS ready") : @tr("Welcome");
                     font-size: (64px * S.k);
                     font-weight: 700;
                     color: Theme.text;
                     horizontal-alignment: center;
                 }
                 if root.boot-first: Text {
-                    text: "Setting up SwarmPlay";
+                    text: @tr("Setting up SwarmPlay");
                     font-size: (23px * S.k);
                     color: Theme.text2;
                     horizontal-alignment: center;
                 }
                 if root.boot-first && root.boot-stick: Rectangle { height: (6px * S.k); }
                 if root.boot-first && root.boot-stick: Text {
-                    text: "You can install it later from Settings.";
+                    text: @tr("You can install it later from Settings.");
                     font-size: (19px * S.k);
                     color: Theme.text3;
                     horizontal-alignment: center;
@@ -2961,7 +2961,7 @@ export component AppWindow inherits Window {
                             spacing: (12px * S.k);
                             KeyCap { text: root.pad-hints ? "✕" : "Enter"; round: root.pad-hints; fg: root.boot-ready ? #ffffff : #8fb6ff; bg: root.boot-ready ? #0a0d18 : #ffffff24; y: (17px * S.k); }
                             Text {
-                                text: root.boot-ready ? "Start" : "Skip and continue";
+                                text: root.boot-ready ? @tr("Start") : @tr("Skip and continue");
                                 font-size: (21px * S.k);
                                 font-weight: 600;
                                 color: root.boot-ready ? #0a0d18 : Theme.text;
@@ -3185,10 +3185,10 @@ export component AppWindow inherits Window {
                             HorizontalLayout {
                                 spacing: (10px * S.k);
                                 Image { source: Icons.lock; colorize: Theme.warn; width: (22px * S.k); height: self.width; y: (3px * S.k); }
-                                Text { text: "Before you restart"; font-size: (24px * S.k); font-weight: 700; color: Theme.warn; }
+                                Text { text: @tr("Before you restart"); font-size: (24px * S.k); font-weight: 700; color: Theme.warn; }
                             }
                             Text {
-                                text: "A blue screen comes up once after the restart. On it, use a keyboard's arrow keys and Enter:";
+                                text: @tr("A blue screen comes up once after the restart. On it, use a keyboard's arrow keys and Enter:");
                                 width: (620px * S.k);
                                 font-size: (18px * S.k);
                                 color: Theme.text2;
@@ -3196,10 +3196,10 @@ export component AppWindow inherits Window {
                             }
                             Rectangle { height: (2px * S.k); }
                             for st[n] in [
-                                { a: "Choose ", b: "“Enroll MOK”" },
+                                { a: @tr("Choose "), b: "“Enroll MOK”" },
                                 { a: "", b: "“Continue”" },
                                 { a: "", b: "“Yes”" },
-                                { a: "Type the password ", b: "universalblue" },
+                                { a: @tr("Type the password "), b: "universalblue" },
                                 { a: "", b: "“Reboot”" },
                             ]: HorizontalLayout {
                                 spacing: (14px * S.k);
@@ -3218,7 +3218,7 @@ export component AppWindow inherits Window {
                             }
                             Rectangle { height: (4px * S.k); }
                             Text {
-                                text: "This lets NVIDIA's graphics driver start. Skipped it? AzrakOS still starts; the PC asks again later.";
+                                text: @tr("This lets NVIDIA's graphics driver start. Skipped it? AzrakOS still starts; the PC asks again later.");
                                 width: (620px * S.k);
                                 font-size: (16px * S.k);
                                 color: Theme.text3;
@@ -3281,7 +3281,7 @@ export component AppWindow inherits Window {
                     spacing: (10px * S.k);
                     alignment: center;
                     KeyCap { text: root.pad-hints ? "○" : "Esc"; round: root.pad-hints; fg: root.pad-hints ? #ff8f9c : #ffffff; y: (10px * S.k); }
-                    Text { text: "Back"; font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
+                    Text { text: @tr("Back"); font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
                 }
                 TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.os-install, -1); } }
             }
@@ -3334,7 +3334,7 @@ export component AppWindow inherits Window {
                                     // The caret: letters go in here.
                                     Rectangle { width: (2px * S.k); height: (28px * S.k); y: (parent.height - self.height) / 2; background: Theme.accent; }
                                     if root.query == "": Text {
-                                        text: "  A name, initials (tlou) or a genre";
+                                        text: "  " + @tr("A name, initials (tlou) or a genre");
                                         font-size: (22px * S.k);
                                         color: Theme.text3;
                                         vertical-alignment: center;
@@ -3391,8 +3391,8 @@ export component AppWindow inherits Window {
                         spacing: (22px * S.k);
                         padding-top: (6px * S.k);
                         for h in root.pad-hints
-                            ? [{ key: "□", what: "Delete" }, { key: "△", what: "Space" }, { key: "R2", what: "Show results" }, { key: "○", what: "Close" }]
-                            : [{ key: "Enter", what: root.sk-enter-done ? "Show results" : "Press the key" }, { key: "Esc", what: "Close" }]: HorizontalLayout {
+                            ? [{ key: "□", what: @tr("Delete") }, { key: "△", what: @tr("Space") }, { key: "R2", what: @tr("Show results") }, { key: "○", what: @tr("Close") }]
+                            : [{ key: "Enter", what: root.sk-enter-done ? @tr("Show results") : @tr("Press the key") }, { key: "Esc", what: @tr("Close") }]: HorizontalLayout {
                             spacing: (8px * S.k);
                             KeyCap { text: h.key; round: root.pad-hints && h.key.character-count == 1; }
                             Text { text: h.what; font-size: (17px * S.k); color: Theme.hint; vertical-alignment: center; }
@@ -3436,7 +3436,7 @@ export component AppWindow inherits Window {
                                 VerticalLayout {
                                     alignment: center;
                                     spacing: (4px * S.k);
-                                    Text { text: "Join " + root.wj-ssid; font-size: (30px * S.k); font-weight: 700; color: Theme.text; overflow: elide; }
+                                    Text { text: @tr("Join {}", root.wj-ssid); font-size: (30px * S.k); font-weight: 700; color: Theme.text; overflow: elide; }
                                     HorizontalLayout {
                                         spacing: (6px * S.k);
                                         alignment: start;
@@ -3469,7 +3469,7 @@ export component AppWindow inherits Window {
                                         opacity: mod(wj.t, 1.0) < 0.55 ? 1 : 0;
                                     }
                                     if root.wj-field == "": Text {
-                                        text: "Password";
+                                        text: @tr("Password");
                                         font-size: (22px * S.k);
                                         color: Theme.text3;
                                         vertical-alignment: center;
@@ -3499,8 +3499,8 @@ export component AppWindow inherits Window {
                                 spacing: (10px * S.k);
                                 if root.wj-busy: Image { source: Icons.spinner; width: (20px * S.k); height: self.width; y: (2px * S.k); transform-rotation: wj.t * 400deg; }
                                 Text {
-                                    text: root.wj-busy ? "Connecting to " + root.wj-ssid + "…" : root.wj-error != "" ? root.wj-error : root.wj-note != "" ? root.wj-note
-                                        : root.pad-hints ? "Choose the letters below" : "Type with your keyboard, or choose the letters below";
+                                    text: root.wj-busy ? @tr("Connecting to {}…", root.wj-ssid) : root.wj-error != "" ? root.wj-error : root.wj-note != "" ? root.wj-note
+                                        : root.pad-hints ? @tr("Choose the letters below") : @tr("Type with your keyboard, or choose the letters below");
                                     font-size: (17px * S.k);
                                     color: root.wj-busy ? Theme.text2 : root.wj-error != "" ? Theme.danger : root.wj-note != "" ? Theme.warn : Theme.text2;
                                     vertical-alignment: center;
@@ -3533,8 +3533,8 @@ export component AppWindow inherits Window {
                                 opacity: root.wj-busy ? 0 : 1;
                                 animate opacity { duration: 200ms; }
                                 for h in root.pad-hints
-                                    ? [{ key: "□", what: "Delete" }, { key: "△", what: "Space" }, { key: "L1", what: "Shift" }, { key: "R1", what: "Symbols" }, { key: "R2", what: "Join" }, { key: "○", what: "Cancel" }]
-                                    : [{ key: "Enter", what: root.wj-enter-joins ? "Join" : "Press the key" }, { key: "Tab", what: root.wj-show ? "Hide password" : "Show password" }, { key: "Esc", what: "Cancel" }]: HorizontalLayout {
+                                    ? [{ key: "□", what: @tr("Delete") }, { key: "△", what: @tr("Space") }, { key: "L1", what: @tr("Shift") }, { key: "R1", what: @tr("Symbols") }, { key: "R2", what: @tr("Join") }, { key: "○", what: @tr("Cancel") }]
+                                    : [{ key: "Enter", what: root.wj-enter-joins ? @tr("Join") : @tr("Press the key") }, { key: "Tab", what: root.wj-show ? @tr("Hide password") : @tr("Show password") }, { key: "Esc", what: @tr("Cancel") }]: HorizontalLayout {
                                     spacing: (8px * S.k);
                                     KeyCap { text: h.key; round: root.pad-hints && h.key.character-count == 1; }
                                     Text { text: h.what; font-size: (17px * S.k); color: Theme.hint; vertical-alignment: center; }
@@ -3621,7 +3621,7 @@ export component AppWindow inherits Window {
                                 alignment: center;
                                 spacing: (10px * S.k);
                                 KeyCap { text: root.pad-hints ? "○" : "Esc"; round: root.pad-hints; fg: root.pad-hints ? #ff8f9c : #ffffff; }
-                                Text { text: "Cancel"; font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
+                                Text { text: @tr("Cancel"); font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
                             }
                         }
                     }
@@ -3643,7 +3643,7 @@ export component AppWindow inherits Window {
                 moved => { root.trailer-action("controls"); }
             }
             if root.trailer-loading: Text {
-                text: "Loading trailer…";
+                text: @tr("Loading trailer…");
                 font-size: (22px * S.k);
                 color: Theme.text2;
             }
@@ -3673,7 +3673,7 @@ export component AppWindow inherits Window {
                     x: (48px * S.k);
                     y: (84px * S.k);
                     spacing: (2px * S.k);
-                    Text { text: "Trailer"; font-size: (17px * S.k); font-weight: 500; color: Theme.hint; }
+                    Text { text: @tr("Trailer"); font-size: (17px * S.k); font-weight: 500; color: Theme.hint; }
                     Text { text: root.trailer-title; font-size: (26px * S.k); font-weight: 600; color: Theme.text; }
                 }
             }
@@ -3719,13 +3719,13 @@ export component AppWindow inherits Window {
                     y: (82px * S.k);
                     spacing: (10px * S.k);
                     KeyCap { text: root.pad-hints ? "✕" : "Enter"; round: root.pad-hints; }
-                    Text { text: root.trailer-paused ? "Play" : "Pause"; font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
+                    Text { text: root.trailer-paused ? @tr("Trailer" => "Play") : @tr("Trailer" => "Pause"); font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
                     Rectangle { width: (14px * S.k); }
                     KeyCap { text: "◂ ▸"; }
                     Text { text: "10 s"; font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
                     Rectangle { width: (14px * S.k); }
                     KeyCap { text: root.pad-hints ? "○" : "Esc"; round: root.pad-hints; }
-                    Text { text: "Close"; font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
+                    Text { text: @tr("Close"); font-size: (17px * S.k); color: Theme.text2; vertical-alignment: center; }
                 }
             }
         }
@@ -3783,7 +3783,7 @@ export component AppWindow inherits Window {
         if root.toasts.length > 0 && root.overlay == 0: Text {
             x: root.width - self.width - (100px * S.k);
             y: (108px * S.k) + root.toasts.length * (94px * S.k) + (2px * S.k);
-            text: root.pad-hints ? "PS  to see it" : "Click to open";
+            text: root.pad-hints ? @tr("PS  to see it") : @tr("Click to open");
             font-size: (14px * S.k); color: Theme.hint;
         }
 
@@ -3804,7 +3804,7 @@ export component AppWindow inherits Window {
                 x: (96px * S.k); y: (40px * S.k); height: (64px * S.k);
                 spacing: (18px * S.k); alignment: start;
                 Image { source: Icons.bell; colorize: Theme.text; width: (34px * S.k); height: self.width; y: (15px * S.k); }
-                Text { text: "Notifications"; font-size: (36px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
+                Text { text: @tr("Notifications"); font-size: (36px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
             }
             if root.notes.length == 0: VerticalLayout {
                 y: (root.height - self.height) / 2; width: root.width; height: self.preferred-height;
@@ -3812,8 +3812,8 @@ export component AppWindow inherits Window {
                 HorizontalLayout { alignment: center;
                     Rectangle { width: (96px * S.k); height: self.width; border-radius: self.width / 2; background: #ffffff12;
                         Image { source: Icons.bell; colorize: Theme.text2; width: (44px * S.k); height: self.width; } } }
-                Text { text: "No notifications"; font-size: (30px * S.k); font-weight: 600; color: Theme.text; horizontal-alignment: center; }
-                Text { text: "Downloads, games ready to play and updates show up here."; font-size: (19px * S.k); color: Theme.text2; horizontal-alignment: center; }
+                Text { text: @tr("No notifications"); font-size: (30px * S.k); font-weight: 600; color: Theme.text; horizontal-alignment: center; }
+                Text { text: @tr("Downloads, games ready to play and updates show up here."); font-size: (19px * S.k); color: Theme.text2; horizontal-alignment: center; }
             }
             if root.notes.length > 0: Flickable {
                 property <length> w: min((1080px * S.k), root.width - (192px * S.k));
@@ -3836,7 +3836,7 @@ export component AppWindow inherits Window {
                         opacity: self.shown ? 1 : 0;
                         animate opacity { duration: 240ms; delay: min(i, 10) * 25ms; easing: ease-out-quad; }
                         if n.group != "": Text {
-                            text: n.group == "TODAY" ? "Today" : "Earlier";
+                            text: n.group == "TODAY" ? @tr("Today") : @tr("Earlier");
                             height: (44px * S.k); vertical-alignment: bottom;
                             font-size: (17px * S.k); font-weight: 600; color: Theme.hint;
                         }
@@ -3877,7 +3877,7 @@ export component AppWindow inherits Window {
                         border-width: (3px * S.k);
                         border-color: f ? #ff8a9a : #ff8a9a00;
                         animate background, border-color { duration: 160ms; }
-                        Text { x: (22px * S.k); text: "Clear all"; font-size: (19px * S.k); font-weight: 500; color: #ff8a9a; vertical-alignment: center; }
+                        Text { x: (22px * S.k); text: @tr("Clear all"); font-size: (19px * S.k); font-weight: 500; color: #ff8a9a; vertical-alignment: center; }
                         ta-c := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.notes, root.notes.length); } }
                     }
                 }
@@ -3886,7 +3886,7 @@ export component AppWindow inherits Window {
                 x: root.width - self.width - (96px * S.k); y: root.height - (60px * S.k);
                 width: self.preferred-width; height: (26px * S.k);
                 spacing: (22px * S.k);
-                for h in root.pad-hints ? [{ k: "✕", l: "Open" }, { k: "□", l: "Delete" }, { k: "○", l: "Back" }] : [{ k: "Enter", l: "Open" }, { k: "T", l: "Delete" }, { k: "Esc", l: "Back" }]: HorizontalLayout {
+                for h in root.pad-hints ? [{ k: "✕", l: @tr("Open") }, { k: "□", l: @tr("Delete") }, { k: "○", l: @tr("Back") }] : [{ k: "Enter", l: @tr("Open") }, { k: "T", l: @tr("Delete") }, { k: "Esc", l: @tr("Back") }]: HorizontalLayout {
                     spacing: (8px * S.k);
                     KeyCap { text: h.k; round: root.pad-hints; }
                     Text { text: h.l; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
@@ -3925,7 +3925,7 @@ export component AppWindow inherits Window {
             Text {
                 x: (root.width - parent.w) / 2; y: (128px * S.k);
                 width: parent.w;
-                text: root.pick-step == 0 ? "Games can go on any of these. A drive plugged in but not mounted is mounted when chosen." : root.pick-path;
+                text: root.pick-step == 0 ? @tr("Games can go on any of these. A drive plugged in but not mounted is mounted when chosen.") : root.pick-path;
                 font-size: (18px * S.k); color: Theme.text2; overflow: elide;
             }
             if root.pick-note != "": Text {
@@ -3995,7 +3995,7 @@ export component AppWindow inherits Window {
                     if root.pick-step == 1 && root.pick-rows.length == 1: Text {
                         height: (60px * S.k);
                         x: (22px * S.k);
-                        text: "No folders in here";
+                        text: @tr("No folders in here");
                         font-size: (17px * S.k); color: Theme.hint; vertical-alignment: center;
                     }
                 }
@@ -4005,8 +4005,8 @@ export component AppWindow inherits Window {
                 width: self.preferred-width; height: (26px * S.k);
                 spacing: (22px * S.k);
                 for h in root.pick-step == 0
-                    ? (root.pad-hints ? [{ k: "✕", l: "Open" }, { k: "○", l: "Back" }] : [{ k: "Enter", l: "Open" }, { k: "Esc", l: "Back" }])
-                    : (root.pad-hints ? [{ k: "✕", l: "Open" }, { k: "△", l: "Use this folder" }, { k: "○", l: "Up" }] : [{ k: "Enter", l: "Open" }, { k: "/", l: "Use this folder" }, { k: "Esc", l: "Up" }]): HorizontalLayout {
+                    ? (root.pad-hints ? [{ k: "✕", l: @tr("Open") }, { k: "○", l: @tr("Back") }] : [{ k: "Enter", l: @tr("Open") }, { k: "Esc", l: @tr("Back") }])
+                    : (root.pad-hints ? [{ k: "✕", l: @tr("Open") }, { k: "△", l: @tr("Use this folder") }, { k: "○", l: @tr("Up") }] : [{ k: "Enter", l: @tr("Open") }, { k: "/", l: @tr("Use this folder") }, { k: "Esc", l: @tr("Up") }]): HorizontalLayout {
                     spacing: (8px * S.k);
                     KeyCap { text: h.k; round: root.pad-hints; }
                     Text { text: h.l; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
@@ -4038,14 +4038,14 @@ export component AppWindow inherits Window {
                     padding-top: (40px * S.k);
                     padding-bottom: (40px * S.k);
                     spacing: (10px * S.k);
-                    Text { text: "Keyboard controls in games"; font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
+                    Text { text: @tr("Keyboard controls in games"); font-size: (30px * S.k); font-weight: 600; color: Theme.text; }
                     Text { text: root.launch-controller; font-size: (17px * S.k); color: root.launch-keyboard ? Theme.text3 : Theme.ok; }
                     Rectangle { height: (6px * S.k); }
                     // PS5 and PS4 games use different emulators, with different keys.
                     HorizontalLayout {
                         alignment: start;
                         spacing: (8px * S.k);
-                        for tab[i] in ["PS5 games · KytyPS5", "PS4 games · shadPS4"]: Rectangle {
+                        for tab[i] in [@tr("PS5 games · KytyPS5"), @tr("PS4 games · shadPS4")]: Rectangle {
                             property <bool> on: (i == 1) == root.controls-ps4;
                             width: tl.preferred-width + (28px * S.k);
                             height: (36px * S.k);
@@ -4054,16 +4054,16 @@ export component AppWindow inherits Window {
                             tl := Text { text: tab; font-size: (16px * S.k); font-weight: 600; color: on ? #0a0d18 : Theme.text2; }
                             TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.controls, i); } }
                         }
-                        Text { text: "  ◂ ▸ to switch"; font-size: (15px * S.k); color: Theme.text3; vertical-alignment: center; }
+                        Text { text: "  " + @tr("◂ ▸ to switch"); font-size: (15px * S.k); color: Theme.text3; vertical-alignment: center; }
                     }
                     Rectangle { height: (6px * S.k); }
                     if root.controls-ps4: HorizontalLayout {
                         spacing: (56px * S.k);
                         for column in [
-                            [{ what: "✕  Cross", keys: "N  (or keypad 2)" }, { what: "○  Circle", keys: "B  (or keypad 6)" }, { what: "□  Square", keys: "V  (or keypad 4)" },
-                             { what: "△  Triangle", keys: "C  (or keypad 8)" }, { what: "D-pad", keys: "Arrow keys" }, { what: "Options", keys: "Enter" }],
-                            [{ what: "Left stick", keys: "W  A  S  D" }, { what: "Right stick", keys: "I  J  K  L" }, { what: "L1  /  R1", keys: "Q  /  U" },
-                             { what: "L2  /  R2", keys: "E  /  O" }, { what: "L3  /  R3", keys: "X  /  M" }, { what: "Touchpad", keys: "Space" }],
+                            [{ what: @tr("✕  Cross"), keys: @tr("N  (or keypad 2)") }, { what: @tr("○  Circle"), keys: @tr("B  (or keypad 6)") }, { what: @tr("□  Square"), keys: @tr("V  (or keypad 4)") },
+                             { what: @tr("△  Triangle"), keys: @tr("C  (or keypad 8)") }, { what: @tr("D-pad"), keys: @tr("Arrow keys") }, { what: @tr("Options"), keys: "Enter" }],
+                            [{ what: @tr("Left stick"), keys: "W  A  S  D" }, { what: @tr("Right stick"), keys: "I  J  K  L" }, { what: "L1  /  R1", keys: "Q  /  U" },
+                             { what: "L2  /  R2", keys: "E  /  O" }, { what: "L3  /  R3", keys: "X  /  M" }, { what: @tr("Touchpad"), keys: @tr("Space") }],
                         ]: VerticalLayout {
                             spacing: (12px * S.k);
                             for row in column: HorizontalLayout {
@@ -4077,10 +4077,10 @@ export component AppWindow inherits Window {
                     if !root.controls-ps4: HorizontalLayout {
                         spacing: (56px * S.k);
                         for column in [
-                            [{ what: "✕  Cross", keys: "J" }, { what: "○  Circle", keys: "L" }, { what: "□  Square", keys: "K" }, { what: "△  Triangle", keys: "I" },
-                             { what: "D-pad", keys: "Arrow keys" }, { what: "Options", keys: "Enter" }],
-                            [{ what: "Left stick", keys: "W  A  S  D" }, { what: "Right stick", keys: "T  F  G  H" }, { what: "L1  /  R1", keys: "Q  /  E" },
-                             { what: "L2  /  R2", keys: "Z  /  C" }, { what: "L3  /  R3", keys: "Left Shift  /  Left Ctrl" }, { what: "Touchpad", keys: "Backspace  /  Tab" }],
+                            [{ what: @tr("✕  Cross"), keys: "J" }, { what: @tr("○  Circle"), keys: "L" }, { what: @tr("□  Square"), keys: "K" }, { what: @tr("△  Triangle"), keys: "I" },
+                             { what: @tr("D-pad"), keys: @tr("Arrow keys") }, { what: @tr("Options"), keys: "Enter" }],
+                            [{ what: @tr("Left stick"), keys: "W  A  S  D" }, { what: @tr("Right stick"), keys: "T  F  G  H" }, { what: "L1  /  R1", keys: "Q  /  E" },
+                             { what: "L2  /  R2", keys: "Z  /  C" }, { what: "L3  /  R3", keys: @tr("Left Shift  /  Left Ctrl") }, { what: @tr("Touchpad"), keys: "Backspace  /  Tab" }],
                         ]: VerticalLayout {
                             spacing: (12px * S.k);
                             for row in column: HorizontalLayout {
@@ -4092,9 +4092,9 @@ export component AppWindow inherits Window {
                         }
                     }
                     Rectangle { height: (10px * S.k); }
-                    Text { text: root.controls-ps4 ? "shadPS4 keeps its key layout in its own settings file; these are its defaults." : "F7 turns the mouse into the right stick (press it again to release the mouse)."; font-size: (16px * S.k); color: Theme.text3; }
+                    Text { text: root.controls-ps4 ? @tr("shadPS4 keeps its key layout in its own settings file; these are its defaults.") : @tr("F7 turns the mouse into the right stick (press it again to release the mouse)."); font-size: (16px * S.k); color: Theme.text3; }
                     Text {
-                        text: "Games play best with a controller: DualSense, DualShock 4, Xbox and most others work\nover USB or Bluetooth with no setup. Connect it before starting a game.";
+                        text: @tr("Games play best with a controller: DualSense, DualShock 4, Xbox and most others work\nover USB or Bluetooth with no setup. Connect it before starting a game.");
                         font-size: (16px * S.k);
                         color: Theme.text3;
                     }

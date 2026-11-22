@@ -2,6 +2,8 @@
 //! player ("Getting PS4 support · 9%"), and the numbers and names behind it stay in Settings and
 //! the Game Hub's technical details.
 
+use tr::tr;
+
 /// How easy a game is to download, from how many people were sharing it (seeders) when the
 /// catalog counted them. The counts aren't live, so this is a hint, not a promise.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -26,12 +28,12 @@ impl Availability {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Availability::Good => "Good",
-            Availability::Low => "Low",
-            Availability::None => "None",
-            Availability::Unknown => "Unknown",
+            Availability::Good => tr!("Availability" => "Good"),
+            Availability::Low => tr!("Availability" => "Low"),
+            Availability::None => tr!("Availability" => "None"),
+            Availability::Unknown => tr!("Availability" => "Unknown"),
         }
     }
 
@@ -47,7 +49,8 @@ impl Availability {
 
 /// The status line under the Home screen, in players' words. Progress messages name emulators
 /// and versions ("Downloading shadPS4 0.20.0 · 9%"), which Settings → Updates still shows; on
-/// the Home screen it's what they're for that matters.
+/// the Home screen it's what they're for that matters. What's matched is the tools' English; what
+/// comes out is in the player's language.
 pub fn status(text: &str) -> String {
     let percent = |done: &str| -> Option<u64> {
         let (a, b) = done.split_once('/')?;
@@ -56,29 +59,37 @@ pub fn status(text: &str) -> String {
     };
     // "… · 9%" at the end of a progress message.
     let tail = text.rsplit_once(" · ").map(|(_, p)| p).filter(|p| p.ends_with('%')).map(|p| format!(" · {p}")).unwrap_or_default();
-    let support = |console: &str| {
-        if text.starts_with("Installing") { format!("Setting up {console} support…") } else { format!("Getting {console} support{tail}") }
+    // The emulators' and the launcher's own progress come in the interface's language (kyty.rs,
+    // shad.rs, update.rs): matched by their English start or by their translation's, up to its
+    // first {}.
+    let begins = |english: &str, template: String| {
+        let head = template.split('{').next().unwrap_or_default().trim_end_matches('…').to_string();
+        text.starts_with(english) || (!head.trim().is_empty() && text.starts_with(head.as_str()))
     };
-    if text.starts_with("Downloading shadPS4") || text.starts_with("Installing shadPS4") {
+    let installing = begins("Installing shadPS4", tr!("Installing shadPS4…")) || begins("Installing KytyPS5", tr!("Installing KytyPS5…"));
+    let support = |console: &str| {
+        if installing { tr!("Setting up {console} support…", console) } else { tr!("Getting {console} support", console) + &tail }
+    };
+    if begins("Downloading shadPS4", tr!("Downloading shadPS4 {} · {}%")) || begins("Installing shadPS4", tr!("Installing shadPS4…")) {
         return support("PS4");
     }
-    if text.starts_with("Downloading KytyPS5") || text.starts_with("Installing KytyPS5") {
+    if begins("Downloading KytyPS5", tr!("Downloading KytyPS5 {} · {}%")) || begins("Installing KytyPS5", tr!("Installing KytyPS5…")) {
         return support("PS5");
     }
-    if text.starts_with("Downloading SwarmPlay") {
-        return format!("Getting the launcher's update{tail}");
+    if begins("Downloading SwarmPlay", tr!("Downloading SwarmPlay {} · {}%")) {
+        return tr!("Getting the launcher's update") + &tail;
     }
     if let Some(done) = text.strip_prefix("Downloading artwork ").or_else(|| text.strip_prefix("Downloading game art ")) {
         return match percent(done) {
-            Some(p) => format!("Getting game pictures · {p}%"),
-            None => "Getting game pictures…".into(),
+            Some(p) => tr!("Getting game pictures · {p}%", p),
+            None => tr!("Getting game pictures…"),
         };
     }
     if text.starts_with("Loading RuTracker") || (text.starts_with("Loaded ") && text.ends_with("RuTracker releases")) {
-        return "Loading the game list…".into();
+        return tr!("Loading the game list…");
     }
     if let Some(console) = text.strip_prefix("Downloading the ").and_then(|t| t.strip_suffix(" catalog")) {
-        return format!("Updating the {console} game list…");
+        return tr!("Updating the {console} game list…", console);
     }
     text.to_string()
 }

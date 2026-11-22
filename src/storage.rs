@@ -16,6 +16,7 @@ use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use tr::tr;
 
 /// What fills a drive, counted: games, downloads, screenshots (bytes on the disk).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -32,6 +33,16 @@ const RECOUNT_SECS: f64 = 60.0;
 
 /// The legend under a drive's bar: its colour (in the bar too), as a console's.
 pub const PARTS: [&str; 4] = ["Games", "Downloads", "Media gallery", "Other"];
+
+/// A line of the legend (PARTS' name), as shown.
+pub fn part_label(k: usize) -> String {
+    match PARTS[k.min(PARTS.len() - 1)] {
+        "Games" => tr!("Games"),
+        "Downloads" => tr!("Downloads"),
+        "Media gallery" => tr!("Media gallery"),
+        _ => tr!("Other"),
+    }
+}
 
 /// Bytes `path` takes on the disk, not crossing into other drives nor following links.
 pub fn du(path: &Path) -> u64 {
@@ -114,7 +125,7 @@ fn mount_point(path: &Path) -> String {
 /// A drive's name for people: the system's own drive, or the removable one's label.
 pub fn drive_name(mount: &str) -> String {
     let internal = ["/", "/var", "/home", "/var/home", "/sysroot", "/usr"];
-    if internal.contains(&mount) { return "Internal storage".into(); }
+    if internal.contains(&mount) { return tr!("Internal storage"); }
     Path::new(mount).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| mount.to_string())
 }
 
@@ -124,15 +135,17 @@ fn under(folder: &str) -> (String, String) {
     (base.join("Downloads").to_string_lossy().into_owned(), base.join("Games").to_string_lossy().into_owned())
 }
 
-/// A size as a console writes it: 0 kB, 512 MB, 2.02 GB, 260.5 GB, 1.2 TB.
+/// A size as a console writes it: 0 kB, 512 MB, 2.02 GB, 260.5 GB, 1.2 TB (with a decimal comma
+/// in Portuguese).
 pub fn size(bytes: u64) -> String {
+    use crate::i18n::num;
     let k = bytes as f64 / 1024.0;
     let (m, g) = (k / 1024.0, k / 1024.0 / 1024.0);
-    if g >= 1024.0 { format!("{:.1} TB", g / 1024.0) }
-    else if g >= 100.0 { format!("{g:.1} GB") }
-    else if g >= 1.0 { format!("{g:.2} GB") }
-    else if m >= 1.0 { format!("{m:.0} MB") }
-    else { format!("{k:.0} kB") }
+    if g >= 1024.0 { format!("{} TB", num(g / 1024.0, 1)) }
+    else if g >= 100.0 { format!("{} GB", num(g, 1)) }
+    else if g >= 1.0 { format!("{} GB", num(g, 2)) }
+    else if m >= 1.0 { format!("{} MB", num(m, 0)) }
+    else { format!("{} kB", num(k, 0)) }
 }
 
 /// The bar's parts, as shares of the whole drive: games, downloads, media, other (what's used
@@ -209,8 +222,8 @@ impl App {
             let mut r = row(5, &p.name);
             let u = usage.as_ref().map(|m| m.get(&p.dev).copied().unwrap_or_default());
             if p.total > 0 {
-                r.value = format!("Size: {}", size(p.total)).into();
-                r.value2 = format!("Free space: {}", size(p.free)).into();
+                r.value = tr!("Size: {}", size(p.total)).into();
+                r.value2 = tr!("Free space: {}", size(p.free)).into();
                 r.value_kind = if p.free < 50 << 30 { 2 } else { 0 };
                 let sh = match &u {
                     Some(u) => shares(u, p.free, p.total),
@@ -219,39 +232,39 @@ impl App {
                 };
                 r.segs = crate::app::model(sh.to_vec());
             } else {
-                r.value = "Not connected".into();
+                r.value = tr!("Not connected").into();
                 r.value_kind = 2;
             }
             (r.hint, r.hint_kind) = if p.default {
-                (format!("New games go here · {}", util::display_path(&p.install)).into(), 1)
+                (tr!("New games go here · {}", util::display_path(&p.install)).into(), 1)
             } else {
-                (format!("Press to put new games here · {}", util::display_path(&p.install)).into(), 0)
+                (tr!("Press to put new games here · {}", util::display_path(&p.install)).into(), 0)
             };
             r.removable = p.added.is_some();
             rows.push((SId::StoragePlace(i as u16), r));
             if p.total == 0 { continue; }
             // What fills it, each with its colour.
             let used = p.total.saturating_sub(p.free);
-            for (k, part) in PARTS.iter().enumerate() {
-                let mut r = row(6, part);
+            for k in 0..PARTS.len() {
+                let mut r = row(6, &part_label(k));
                 r.dot = k as i32 + 1;
                 r.value = match &u {
-                    None => "Counting…".into(),
+                    None => tr!("Counting…").into(),
                     Some(u) => size(match k { 0 => u.games, 1 => u.downloads, 2 => u.media, _ => used.saturating_sub(u.games + u.downloads + u.media) }).into(),
                 };
                 rows.push((SId::StoragePart(i as u16, k as u8), r));
             }
         }
-        let mut r = row(4, "Add a place");
-        r.hint = "Another drive (an SSD, a USB drive) or a folder on one: games can download and install there".into();
+        let mut r = row(4, &tr!("Add a place"));
+        r.hint = tr!("Another drive (an SSD, a USB drive) or a folder on one: games can download and install there").into();
         rows.push((SId::StorageAdd, r));
-        let mut r = row(4, "Install new games to");
+        let mut r = row(4, &tr!("Install new games to"));
         r.value = util::display_path(&cfg.install_dir).into();
-        r.hint = "Downloaded games are set up here when you press Install".into();
+        r.hint = tr!("Downloaded games are set up here when you press Install").into();
         rows.push((SId::InstallDir, r));
-        let mut r = row(4, "Save downloads to");
+        let mut r = row(4, &tr!("Save downloads to"));
         r.value = util::display_path(&cfg.download_dir).into();
-        r.hint = "Each download gets its own folder".into();
+        r.hint = tr!("Each download gets its own folder").into();
         rows.push((SId::DownloadDir, r));
         (rows, places)
     }
@@ -272,10 +285,10 @@ impl App {
                     crate::audio::play(crate::audio::Sound::Select);
                     let _ = std::process::Command::new("xdg-open").arg(&dir).spawn();
                 } else {
-                    self.note_setting(id, "No screenshots yet · Share takes one in a game", 0);
+                    self.note_setting(id, &tr!("No screenshots yet · Share takes one in a game"), 0);
                 }
             }
-            _ => self.note_setting(id, "Everything else on this drive: the system, apps, your own files", 0),
+            _ => self.note_setting(id, &tr!("Everything else on this drive: the system, apps, your own files"), 0),
         }
     }
 
@@ -283,7 +296,7 @@ impl App {
     pub fn storage_remove(&mut self, i: usize) {
         let Some(place) = self.storage_places().get(i).cloned() else { return };
         let Some(folder) = place.added else {
-            return self.note_setting(SId::StoragePlace(i as u16), "This one stays: it's where SwarmPlay started", 0);
+            return self.note_setting(SId::StoragePlace(i as u16), &tr!("This one stays: it's where SwarmPlay started"), 0);
         };
         {
             let mut c = self.cfg.lock().unwrap();
@@ -291,7 +304,7 @@ impl App {
             c.save();
         }
         crate::audio::play(crate::audio::Sound::Back);
-        self.toast("Taken off the list", &format!("{} · its games and downloads are still there", place.name), "disk", crate::toast::DONE);
+        self.toast(&tr!("Taken off the list"), &tr!("{} · its games and downloads are still there", place.name), "disk", crate::toast::DONE);
         Self::storage_recount();
         self.refresh_settings();
     }
@@ -300,11 +313,11 @@ impl App {
     pub fn storage_use(&mut self, i: usize) {
         let Some(place) = self.storage_places().get(i).cloned() else { return };
         if place.default {
-            return self.note_setting(SId::StoragePlace(i as u16), "New games already go here", 0);
+            return self.note_setting(SId::StoragePlace(i as u16), &tr!("New games already go here"), 0);
         }
         for dir in [&place.download, &place.install] {
             if let Err(e) = std::fs::create_dir_all(util::expand_home(dir)) {
-                return self.note_setting(SId::StoragePlace(i as u16), &format!("Can't use it: {e}"), 2);
+                return self.note_setting(SId::StoragePlace(i as u16), &tr!("Can't use it: {e}", e), 2);
             }
         }
         {
@@ -315,7 +328,7 @@ impl App {
             c.save();
         }
         crate::audio::play(crate::audio::Sound::Select);
-        self.toast("New games go here now", &place.name, "disk", crate::toast::DONE);
+        self.toast(&tr!("New games go here now"), &place.name, "disk", crate::toast::DONE);
         self.refresh_settings();
     }
 
@@ -325,11 +338,11 @@ impl App {
         let path: PathBuf = util::expand_home(&folder);
         if folder.is_empty() { return; }
         if !path.is_dir() {
-            return self.note_setting(SId::StorageAdd, "Not added: no folder there (is the drive connected?)", 2);
+            return self.note_setting(SId::StorageAdd, &tr!("Not added: no folder there (is the drive connected?)"), 2);
         }
         let (download, install) = under(&folder);
         if let Err(e) = std::fs::create_dir_all(util::expand_home(&install)).and_then(|_| std::fs::create_dir_all(util::expand_home(&download))) {
-            return self.note_setting(SId::StorageAdd, &format!("Not added: can't write there ({e})"), 2);
+            return self.note_setting(SId::StorageAdd, &tr!("Not added: can't write there ({e})", e), 2);
         }
         {
             let mut c = self.cfg.lock().unwrap();
@@ -337,7 +350,7 @@ impl App {
             if !c.game_dir_paths().iter().any(|d| *d == util::expand_home(&install)) { c.game_dirs.push(install); }
             c.save();
         }
-        self.note_setting(SId::StorageAdd, "Added · press it in the list to put new games there", 1);
+        self.note_setting(SId::StorageAdd, &tr!("Added · press it in the list to put new games there"), 1);
         Self::storage_recount();
         self.refresh_settings();
     }
@@ -353,6 +366,11 @@ mod tests {
         assert_eq!(drive_name("/var/home"), "Internal storage");
         assert_eq!(drive_name("/run/media/m/Games SSD"), "Games SSD");
         assert_eq!(under("/run/media/m/SSD/"), ("/run/media/m/SSD/SwarmPlay/Downloads".into(), "/run/media/m/SSD/SwarmPlay/Games".into()));
+    }
+
+    #[test]
+    fn every_part_has_a_label() {
+        for (k, p) in PARTS.iter().enumerate() { assert_eq!(part_label(k), *p); }
     }
 
     #[test]

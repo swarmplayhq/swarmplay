@@ -1,0 +1,5121 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2026-11-22 02:25+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/app.rs
+msgid "A PKG package: PS5 games install from extracted releases only."
+msgstr ""
+
+#: src/app.rs
+msgid "Action"
+msgstr ""
+
+#: src/app.rs
+msgid "Adventure"
+msgstr ""
+
+#: src/app.rs src/download_ui.rs
+msgid "All"
+msgstr ""
+
+#: src/app.rs
+msgid "All genres"
+msgstr ""
+
+#: src/app.rs
+msgid "Can't play the trailer: {e}"
+msgstr ""
+
+#: src/app.rs
+msgid "Can't rate this game: its folder has no title ID"
+msgstr ""
+
+#: src/app.rs
+msgid "Catalog reload failed · keeping the offline snapshot"
+msgstr ""
+
+#: src/app.rs
+msgid "Checking for new releases…"
+msgstr ""
+
+#: src/app.rs
+msgid ""
+"Closed right after starting · it may need something this PC doesn't have "
+"(Wine, a library)"
+msgstr ""
+
+#: src/app.rs
+msgid "Closed right after starting · {emulator} may not support it yet"
+msgstr ""
+
+#: src/app.rs
+msgid "Closing it and saving {}'s caches…"
+msgstr ""
+
+#: src/app.rs
+msgid "Closing it…"
+msgstr ""
+
+#: src/app.rs
+msgid "Couldn't change it: {e}"
+msgstr ""
+
+#: src/app.rs
+msgid "Couldn't refresh it: {e}"
+msgstr ""
+
+#: src/app.rs
+msgid "Couldn't start it: {e}"
+msgstr ""
+
+#: src/app.rs
+msgid "Couldn't switch to it"
+msgstr ""
+
+#: src/app.rs
+msgid "Couldn't switch to it: its window wasn't found (Resume needs xdotool)"
+msgstr ""
+
+#: src/app.rs src/compat.rs
+msgid "Doesn't start"
+msgstr ""
+
+#: src/app.rs
+msgid "Download"
+msgstr ""
+
+#: src/app.rs
+msgid "Download anyway"
+msgstr ""
+
+#: src/app.rs
+msgid "Family"
+msgstr ""
+
+#: src/app.rs
+msgid "Fighting"
+msgstr ""
+
+#: src/app.rs
+msgid "Game Hub"
+msgstr ""
+
+#: src/app.rs
+msgid "Horror"
+msgstr ""
+
+#: src/app.rs
+msgid "How far did {name} get?"
+msgstr ""
+
+#: src/app.rs
+msgid "In game: reaches gameplay"
+msgstr ""
+
+#: src/app.rs src/download_ui.rs src/installer.rs src/present.rs
+#: src/versions.rs
+msgid "Installed"
+msgstr ""
+
+#: src/app.rs
+msgid "Installing…"
+msgstr ""
+
+#: src/app.rs src/compat.rs
+msgid "Intro logos, then stops"
+msgstr ""
+
+#: src/app.rs
+msgid "It exited with code {code} · open its log"
+msgstr ""
+
+#: src/app.rs
+msgid "KytyPS5 compatibility list"
+msgstr ""
+
+#: src/app.rs
+msgid ""
+"Look for a release of this game that is a folder, an archive or an exFAT "
+"image."
+msgstr ""
+
+#: src/app.rs
+msgid "Main menu, but not gameplay"
+msgstr ""
+
+#: src/app.rs
+msgid "Most seeders"
+msgstr ""
+
+#: src/app.rs
+msgid "Name (A–Z)"
+msgstr ""
+
+#: src/app.rs
+msgid "Newest uploads"
+msgstr ""
+
+#: src/app.rs
+msgid "No log yet: play the game once to make one"
+msgstr ""
+
+#: src/app.rs
+msgid "No new releases"
+msgstr ""
+
+#: src/app.rs
+msgid "Not now"
+msgstr ""
+
+#: src/app.rs
+msgid ""
+"Nothing new to share: rate a game from its Options menu after playing it"
+msgstr ""
+
+#: src/app.rs
+msgid "Open game folder"
+msgstr ""
+
+#: src/app.rs
+msgid ""
+"Opened {n} report in your browser: check it, drag in its log from the folder "
+"that opened (named after the game), and submit."
+msgid_plural ""
+"Opened {n} reports in your browser: check each one, drag in its log from the "
+"folder that opened (named after the game), and submit."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/app.rs src/storage.rs
+msgid "Other"
+msgstr ""
+
+#: src/app.rs
+msgid "PKG release"
+msgstr ""
+
+#: src/app.rs
+msgid "Platformer"
+msgstr ""
+
+#: src/app.rs
+msgid "Play now starts {path}"
+msgstr ""
+
+#: src/app.rs
+msgid "PlayStation Store page"
+msgstr ""
+
+#: src/app.rs src/compat.rs
+msgid "Playable"
+msgstr ""
+
+#: src/app.rs
+msgid "ProtonDB page"
+msgstr ""
+
+#: src/app.rs
+msgid "Puzzle"
+msgstr ""
+
+#: src/app.rs
+msgid "RPG"
+msgstr ""
+
+#: src/app.rs
+msgid "Racing"
+msgstr ""
+
+#: src/app.rs
+msgid "Rate how it runs"
+msgstr ""
+
+#: src/app.rs
+msgid ""
+"Rated: {} on Linux · it goes to {emulator} when you share your ratings in "
+"Settings"
+msgstr ""
+
+#: src/app.rs
+msgid "Release date"
+msgstr ""
+
+#: src/app.rs
+msgid "Shooter"
+msgstr ""
+
+#: src/app.rs
+msgid "Showing results for “{}”"
+msgstr ""
+
+#: src/app.rs
+msgid "Simulation"
+msgstr ""
+
+#: src/app.rs
+msgid "Size (largest)"
+msgstr ""
+
+#: src/app.rs
+msgid "Size (smallest)"
+msgstr ""
+
+#: src/app.rs
+msgid "Sports"
+msgstr ""
+
+#: src/app.rs
+msgid "Start with {}"
+msgstr ""
+
+#: src/app.rs
+msgid "Starting with {}…"
+msgstr ""
+
+#: src/app.rs
+msgid "Starting…"
+msgstr ""
+
+#: src/app.rs
+msgid "Stealth"
+msgstr ""
+
+#: src/app.rs
+msgid "Steam page"
+msgstr ""
+
+#: src/app.rs
+msgid "Still starting… a game's first launch can take a while"
+msgstr ""
+
+#: src/app.rs
+msgid "Stopped unexpectedly · the game exited with code {code}"
+msgstr ""
+
+#: src/app.rs
+msgid "Stopped unexpectedly · {emulator} exited with code {code}"
+msgstr ""
+
+#: src/app.rs
+msgid "Strategy"
+msgstr ""
+
+#: src/app.rs
+msgid "Survival"
+msgstr ""
+
+#: src/app.rs
+msgid ""
+"This game has another release that isn't a PKG: switch to it with the "
+"release selector."
+msgstr ""
+
+#: src/app.rs
+msgid "Top rated"
+msgstr ""
+
+#: src/app.rs
+msgid "VR"
+msgstr ""
+
+#: src/app.rs
+msgid "View Game"
+msgstr ""
+
+#: src/app.rs
+msgid "View download"
+msgstr ""
+
+#: src/app.rs
+msgid "View emulator log"
+msgstr ""
+
+#: src/app.rs
+msgid "View game log"
+msgstr ""
+
+#: src/app.rs
+msgid "Watch trailer"
+msgstr ""
+
+#: src/app.rs
+msgid "log in Options"
+msgstr ""
+
+#: src/app.rs
+msgid "shadPS4 compatibility list"
+msgstr ""
+
+#: src/app.rs
+msgid ""
+"shadPS4 only accepts reports for games dumped from a copy you own, "
+"unmodified."
+msgstr ""
+
+#: src/app.rs
+msgid "{name} is running: stop it first, or Resume it from Home"
+msgstr ""
+
+#: src/app.rs src/boot.rs src/present.rs src/search_keys.rs
+msgid "{n} game"
+msgid_plural "{n} games"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/app.rs
+msgid "{n} more next time."
+msgid_plural "{n} more next time."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/app.rs
+msgid "{n} new release"
+msgid_plural "{n} new releases"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/app.rs src/present.rs
+msgid "{n} release"
+msgid_plural "{n} releases"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/app.rs
+msgid "{} closed"
+msgstr ""
+
+#: src/app.rs
+msgid "{} games only"
+msgstr ""
+
+#: src/audio.rs
+msgid "High"
+msgstr ""
+
+#: src/audio.rs
+msgid "Low"
+msgstr ""
+
+#: src/audio.rs
+msgid "Medium"
+msgstr ""
+
+#: src/audio.rs src/toast.rs
+msgid "Off"
+msgstr ""
+
+#: src/boot.rs
+msgid "All set"
+msgstr ""
+
+#: src/boot.rs
+msgid "All set · pick a game in the Library to play"
+msgstr ""
+
+#: src/boot.rs
+msgid "All set · {n} installed game found"
+msgid_plural "All set · {n} installed games found"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/boot.rs
+msgid "Game list"
+msgstr ""
+
+#: src/boot.rs
+msgid "Loading…"
+msgstr ""
+
+#: src/boot.rs src/overlay_ui.rs
+msgid "Ready"
+msgstr ""
+
+#: src/boot.rs
+msgid ""
+"This only happens once. Skip anytime — downloads continue in the background."
+msgstr ""
+
+#: src/boot.rs
+msgid "Using the saved list"
+msgstr ""
+
+#: src/boot.rs
+msgid "Your Home screen"
+msgstr ""
+
+#: src/catalog.rs
+msgid "Checking for new releases"
+msgstr ""
+
+#: src/compat.rs
+msgid "Doesn't start on this PC"
+msgstr ""
+
+#: src/compat.rs
+msgid "Doesn't start yet"
+msgstr ""
+
+#: src/compat.rs
+msgid "Logos only"
+msgstr ""
+
+#: src/compat.rs
+msgid "Main menu, not gameplay"
+msgstr ""
+
+#: src/compat.rs
+msgid "Menus only"
+msgstr ""
+
+#: src/compat.rs src/present.rs
+msgid "Not tested yet"
+msgstr ""
+
+#: src/compat.rs
+msgid "Playable, but may run slowly here"
+msgstr ""
+
+#: src/compat.rs
+msgid "Plays on this PC"
+msgstr ""
+
+#: src/compat.rs
+msgid "Reaches gameplay"
+msgstr ""
+
+#: src/compat.rs
+msgid "Starts, but may stop early"
+msgstr ""
+
+#: src/compat.rs
+msgid "another OS"
+msgstr ""
+
+#: src/compat.rs
+msgid "{} on Linux"
+msgstr ""
+
+#: src/compat.rs
+msgid "{} on Linux · your result"
+msgstr ""
+
+#: src/compat.rs
+msgid "{} on {} · untested on Linux"
+msgstr ""
+
+#: src/config.rs
+msgid "Fifo (V-Sync)"
+msgstr ""
+
+#: src/config.rs
+msgid "Immediate (uncapped)"
+msgstr ""
+
+#: src/config.rs
+msgid "Mailbox (low latency)"
+msgstr ""
+
+#: src/control_center.rs src/settings.rs
+msgid "Quit SwarmPlay"
+msgstr ""
+
+#. Installed and waiting: a restart is what's needed.
+#: src/control_center.rs src/os/install.rs src/os/power.rs src/settings.rs
+msgid "Restart"
+msgstr ""
+
+#: src/control_center.rs
+msgid "Restart SwarmPlay"
+msgstr ""
+
+#: src/control_center.rs
+msgid "Turn off"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Added just now"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Added today"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Added yesterday"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Added {day}"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Added {n} hour ago"
+msgid_plural "Added {n} hours ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/download_ui.rs
+msgid "Added {n} minute ago"
+msgid_plural "Added {n} minutes ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/download_ui.rs
+msgid "After {name}"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Before sharing"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "By itself"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Cancel install"
+msgstr ""
+
+#: src/download_ui.rs src/installer.rs
+msgid "Cancelled"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Cancelled · what's downloaded is kept"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Choose files"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Choose its files"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Connected to you"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Couldn't cancel it: {error}"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Couldn't delete it: {}"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Couldn't delete its download, so the game stays: {}"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Couldn't delete the game: {}"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Couldn't do that: {error}"
+msgstr ""
+
+#: src/download_ui.rs src/install_ui.rs
+msgid "Couldn't install"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Delete the download"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Delete the game and its download"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Delete the installed game"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Delete…"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Download again"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Download speed"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Download stopped"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Downloaded"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Downloaded · not installed yet"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Downloaded, and kept"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Downloading"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Frees {}."
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Frees {}. It leaves the Library and this list."
+msgstr ""
+
+#: src/download_ui.rs
+msgid ""
+"Frees {}. The download stays and keeps sharing, and Install puts the game "
+"back."
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Frees {}. The download stays, and Install puts the game back."
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Frees {}. The game stays installed; sharing it stops."
+msgstr ""
+
+#. Just pressed Download: being looked up.
+#: src/download_ui.rs
+msgid "Getting the file list"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "In progress"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Install by hand"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Install cancelled"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Install failed"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Install · next in line"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Installing"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Installing · {}%"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Installs by itself"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Installs next"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "It's installing: cancel the installation before deleting it"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "It's installing: cancel the installation first"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Its download is deleted, but the game couldn't be: {}"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Its download is deleted; the game was running, so it stays"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Its folder is missing: check Game folders in Settings"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Keeps every file. It just leaves this list."
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Needs you"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Next"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Not installed"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Not sharing"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Nothing in progress"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Nothing needs you"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Nothing ready to play yet"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Now"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Open folder"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Pause"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Paused"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Paused until your VPN connects"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Paused · {}%"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Quit the game first: it's running"
+msgstr ""
+
+#: src/download_ui.rs src/install_ui.rs
+msgid "Ready to play"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Ready · sharing"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Ready · verifying"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Remove from Downloads only"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Resumes"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Retry"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Retry install"
+msgstr ""
+
+#. Sharing goes on and off; Delete (which asks what to delete) sits beside it.
+#: src/download_ui.rs
+msgid "Share again"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Share it again any time"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Sharing is off in Settings"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Sharing speed"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Size"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Starting"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Starting the download"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Still to download"
+msgstr ""
+
+#. Sharing goes on and off; Delete (which asks what to delete) sits beside it.
+#: src/download_ui.rs
+msgid "Stop sharing"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Stopped"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Time left"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Unpacked"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "VPN on"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "VPN settings"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Verifying"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Verifying what's already downloaded"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Verifying · {}%"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Waiting for you to choose its files"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Waiting for your VPN"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Waiting to install"
+msgstr ""
+
+#: src/download_ui.rs src/util.rs
+msgid "Yesterday"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "{n} download"
+msgid_plural "{n} downloads"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/download_ui.rs
+msgid "{n} file"
+msgid_plural "{n} files"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/download_ui.rs src/present.rs
+msgid "{n} player"
+msgid_plural "{n} players"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/download_ui.rs
+msgid "{n} ready"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "{n} ready to play"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "{} need you"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "{} of {}"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "{} · installing now"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "{} · ready to install"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "{}% · {} left"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Cannot check destination free space"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Cannot create download folder"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Choose an absolute download folder (or a ~/ path)"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Choose an absolute install folder (or a ~/ path)"
+msgstr ""
+
+#: src/downloads.rs src/setup_ui.rs
+msgid "Choose at least one file"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Download worker is busy or unavailable"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Invalid magnet link"
+msgstr ""
+
+#: src/downloads.rs
+msgid "It has started; cancel or remove it instead"
+msgstr ""
+
+#: src/downloads.rs
+msgid "It's downloading; cancel it first"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Its file list couldn't be read ({})."
+msgstr ""
+
+#: src/downloads.rs
+msgid "Its file list couldn't be read. Retry looks it up again."
+msgstr ""
+
+#: src/downloads.rs
+msgid ""
+"Its file list is gone. Remove it from Downloads, then press Download again."
+msgstr ""
+
+#: src/downloads.rs
+msgid "Its file list is missing. Retry looks it up again."
+msgstr ""
+
+#: src/downloads.rs
+msgid "Metadata lookup task stopped unexpectedly; retry"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Metadata lookup timed out; no reachable peers. Retry later."
+msgstr ""
+
+#: src/downloads.rs
+msgid "Not deleted: {}"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Not enough free space in the download folder"
+msgstr ""
+
+#: src/downloads.rs
+msgid ""
+"Nothing in this release can be downloaded: it only holds programs a console "
+"game never needs."
+msgstr ""
+
+#: src/downloads.rs
+msgid "Refusing to delete {}: it isn't this download's own folder"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Refusing to overwrite an existing folder not owned by this transfer"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Remove an old transfer first (maximum {max})"
+msgstr ""
+
+#: src/downloads.rs
+msgid ""
+"SwarmPlay can't install this release: {why}. Nothing was downloaded; choose "
+"another release of this game."
+msgstr ""
+
+#: src/downloads.rs
+msgid "That file can't be downloaded"
+msgstr ""
+
+#: src/downloads.rs
+msgid ""
+"The downloaded files were moved, changed or deleted, so this download can't "
+"seed. Remove it, or download it again."
+msgstr ""
+
+#: src/downloads.rs
+msgid "This download has already started"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Torrent is empty"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Transfer folder belongs to another user"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Transfer not found"
+msgstr ""
+
+#: src/downloads.rs
+msgid ""
+"Waiting for your VPN: downloads only run through it (Settings → Downloads)"
+msgstr ""
+
+#: src/downloads.rs
+msgid "{} isn't this download's own folder, so it's left alone"
+msgstr ""
+
+#: src/exfat.rs
+msgid "Not an exFAT image"
+msgstr ""
+
+#: src/exfat.rs
+msgid ""
+"The exFAT image is shorter than its header says; wait until the download is "
+"complete"
+msgstr ""
+
+#: src/exfat.rs
+msgid "exFAT folder entry checksum mismatch; the image is damaged"
+msgstr ""
+
+#: src/folder_pick.rs src/storage.rs
+msgid "Add a place"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Can't write here · choose a folder of yours"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Can't write there: choose a folder of yours, or the drive's own top"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Couldn't mount it: {e}"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Downloads go to {shown} now"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Games and downloads go in {}"
+msgstr ""
+
+#. The first drive is always the home folder (drives()); its name is translated.
+#: src/folder_pick.rs
+msgid "Home folder"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Install new games here"
+msgstr ""
+
+#: src/folder_pick.rs src/storage.rs
+msgid "Install new games to"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Mounting…"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "New games are set up in {shown} now"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Not changed: {e}"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Not mounted · {} · ✕ mounts it"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Removable · {sub}"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Save downloads here"
+msgstr ""
+
+#: src/folder_pick.rs src/storage.rs
+msgid "Save downloads to"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "SwarmPlay's games and downloads"
+msgstr ""
+
+#. Already a place: a folder on it becomes where new games go instead.
+#: src/folder_pick.rs
+msgid ""
+"That drive is already in the list · use Install new games to for a folder on "
+"it"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Use this drive"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "it didn't say where"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "it failed"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "{free} free of {total}"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "{} drive"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "{} · choose a drive"
+msgstr ""
+
+#: src/gamepad.rs
+msgid "No controller connected"
+msgstr ""
+
+#: src/gamepad.rs
+msgid "{name} connected"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Apr"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Aug"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Dec"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Feb"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Jan"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Jul"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Jun"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Mar"
+msgstr ""
+
+#: src/i18n.rs
+msgid "May"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Nov"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Oct"
+msgstr ""
+
+#: src/i18n.rs
+msgid "Sep"
+msgstr ""
+
+#: src/install_ui.rs
+msgid "Couldn't install: {}"
+msgstr ""
+
+#: src/install_ui.rs
+msgid ""
+"Folders, RAR, ZIP, 7z or TAR archives (these depend on the system's "
+"libarchive), GOG Linux installers (.sh) and AppImages. Installing unpacks "
+"the game and finds how to start it; nothing in it runs until you press Play. "
+"Unlike console games, which run inside an emulator, PC games run with your "
+"user's access to your files: only install releases you trust."
+msgstr ""
+
+#: src/install_ui.rs
+msgid ""
+"Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR "
+"archives (these depend on the system's libarchive; password-protected ones "
+"aren't supported). PS4 PKG packages are unpacked for shadPS4, with their "
+"update and DLC. Installing checks the game's structure, not that its content "
+"is authentic, and never runs the downloaded files."
+msgstr ""
+
+#: src/install_ui.rs
+msgid ""
+"Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR "
+"archives (these depend on the system's libarchive; password-protected ones "
+"aren't supported). PS5 PKG packages can't be installed: choose a release of "
+"this game that isn't a PKG. Installing checks the game's structure, not that "
+"its content is authentic, and never runs the downloaded files."
+msgstr ""
+
+#: src/install_ui.rs
+msgid ""
+"Folders, exFAT or decrypted PFS (.ffpfsc) images, RAR, ZIP, 7z or TAR "
+"archives, and PS4 PKG packages (not PS5 PKG). Installing checks the game's "
+"structure, not that its content is authentic, and never runs the downloaded "
+"files."
+msgstr ""
+
+#: src/install_ui.rs
+msgid "The download isn't finished"
+msgstr ""
+
+#. Its row says "Waiting to install".
+#: src/install_ui.rs
+msgid "Waiting to install: it starts once the game installing now is done"
+msgstr ""
+
+#: src/installer.rs
+msgid "Absolute or drive-qualified archive path is forbidden"
+msgstr ""
+
+#: src/installer.rs
+msgid "Ambiguous source filename (backslash separators are archive-only)"
+msgstr ""
+
+#: src/installer.rs
+msgid "Another installation is active"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive added entries after inspection"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive entry truncated: {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive entry {} is a {what}, which is unsupported"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive hardlinks are unsupported"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive has unknown uncompressed size; cannot safely install"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive headers changed since inspection"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive is empty"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive path traversal is forbidden"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive symlinks are forbidden"
+msgstr ""
+
+#: src/installer.rs
+msgid "Archive truncated since inspection"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"Atomic publication refused (existing destination is never overwritten): {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Cancelled; source files retained"
+msgstr ""
+
+#: src/installer.rs
+msgid "Cannot check destination free space: {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Could not get the PKG extractor: {e}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Create shadPS4 add-on folder"
+msgstr ""
+
+#: src/installer.rs
+msgid "Delete {}: {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Disk image changed while installing"
+msgstr ""
+
+#: src/installer.rs
+msgid "Disk image file truncated: {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Disk image is empty"
+msgstr ""
+
+#: src/installer.rs
+msgid "Duplicate archive entry: {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Extract archive data (corruption, password, or missing volume)"
+msgstr ""
+
+#: src/installer.rs
+msgid "Extracting"
+msgstr ""
+
+#: src/installer.rs
+msgid "Failed"
+msgstr ""
+
+#: src/installer.rs
+msgid "File exceeds size limit ({max} bytes)"
+msgstr ""
+
+#: src/installer.rs
+msgid "Game folder is nested too deeply"
+msgstr ""
+
+#: src/installer.rs
+msgid "Inspect archive data (corruption, password, or missing volume)"
+msgstr ""
+
+#: src/installer.rs
+msgid "Inspect archive data (missing volume or corrupt archive)"
+msgstr ""
+
+#: src/installer.rs
+msgid "Inspecting"
+msgstr ""
+
+#: src/installer.rs
+msgid "Installation is not active (publication may have completed)"
+msgstr ""
+
+#: src/installer.rs
+msgid "Installed, but could not persist record: {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Installer queue unavailable: {e}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Installer worker panicked; retry"
+msgstr ""
+
+#: src/installer.rs
+msgid "Interrupted; retry"
+msgstr ""
+
+#: src/installer.rs
+msgid "Invalid RAR volume number"
+msgstr ""
+
+#: src/installer.rs
+msgid "Invalid sce_sys/param.json JSON"
+msgstr ""
+
+#: src/installer.rs
+msgid "Invalid sce_sys/param.sfo"
+msgstr ""
+
+#: src/installer.rs
+msgid "Invalid title ID in the game's metadata"
+msgstr ""
+
+#: src/installer.rs
+msgid "Its install folder wasn't recorded"
+msgstr ""
+
+#: src/installer.rs
+msgid "Missing eboot.bin; an update/PKG is not a complete extracted game"
+msgstr ""
+
+#: src/installer.rs
+msgid "Missing multipart volume {}; all volumes must be complete"
+msgstr ""
+
+#: src/installer.rs
+msgid "Multiple independent archives found; choose a single release folder"
+msgstr ""
+
+#: src/installer.rs
+msgid "Multiple valid game roots found; install one complete game at a time"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"No valid extracted game found; require bounded sce_sys/param.json (PS5) or "
+"param.sfo (PS4) with a title ID and nonempty eboot.bin. {}"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"Not enough destination disk space: need {required} bytes including staging "
+"overhead; available {free}"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"Nothing in this release can start the game: no start script, Linux program, "
+"AppImage or Windows .exe was found"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"Open archive (unsupported format, missing volume, or password protection)"
+msgstr ""
+
+#: src/installer.rs
+msgid "Open exFAT disk image"
+msgstr ""
+
+#: src/installer.rs
+msgid "Open explicit installation destination"
+msgstr ""
+
+#: src/installer.rs
+msgid "Open owned torrent folder"
+msgstr ""
+
+#: src/installer.rs
+msgid "Open shadPS4 add-on folder"
+msgstr ""
+
+#: src/installer.rs
+msgid "Open the exFAT image inside the PFS image"
+msgstr ""
+
+#: src/installer.rs
+msgid "PKG changed while installing"
+msgstr ""
+
+#: src/installer.rs src/rar.rs
+msgid "Password-protected archives are unsupported"
+msgstr ""
+
+#: src/installer.rs
+msgid "Read archive header"
+msgstr ""
+
+#: src/installer.rs
+msgid "Refusing to delete {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Source and destination trees must be separate"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"Source changed after inspection: {path}; wait until download is complete"
+msgstr ""
+
+#: src/installer.rs
+msgid "Source changed during copy"
+msgstr ""
+
+#: src/installer.rs
+msgid "Source changed during inspection"
+msgstr ""
+
+#: src/installer.rs
+msgid "Source directory changed during inspection"
+msgstr ""
+
+#: src/installer.rs
+msgid "Source must be a launcher-owned torrent folder"
+msgstr ""
+
+#: src/installer.rs
+msgid "Symlink without a target: {path}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Symlink {path} points outside the game"
+msgstr ""
+
+#: src/installer.rs
+msgid "Symlinks, hardlinks and special source entries are forbidden: {path}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Symlinks, hardlinks and special source files are forbidden"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"System libarchive missing; install your distribution's libarchive runtime "
+"(libarchive13 on Debian/Ubuntu). No external extraction fallback is used"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"The archive inside {} starts {} KiB in; only the first {} KiB can be searched"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"This download has both an archive and a disk image; choose a single release "
+"folder"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"This download has no game PKG, only add-ons; install the game itself first"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"This download has no game PKG, only an update; install the game itself first"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"This download has {} disk images; install supports one game image at a time"
+msgstr ""
+
+#: src/installer.rs
+msgid "This download has {} game PKGs; install one game at a time"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"This download is already installed; existing games are never overwritten"
+msgstr ""
+
+#: src/installer.rs
+msgid "This game wasn't installed by SwarmPlay"
+msgstr ""
+
+#: src/installer.rs
+msgid "Title ID mismatch: extracted {tid}, expected {}"
+msgstr ""
+
+#: src/installer.rs
+msgid "Too many files"
+msgstr ""
+
+#: src/installer.rs
+msgid "Torrent folder belongs to another user"
+msgstr ""
+
+#: src/installer.rs
+msgid "Torrent ownership marker does not match installation key"
+msgstr ""
+
+#: src/installer.rs
+msgid "Unsafe path in disk image: {}"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"Unsupported PKG package; provide an already extracted game with sce_sys/"
+"param.json and eboot.bin"
+msgstr ""
+
+#: src/installer.rs
+msgid "Validating"
+msgstr ""
+
+#: src/installer.rs
+msgid "eboot.bin is empty"
+msgstr ""
+
+#: src/installer.rs
+msgid "param.json is missing titleId"
+msgstr ""
+
+#: src/installer.rs
+msgid "param.sfo is missing TITLE_ID"
+msgstr ""
+
+#: src/installer.rs
+msgid "unsupported format or missing volume"
+msgstr ""
+
+#: src/installer.rs
+msgid ""
+"{action}: {error} [{version}]; verify all volumes, format support and that "
+"the archive is not password-protected"
+msgstr ""
+
+#: src/kyty.rs src/words.rs
+msgid "Downloading KytyPS5 {} · {}%"
+msgstr ""
+
+#: src/kyty.rs src/words.rs
+msgid "Installing KytyPS5…"
+msgstr ""
+
+#: src/kyty.rs
+msgid "could not extract the archive (is `tar` installed?)"
+msgstr ""
+
+#: src/kyty.rs
+msgid "download failed: {}"
+msgstr ""
+
+#: src/kyty.rs
+msgid "download is corrupted (checksum mismatch)"
+msgstr ""
+
+#: src/kyty.rs src/shad.rs
+msgid "no previous version to roll back to"
+msgstr ""
+
+#: src/kyty.rs src/update.rs
+msgid "no releases found"
+msgstr ""
+
+#: src/kyty.rs
+msgid "the downloaded emulator does not run on this system"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "Could not download KytyPS5 · retry from Settings"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "Couldn't reach GitHub: {e}"
+msgstr ""
+
+#: src/kyty_ui.rs src/shad_ui.rs
+msgid "Couldn't roll back: {e}"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "Installs when you finish playing"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "KytyPS5 emulator found"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "KytyPS5 update will install after your game"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "KytyPS5 updated"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "KytyPS5 {} ready"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "KytyPS5 {} · up to date"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "Official build {} is out · switch to get it, and updates from then on"
+msgstr ""
+
+#: src/kyty_ui.rs src/shad_ui.rs
+msgid "Rolled back to {}"
+msgstr ""
+
+#: src/kyty_ui.rs src/shad_ui.rs
+msgid "Starting download…"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "Switched to official builds"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "Switched to official builds · your saves were copied over"
+msgstr ""
+
+#: src/kyty_ui.rs
+msgid "Up to date with the latest official build, {}"
+msgstr ""
+
+#: src/kyty_ui.rs src/shad_ui.rs src/update.rs
+msgid "Update check failed: {e}"
+msgstr ""
+
+#: src/kyty_ui.rs src/update.rs
+msgid "Update failed: {e}"
+msgstr ""
+
+#: src/os/install.rs
+msgid "A game is running: close it first, then install"
+msgstr ""
+
+#: src/os/install.rs
+msgid "AzrakOS is installed"
+msgstr ""
+
+#. Also on Home, which is where the player is after Later.
+#: src/os/install.rs
+msgid "AzrakOS is installed: restart without the USB stick"
+msgstr ""
+
+#: src/os/install.rs
+msgid ""
+"AzrakOS needs a disk of 40 GB or more (not the USB stick). Connect one, then "
+"try again."
+msgstr ""
+
+#: src/os/install.rs
+msgid "AzrakOS replaces everything on this disk."
+msgstr ""
+
+#: src/os/install.rs
+msgid "Couldn't list the disks: {e}"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Couldn't restart: {e}"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Details: {e}"
+msgstr ""
+
+#: src/os/install.rs src/os/system.rs
+msgid "Disk"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Erase and install"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Erase this disk?"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Everything on the disk you choose is erased."
+msgstr ""
+
+#. A USB disk here is never the stick itself (the installer leaves it out).
+#: src/os/install.rs
+msgid "External drive · USB"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Getting ready"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Install on this PC"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Installation didn't finish"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Installed: restart without the USB stick to start it"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Installing AzrakOS"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Keep the PC on"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Later"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Looking at this PC's disks…"
+msgstr ""
+
+#: src/os/install.rs
+msgid "No disk to install on"
+msgstr ""
+
+#: src/os/install.rs
+msgid ""
+"Remove the USB stick, then restart: the PC starts straight into AzrakOS."
+msgstr ""
+
+#: src/os/install.rs
+msgid "Something went wrong while copying AzrakOS to the disk."
+msgstr ""
+
+#. With the key screen, its panel says what the driver needs instead.
+#: src/os/install.rs
+msgid ""
+"This PC has an NVIDIA graphics card: its driver downloads by itself the "
+"first time the PC is online, then asks for a restart."
+msgstr ""
+
+#: src/os/install.rs
+msgid "This can't be undone."
+msgstr ""
+
+#: src/os/install.rs
+msgid "This takes a few minutes."
+msgstr ""
+
+#: src/os/install.rs
+msgid "Try AzrakOS"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Try again"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Try again, or keep trying AzrakOS from the USB stick."
+msgstr ""
+
+#: src/os/install.rs
+msgid "Welcome to AzrakOS"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Where should AzrakOS go?"
+msgstr ""
+
+#: src/os/install.rs
+msgid "Windows and everything on this disk will be deleted."
+msgstr ""
+
+#. A USB disk here is never the stick itself (the installer leaves it out).
+#: src/os/install.rs
+msgid "Windows is on it"
+msgstr ""
+
+#: src/os/install.rs
+msgid ""
+"You're running it from the USB stick, and nothing on this PC has changed. "
+"Try it as long as you like, or install it so the PC starts straight into it."
+msgstr ""
+
+#: src/os/power.rs
+msgid "A game is running: close it first, so its progress is saved"
+msgstr ""
+
+#: src/os/power.rs
+msgid "AzrakOS {} is downloaded. The PC restarts into it and comes back here."
+msgstr ""
+
+#: src/os/power.rs
+msgid "Couldn't restart"
+msgstr ""
+
+#: src/os/power.rs
+msgid "Couldn't shut down"
+msgstr ""
+
+#: src/os/power.rs
+msgid "It didn't happen. Try again in a moment."
+msgstr ""
+
+#: src/os/power.rs
+msgid "Restart and update"
+msgstr ""
+
+#: src/os/power.rs
+msgid "Restart and update?"
+msgstr ""
+
+#: src/os/power.rs
+msgid "Restart now?"
+msgstr ""
+
+#: src/os/power.rs
+msgid "Restarting…"
+msgstr ""
+
+#: src/os/power.rs
+msgid "See you soon."
+msgstr ""
+
+#: src/os/power.rs src/settings.rs
+msgid "Shut down"
+msgstr ""
+
+#: src/os/power.rs
+msgid "Shut down now?"
+msgstr ""
+
+#: src/os/power.rs
+msgid "Shutting down…"
+msgstr ""
+
+#: src/os/power.rs
+msgid "The PC comes back here in a moment."
+msgstr ""
+
+#: src/os/power.rs
+msgid "The PC restarts and comes back here."
+msgstr ""
+
+#: src/os/power.rs
+msgid "The PC turns off. Its power button turns it on again."
+msgstr ""
+
+#: src/os/system.rs
+msgid "Headphones"
+msgstr ""
+
+#. "GA102 High Definition Audio Controller Digital Stereo (HDMI)" says less than "TV (HDMI)".
+#: src/os/system.rs
+msgid "TV or monitor (HDMI)"
+msgstr ""
+
+#: src/os/system.rs
+msgid "The installer didn't start: {e}"
+msgstr ""
+
+#: src/os/system.rs
+msgid "The installer stopped without finishing."
+msgstr ""
+
+#: src/os/system.rs
+msgid "The installer stopped."
+msgstr ""
+
+#: src/os/system.rs
+msgid "failed"
+msgstr ""
+
+#: src/os/system.rs
+msgid "{program} didn't answer"
+msgstr ""
+
+#: src/os/system.rs
+msgid "{program} isn't installed"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Cable · Connected"
+msgstr ""
+
+#: src/os/system_ui.rs src/welcome.rs
+msgid "Connected"
+msgstr ""
+
+#. With a cable in, Wi-Fi stays connected but isn't the one used.
+#: src/os/system_ui.rs
+msgid "Connected · backup"
+msgstr ""
+
+#: src/os/system_ui.rs src/settings.rs
+msgid "Connecting…"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Couldn't connect: check the password and try again"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Couldn't connect: {e}"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Couldn't forget it: {e}"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Couldn't pair: {e}"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Didn't change: {e}"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid ""
+"DualSense: hold PS and Create until the light flashes · Xbox: hold the pair "
+"button"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Forgetting…"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Good"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Install AzrakOS on this PC"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Internet"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Looking for Wi-Fi…"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "More networks…"
+msgstr ""
+
+#: src/os/system_ui.rs src/settings.rs src/storage.rs
+msgid "Not connected"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Not connected · choose Wi-Fi"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Not on this PC"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Nothing found: put the controller in pairing mode, then search again"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Open · no password"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Pair"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Pair a controller or headset"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Pairing…"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Press a network to join"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Press a network to join · the cable is used while it's plugged in"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Press again to forget it"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Press to connect · press again to forget"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Press to restart and update · now running {}"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Press to see Wi-Fi networks"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Press twice to forget it"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Restart to update to {next}"
+msgstr ""
+
+#. Counting down, so a long search never looks stuck.
+#: src/os/system_ui.rs
+msgid "Searching · {} s"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Searching…"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Strong"
+msgstr ""
+
+#: src/os/system_ui.rs src/settings.rs
+msgid "System"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Updates download by themselves and wait for a restart"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Weak"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "Wi-Fi isn't available: {e}"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid ""
+"Wired controllers work as they are · a USB Bluetooth adapter adds wireless "
+"ones"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid ""
+"You're running AzrakOS from the USB stick · installing erases the disk you "
+"choose"
+msgstr ""
+
+#: src/os/system_ui.rs src/overlay_ui.rs
+msgid "{} more"
+msgstr ""
+
+#: src/os/system_ui.rs
+msgid "{} · Up to date"
+msgstr ""
+
+#: src/os/wifi_join.rs
+msgid "Hide"
+msgstr ""
+
+#: src/os/wifi_join.rs
+msgid "Secured · {}"
+msgstr ""
+
+#: src/os/wifi_join.rs
+msgid "Show"
+msgstr ""
+
+#: src/os/wifi_join.rs
+msgid "Type the password first"
+msgstr ""
+
+#: src/os/wifi_join.rs
+msgid "Wi-Fi passwords have at least {min} characters"
+msgstr ""
+
+#: src/os/wifi_join.rs
+msgid "Wrong password. Check it and try again."
+msgstr ""
+
+#: src/overlay.rs
+msgid "Steam Game Mode"
+msgstr ""
+
+#: src/overlay.rs
+msgid "couldn't turn it on"
+msgstr ""
+
+#: src/overlay.rs
+msgid "no home folder"
+msgstr ""
+
+#: src/overlay.rs
+msgid "screenshots aren't available on {}"
+msgstr ""
+
+#: src/overlay.rs
+msgid "this desktop"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Couldn't install it: {e}"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid ""
+"For the in-game overlay, install the GNOME helper: Settings → Playing → In-"
+"game overlay"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "GNOME loads it at the next login: log out and in once"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "In Steam's Game Mode, the PS button opens Steam's overlay"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "In-game overlay"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Install the GNOME helper"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Installed · log out and in once, then press PS in a game"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Last: {name}"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Log out and in once to finish setting up the in-game overlay"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Log out and in to finish"
+msgstr ""
+
+#: src/overlay_ui.rs src/settings.rs src/sound.rs
+msgid "Muted"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "No screenshot"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Not on {}"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid ""
+"PS in a game: the panel over it · hold PS: Home · Share: a screenshot · "
+"keyboard: bind swarmplay --overlay to a key"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Pause the game while the overlay is open"
+msgstr ""
+
+#. The answer to the player's own press: shown even in a game, as on a console.
+#: src/overlay_ui.rs
+msgid "Pictures → SwarmPlay → {}"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Ready: press PS while a game runs"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Saved in Pictures → SwarmPlay"
+msgstr ""
+
+#. The answer to the player's own press: shown even in a game, as on a console.
+#: src/overlay_ui.rs
+msgid "Screenshot saved"
+msgstr ""
+
+#: src/overlay_ui.rs src/settings.rs
+msgid "Sound"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "Steam's overlay is used"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "The game stops under the panel (a few games' sound may stutter)"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid "{} has no way to show it over games: PS brings SwarmPlay up instead"
+msgstr ""
+
+#: src/package.rs
+msgid "a CrossOver bottle (.cxarchive)"
+msgstr ""
+
+#: src/package.rs
+msgid "a Debian package (.deb)"
+msgstr ""
+
+#: src/package.rs
+msgid "a Flatpak bundle"
+msgstr ""
+
+#: src/package.rs
+msgid "a PlayOnLinux package (.polApp)"
+msgstr ""
+
+#: src/package.rs
+msgid "a Snap package"
+msgstr ""
+
+#: src/package.rs
+msgid "an Arch Linux package"
+msgstr ""
+
+#: src/package.rs
+msgid "an RPM package"
+msgstr ""
+
+#: src/package.rs
+msgid "it holds only a Windows installer"
+msgstr ""
+
+#: src/package.rs
+msgid "it's a Java .jar with nothing that starts it"
+msgstr ""
+
+#: src/package.rs
+msgid "it's a LÖVE game file without the LÖVE runtime"
+msgstr ""
+
+#: src/package.rs
+msgid ""
+"it's a PS5 PKG package; PS5 games install from extracted folders, archives "
+"and exFAT or PFS (.ffpfsc) images"
+msgstr ""
+
+#: src/package.rs
+msgid "it's a disc image, which SwarmPlay doesn't mount"
+msgstr ""
+
+#: src/package.rs
+msgid "it's {kind}, which SwarmPlay doesn't install"
+msgstr ""
+
+#: src/package.rs
+msgid "nothing in it starts a game"
+msgstr ""
+
+#: src/pc.rs
+msgid "May run slowly"
+msgstr ""
+
+#: src/pc.rs
+msgid "Should run well"
+msgstr ""
+
+#: src/pc.rs
+msgid "Won't start"
+msgstr ""
+
+#: src/pc.rs
+msgid "graphics unknown"
+msgstr ""
+
+#: src/pc.rs
+msgid "no graphics card found"
+msgstr ""
+
+#: src/pc.rs
+msgid "{cpu} ({n} cores) · {gpu} · {ram} GB RAM"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid ""
+"Games need a graphics card with Vulkan 1.3: update the graphics driver, or "
+"the card is too old"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "It may run slowly on this PC. {}."
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "No graphics driver found: install the driver for your graphics card"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "Older version {this}: {newest} is under Choose another release"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid ""
+"On Linux this NVIDIA card runs on the open-source NVK driver, which keeps "
+"GTX 600–1000 series cards at a low clock speed, so games run slowly"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "PS4 games need a processor from 2013 or later (with AVX2)"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "This PC can't run {} games yet. {}."
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "This PC: {}"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "Version {this}: {newest} is out, but nobody is sharing it"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid ""
+"Your graphics card lacks Vulkan features {} needs: update its driver, or the "
+"card is too old"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "goes to {shown}"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "only {free} GB free there"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "then it installs by itself"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid ""
+"{console} games run best on a graphics card; built-in graphics may be slow"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "{console} games run best on {cores} or more processor cores"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "{console} games run best with {gb} GB of RAM"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "{console} games run best with {gb} GB of graphics memory"
+msgstr ""
+
+#: src/pc_ui.rs
+msgid "{console} games should run well"
+msgstr ""
+
+#: src/pcgame.rs
+msgid "There's nothing else to start"
+msgstr ""
+
+#: src/pcgame.rs
+msgid "This game's manifest is missing"
+msgstr ""
+
+#: src/pcgame.rs
+msgid "{next} isn't in the game's folder"
+msgstr ""
+
+#: src/pfs.rs
+msgid "Not a PFS image"
+msgstr ""
+
+#: src/pfs.rs
+msgid ""
+"The PFS image is shorter than its header says; wait until the download is "
+"complete"
+msgstr ""
+
+#: src/pfs.rs
+msgid "This PFS image is encrypted; only decrypted images can be installed"
+msgstr ""
+
+#: src/pfs.rs
+msgid "Unsupported PFS image (fragmented file)"
+msgstr ""
+
+#: src/pfs.rs
+msgid "Unsupported PFS image (signed or 64-bit inodes)"
+msgstr ""
+
+#: src/pfs.rs
+msgid ""
+"Unsupported PFS image: only one holding a single exFAT game image can be "
+"installed"
+msgstr ""
+
+#: src/pkgx.rs
+msgid "could not run the PKG extractor: {e}"
+msgstr ""
+
+#: src/pkgx.rs
+msgid "not a PS4 PKG package"
+msgstr ""
+
+#: src/pkgx.rs
+msgid "the PKG extractor does not run on this system"
+msgstr ""
+
+#: src/pkgx.rs
+msgid ""
+"the PKG extractor ran without its write guard, so its files can't be "
+"trusted; nothing was installed"
+msgstr ""
+
+#: src/pkgx.rs
+msgid "the PKG extractor stopped after {done} of {files} files"
+msgstr ""
+
+#: src/pkgx.rs
+msgid "the PKG extractor stopped before finishing ({status})"
+msgstr ""
+
+#: src/pkgx.rs
+msgid "the PKG extractor wrote no files"
+msgstr ""
+
+#: src/present.rs
+msgid "ADDED {added}"
+msgstr ""
+
+#: src/present.rs
+msgid "AUDIO LANGUAGES"
+msgstr ""
+
+#: src/present.rs
+msgid "AVAILABILITY"
+msgstr ""
+
+#: src/present.rs
+msgid "Add game folder"
+msgstr ""
+
+#: src/present.rs
+msgid ""
+"Browse every PS5 game in the catalog. Search, filter by genre and sort by "
+"date, name, rating or size."
+msgstr ""
+
+#: src/present.rs
+msgid "Browse games"
+msgstr ""
+
+#: src/present.rs
+msgid "COLLECTION"
+msgstr ""
+
+#: src/present.rs
+msgid "CONSOLE FIRMWARE NOTE"
+msgstr ""
+
+#: src/present.rs
+msgid "COUNTED"
+msgstr ""
+
+#: src/present.rs
+msgid "Catalog is empty"
+msgstr ""
+
+#: src/present.rs
+msgid "DEVELOPER"
+msgstr ""
+
+#: src/present.rs
+msgid "DOWNLOAD SIZE"
+msgstr ""
+
+#: src/present.rs
+msgid "Date unknown"
+msgstr ""
+
+#: src/present.rs
+msgid "FORMAT"
+msgstr ""
+
+#: src/present.rs
+msgid "Files and paths"
+msgstr ""
+
+#: src/present.rs
+msgid "From the {0} community list, last tested {1}"
+msgstr ""
+
+#: src/present.rs
+msgid "From the {} community list"
+msgstr ""
+
+#: src/present.rs
+msgid "GET STARTED"
+msgstr ""
+
+#: src/present.rs
+msgid "GETTING IT (LEECHERS)"
+msgstr ""
+
+#: src/present.rs
+msgid "Game Library"
+msgstr ""
+
+#: src/present.rs
+msgid "Has a Linux version"
+msgstr ""
+
+#: src/present.rs
+msgid "INSTALLED VERSION"
+msgstr ""
+
+#: src/present.rs
+msgid "INTERFACE LANGUAGES"
+msgstr ""
+
+#: src/present.rs
+msgid "Installed locally. A Windows game, run with Proton or Wine."
+msgstr ""
+
+#: src/present.rs
+msgid "Installed locally. Launches with the {} emulator."
+msgstr ""
+
+#: src/present.rs
+msgid "Installed locally. Runs on Linux by itself, no emulator needed."
+msgstr ""
+
+#: src/present.rs
+msgid "Installed on this PC"
+msgstr ""
+
+#: src/present.rs
+msgid "LAST PLAYED"
+msgstr ""
+
+#: src/present.rs
+msgid "LAST TESTED"
+msgstr ""
+
+#: src/present.rs
+msgid "LOCATION"
+msgstr ""
+
+#: src/present.rs
+msgid "Last played {}"
+msgstr ""
+
+#: src/present.rs
+msgid "List updated {updated}"
+msgstr ""
+
+#: src/present.rs
+msgid "Loading catalog…"
+msgstr ""
+
+#: src/present.rs
+msgid "METACRITIC"
+msgstr ""
+
+#: src/present.rs
+msgid "MODE"
+msgstr ""
+
+#: src/present.rs
+msgid "Multiplayer"
+msgstr ""
+
+#: src/present.rs
+msgid "NEW · ADDED {added}"
+msgstr ""
+
+#: src/present.rs
+msgid "Never played"
+msgstr ""
+
+#: src/present.rs
+msgid "New"
+msgstr ""
+
+#: src/present.rs
+msgid "No games match “{}”"
+msgstr ""
+
+#: src/present.rs
+msgid "No games to show yet"
+msgstr ""
+
+#: src/present.rs
+msgid "No games with these filters"
+msgstr ""
+
+#: src/present.rs
+msgid "No games yet"
+msgstr ""
+
+#: src/present.rs
+msgid "No matches with these filters. Choose All to see them"
+msgstr ""
+
+#: src/present.rs
+msgid "Nobody has reported how far it gets on {} yet"
+msgstr ""
+
+#: src/present.rs
+msgid "None yet"
+msgstr ""
+
+#: src/present.rs
+msgid "Not played yet"
+msgstr ""
+
+#: src/present.rs src/versions.rs
+msgid "ON LINUX"
+msgstr ""
+
+#: src/present.rs
+msgid "ON WINDOWS"
+msgstr ""
+
+#: src/present.rs
+msgid "On Linux: not tested yet"
+msgstr ""
+
+#: src/present.rs
+msgid "On Linux: {}"
+msgstr ""
+
+#: src/present.rs
+msgid "On Windows: {}"
+msgstr ""
+
+#: src/present.rs
+msgid "On {0}: {1}"
+msgstr ""
+
+#: src/present.rs
+msgid "Open Library"
+msgstr ""
+
+#: src/present.rs
+msgid "Others on Linux: {}"
+msgstr ""
+
+#: src/present.rs
+msgid "PLAY TIME"
+msgstr ""
+
+#. In the Game Hub, playtime is in the facts below.
+#: src/present.rs
+msgid "PLAYED {}"
+msgstr ""
+
+#: src/present.rs
+msgid "PLAYERS"
+msgstr ""
+
+#: src/present.rs
+msgid "PUBLISHER"
+msgstr ""
+
+#: src/present.rs
+msgid "Pick a game in the Library, then Download and Install."
+msgstr ""
+
+#: src/present.rs src/settings.rs
+msgid "Playing"
+msgstr ""
+
+#: src/present.rs
+msgid "Playing now"
+msgstr ""
+
+#: src/present.rs
+msgid "REGION"
+msgstr ""
+
+#: src/present.rs
+msgid "RELEASE"
+msgstr ""
+
+#: src/present.rs
+msgid "RELEASE VERSION"
+msgstr ""
+
+#: src/present.rs
+msgid "Release {position} of {count}"
+msgstr ""
+
+#: src/present.rs
+msgid "SHARING IT (SEEDERS)"
+msgstr ""
+
+#: src/present.rs
+msgid "SIZE"
+msgstr ""
+
+#: src/present.rs
+msgid "SOURCE"
+msgstr ""
+
+#: src/present.rs
+msgid "STARTS WITH"
+msgstr ""
+
+#: src/present.rs
+msgid "STEAM"
+msgstr ""
+
+#: src/present.rs
+msgid "Single player"
+msgstr ""
+
+#: src/present.rs
+msgid "Size unknown"
+msgstr ""
+
+#: src/present.rs
+msgid "TESTED ON"
+msgstr ""
+
+#: src/present.rs
+msgid "TITLE ID"
+msgstr ""
+
+#: src/present.rs
+msgid "UPDATE"
+msgstr ""
+
+#: src/present.rs src/welcome.rs
+msgid "Unknown"
+msgstr ""
+
+#: src/present.rs
+msgid "Untested on {}"
+msgstr ""
+
+#: src/present.rs
+msgid "VERSION"
+msgstr ""
+
+#: src/present.rs
+msgid "Windows only on Steam"
+msgstr ""
+
+#: src/present.rs
+msgid "YOUR RESULT"
+msgstr ""
+
+#: src/present.rs
+msgid "Your SwarmPlay at a glance"
+msgstr ""
+
+#: src/present.rs
+msgid "Your result on this PC: {}"
+msgstr ""
+
+#: src/present.rs
+msgid "newest version"
+msgstr ""
+
+#: src/present.rs
+msgid "older version"
+msgstr ""
+
+#: src/present.rs
+msgid "{0} of {1}"
+msgstr ""
+
+#: src/present.rs
+msgid "{0} of {n} game"
+msgid_plural "{0} of {n} games"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/present.rs
+msgid "{n} game in the Library"
+msgid_plural "{n} games in the Library"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/present.rs
+msgid "{n} rating"
+msgid_plural "{n} ratings"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/present.rs
+msgid "{n} report"
+msgid_plural "{n} reports"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/present.rs
+msgid "{n} screenshot"
+msgid_plural "{n} screenshots"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/present.rs
+msgid "{n} screenshot · trailer"
+msgid_plural "{n} screenshots · trailer"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/present.rs
+msgid "{observed} · not live"
+msgstr ""
+
+#: src/present.rs
+msgid "{} · files and paths"
+msgstr ""
+
+#: src/rar.rs
+msgid "Missing RAR volume {}"
+msgstr ""
+
+#. A file that isn't a RAR still gets a handle, with the reason in open_result.
+#: src/rar.rs
+msgid "Open RAR archive"
+msgstr ""
+
+#: src/rar.rs
+msgid "RAR needs a {} GiB dictionary; more memory than an install may take"
+msgstr ""
+
+#: src/rar.rs
+msgid "Read RAR data"
+msgstr ""
+
+#: src/rar.rs
+msgid "Read RAR header"
+msgstr ""
+
+#: src/rar.rs
+msgid ""
+"This build of the launcher can't read RAR archives ({e}): its C++ compiler "
+"left unrar's start-up code out. Rebuild it with the system compiler (CXX=c++)"
+msgstr ""
+
+#: src/rar.rs
+msgid "a volume is missing or can't be opened"
+msgstr ""
+
+#: src/rar.rs
+msgid "damaged data (checksum mismatch)"
+msgstr ""
+
+#: src/rar.rs
+msgid "its dictionary is larger than an install may use"
+msgstr ""
+
+#: src/rar.rs
+msgid "not a RAR archive, or a damaged one"
+msgstr ""
+
+#: src/rar.rs
+msgid "not enough memory"
+msgstr ""
+
+#: src/rar.rs
+msgid "password-protected archives are unsupported"
+msgstr ""
+
+#: src/rar.rs
+msgid "read error"
+msgstr ""
+
+#: src/rar.rs
+msgid "unknown error"
+msgstr ""
+
+#: src/search_keys.rs
+msgid "Best matches"
+msgstr ""
+
+#: src/search_keys.rs
+msgid "Clear"
+msgstr ""
+
+#: src/search_keys.rs
+msgid "No matches"
+msgstr ""
+
+#: src/search_keys.rs
+msgid "Recent searches"
+msgstr ""
+
+#: src/sessions.rs
+msgid ""
+"Emulator not found or not executable:\n"
+"{}"
+msgstr ""
+
+#: src/sessions.rs
+msgid "No emulator set: choose KytyPS5 in Settings"
+msgstr ""
+
+#: src/sessions.rs
+msgid "This game's manifest is missing; install it again"
+msgstr ""
+
+#: src/sessions.rs
+msgid ""
+"This is a Windows game: install umu-launcher (runs it with Proton) or Wine "
+"to play it"
+msgstr ""
+
+#: src/sessions.rs
+msgid "Unknown game"
+msgstr ""
+
+#: src/sessions.rs
+msgid "shadPS4 isn't installed yet"
+msgstr ""
+
+#: src/sessions.rs
+msgid "{} is already running. Stop it first."
+msgstr ""
+
+#: src/sessions.rs
+msgid "{} is missing from the game's folder"
+msgstr ""
+
+#: src/settings.rs
+msgid "AMD CPU patches (PS5 games)"
+msgstr ""
+
+#: src/settings.rs
+msgid "Add a VPN from a file"
+msgstr ""
+
+#: src/settings.rs
+msgid "Add one"
+msgstr ""
+
+#: src/settings.rs
+msgid "Adding…"
+msgstr ""
+
+#: src/settings.rs
+msgid "Advanced"
+msgstr ""
+
+#: src/settings.rs
+msgid "As your desktop's notifications, with Open to go there"
+msgstr ""
+
+#: src/settings.rs
+msgid "Check again"
+msgstr ""
+
+#: src/settings.rs
+msgid "Check for new releases"
+msgstr ""
+
+#: src/settings.rs
+msgid "Checking…"
+msgstr ""
+
+#: src/settings.rs
+msgid ""
+"Checks by itself every 6 hours · the list is updated daily, with seeder "
+"counts from that day"
+msgstr ""
+
+#: src/settings.rs
+msgid "Checks every few hours · updates wait until you close your game"
+msgstr ""
+
+#: src/settings.rs
+msgid "Choose the file…"
+msgstr ""
+
+#: src/settings.rs
+msgid "Connect your VPN app, and downloads use it"
+msgstr ""
+
+#: src/settings.rs
+msgid "Connected by your VPN app"
+msgstr ""
+
+#: src/settings.rs
+msgid "Connected by your VPN app: switch it off there"
+msgstr ""
+
+#: src/settings.rs
+msgid "Controller & keyboard"
+msgstr ""
+
+#: src/settings.rs
+msgid "Controller in Windows games"
+msgstr ""
+
+#: src/settings.rs
+msgid "Couldn't change it: {error}"
+msgstr ""
+
+#: src/settings.rs src/sound.rs
+msgid "Didn't change: {error}"
+msgstr ""
+
+#: src/settings.rs
+msgid "Disconnecting…"
+msgstr ""
+
+#: src/settings.rs
+msgid "Display"
+msgstr ""
+
+#: src/settings.rs
+msgid "Do not disturb"
+msgstr ""
+
+#: src/settings.rs
+msgid "Download only through a VPN"
+msgstr ""
+
+#: src/settings.rs
+msgid "Download the file from your VPN provider's website"
+msgstr ""
+
+#: src/settings.rs src/storage.rs src/toast.rs src/welcome.rs
+msgid "Downloads"
+msgstr ""
+
+#: src/settings.rs
+msgid "Downloads wait until your VPN is connected"
+msgstr ""
+
+#: src/settings.rs
+msgid "During games"
+msgstr ""
+
+#: src/settings.rs
+msgid "Extra KytyPS5 arguments"
+msgstr ""
+
+#: src/settings.rs
+msgid "For example --vblank-frequency 60 --tessellation"
+msgstr ""
+
+#. Rollbacks only when there is something to go back to.
+#: src/settings.rs
+msgid "For when an update breaks a game"
+msgstr ""
+
+#: src/settings.rs
+msgid "Found"
+msgstr ""
+
+#: src/settings.rs
+msgid "From your VPN provider: a WireGuard .conf or OpenVPN .ovpn file"
+msgstr ""
+
+#: src/settings.rs
+msgid "Game folders"
+msgstr ""
+
+#: src/settings.rs
+msgid "Game folders scanned"
+msgstr ""
+
+#: src/settings.rs
+msgid "Games play best with a controller · open to see the keyboard keys"
+msgstr ""
+
+#: src/settings.rs
+msgid "Go back to the previous KytyPS5"
+msgstr ""
+
+#: src/settings.rs
+msgid "Go back to the previous shadPS4"
+msgstr ""
+
+#: src/settings.rs
+msgid "Helps other players download faster · uploads at most 128 KiB/s"
+msgstr ""
+
+#: src/settings.rs
+msgid "Hides your IP address from other players · uses your own VPN"
+msgstr ""
+
+#: src/settings.rs
+msgid "How games are downloaded and shared"
+msgstr ""
+
+#: src/settings.rs
+msgid "Important ones: failures, a game ready to play, a low battery"
+msgstr ""
+
+#: src/settings.rs
+msgid "Internet, Bluetooth and updates"
+msgstr ""
+
+#: src/settings.rs
+msgid "Keep sharing finished downloads"
+msgstr ""
+
+#: src/settings.rs
+msgid "KytyPS5 location"
+msgstr ""
+
+#: src/settings.rs
+msgid "KytyPS5 location and video options, the game catalog"
+msgstr ""
+
+#: src/settings.rs
+msgid "Language"
+msgstr ""
+
+#: src/settings.rs
+msgid "Language, display and your game ratings"
+msgstr ""
+
+#: src/settings.rs
+msgid "Launcher"
+msgstr ""
+
+#: src/settings.rs
+msgid ""
+"Moves to {label} after your game: the launcher can't restart while one is "
+"running"
+msgstr ""
+
+#: src/settings.rs src/update.rs
+msgid "Moving to {label}: the launcher restarts there"
+msgstr ""
+
+#: src/settings.rs
+msgid "None"
+msgstr ""
+
+#: src/settings.rs src/toast.rs
+msgid "Nothing new"
+msgstr ""
+
+#: src/settings.rs
+msgid "Nothing pops up but the important ones; the list keeps everything"
+msgstr ""
+
+#: src/settings.rs
+msgid "Nothing runnable at this path"
+msgstr ""
+
+#: src/settings.rs
+msgid "Only for AMD processors"
+msgstr ""
+
+#. No controller button opens Downloads (the top bar's icon does), so a controller player
+#. just presses this row; Ctrl+D is only worth showing to keyboard players.
+#: src/settings.rs
+msgid "Open downloads"
+msgstr ""
+
+#: src/settings.rs
+msgid "Open · Ctrl+D"
+msgstr ""
+
+#: src/settings.rs
+msgid "PS5 and PS4 games {}"
+msgstr ""
+
+#: src/settings.rs
+msgid "PS5: {} · PS4: {}"
+msgstr ""
+
+#: src/settings.rs
+msgid "Play games in fullscreen"
+msgstr ""
+
+#: src/settings.rs
+msgid "Pop-up notifications"
+msgstr ""
+
+#: src/settings.rs
+msgid "Present mode (PS5 games)"
+msgstr ""
+
+#: src/settings.rs
+msgid "Press to disconnect"
+msgstr ""
+
+#: src/settings.rs
+msgid "Primary display"
+msgstr ""
+
+#: src/settings.rs
+msgid "Protected · downloads only use {iface}"
+msgstr ""
+
+#: src/settings.rs
+msgid "Rate a game from its Options menu after you play it, then share it here"
+msgstr ""
+
+#: src/settings.rs
+msgid "Reads the processor, memory and graphics card"
+msgstr ""
+
+#: src/settings.rs
+msgid "Reloading…"
+msgstr ""
+
+#: src/settings.rs
+msgid "Rescan game folders"
+msgstr ""
+
+#: src/settings.rs
+msgid "Resolution (PS5 games)"
+msgstr ""
+
+#: src/settings.rs
+msgid "Restart to finish · {v}"
+msgstr ""
+
+#: src/settings.rs
+msgid "Return to the launcher when a game closes"
+msgstr ""
+
+#: src/settings.rs
+msgid "Runs PS4 games"
+msgstr ""
+
+#: src/settings.rs
+msgid "Runs PS4 games · installs by itself in the background"
+msgstr ""
+
+#: src/settings.rs
+msgid "Runs PS4 games · installs when you first play one"
+msgstr ""
+
+#: src/settings.rs
+msgid "Runs PS5 games"
+msgstr ""
+
+#: src/settings.rs
+msgid "Runs PS5 games · you use your own build{} · switching keeps your saves"
+msgstr ""
+
+#: src/settings.rs
+msgid "Share your game ratings"
+msgstr ""
+
+#: src/settings.rs
+msgid "Show them for"
+msgstr ""
+
+#: src/settings.rs
+msgid ""
+"Shows any controller (DualShock, DualSense…) to Windows games as an Xbox one "
+"· takes effect at the next start"
+msgstr ""
+
+#: src/settings.rs
+msgid ""
+"Small cards at the top right · everything is kept in the list (Control "
+"Center)"
+msgstr ""
+
+#: src/settings.rs src/welcome.rs
+msgid "Storage"
+msgstr ""
+
+#: src/settings.rs
+msgid "SwarmPlay {cur} · restart to update"
+msgstr ""
+
+#: src/settings.rs
+msgid "SwarmPlay {cur} · up to date"
+msgstr ""
+
+#: src/settings.rs
+msgid "SwarmPlay {cur} · update ready"
+msgstr ""
+
+#: src/settings.rs
+msgid "Switch to official builds"
+msgstr ""
+
+#: src/settings.rs
+msgid ""
+"Tells the emulator teams which games work on Linux · needs a free GitHub "
+"account"
+msgstr ""
+
+#: src/settings.rs
+msgid "The launcher and its emulators"
+msgstr ""
+
+#: src/settings.rs
+msgid "Theme"
+msgstr ""
+
+#: src/settings.rs
+msgid "There's no file dialog on this PC"
+msgstr ""
+
+#: src/settings.rs
+msgid "This PC"
+msgstr ""
+
+#: src/settings.rs
+msgid "This app"
+msgstr ""
+
+#: src/settings.rs
+msgid "Try V-Sync if the picture tears"
+msgstr ""
+
+#: src/settings.rs
+msgid "Type the file itself, like ~/Downloads/wg0.conf"
+msgstr ""
+
+#: src/settings.rs
+msgid "Type the path of a WireGuard .conf or OpenVPN .ovpn file"
+msgstr ""
+
+#: src/settings.rs
+msgid "Until {}"
+msgstr ""
+
+#: src/settings.rs
+msgid "Update automatically"
+msgstr ""
+
+#: src/settings.rs
+msgid "Update to {l}"
+msgstr ""
+
+#: src/settings.rs src/toast.rs src/welcome.rs
+msgid "Updates"
+msgstr ""
+
+#: src/settings.rs
+msgid "Volume and where sound goes"
+msgstr ""
+
+#: src/settings.rs
+msgid "Wallpaper and accent colour"
+msgstr ""
+
+#: src/settings.rs
+msgid "What happens when you start a game"
+msgstr ""
+
+#: src/settings.rs
+msgid "What lets you know, and when"
+msgstr ""
+
+#: src/settings.rs
+msgid "When SwarmPlay is in the background"
+msgstr ""
+
+#: src/settings.rs
+msgid "Where games download and install, and the room left"
+msgstr ""
+
+#: src/settings.rs
+msgid "Where your games live"
+msgstr ""
+
+#: src/settings.rs
+msgid "Your VPN"
+msgstr ""
+
+#: src/settings.rs
+msgid "Your controller works in games with no setup"
+msgstr ""
+
+#: src/settings.rs
+msgid "date unknown"
+msgstr ""
+
+#: src/settings.rs
+msgid "the primary display"
+msgstr ""
+
+#: src/settings.rs
+msgid "{active} active"
+msgstr ""
+
+#: src/settings.rs
+msgid "{cur} · Up to date"
+msgstr ""
+
+#: src/settings.rs
+msgid "{gb} GB free"
+msgstr ""
+
+#: src/settings.rs
+msgid "{n} game found"
+msgid_plural "{n} games found"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/settings.rs
+msgid "{n} installed game found"
+msgid_plural "{n} installed games found"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/settings.rs
+msgid "{n} installed game found · more than one folder? Put a ; between them"
+msgid_plural ""
+"{n} installed games found · more than one folder? Put a ; between them"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/settings.rs
+msgid "{n} release · {date}"
+msgid_plural "{n} releases · {date}"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/settings.rs
+msgid "{ready} ready"
+msgstr ""
+
+#: src/settings.rs
+msgid "{unshared} to share"
+msgstr ""
+
+#: src/settings.rs
+msgid "{} · Connect"
+msgstr ""
+
+#: src/settings.rs
+msgid "{} · Connected"
+msgstr ""
+
+#: src/settings.rs
+msgid "{} · the graphics check didn't finish"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Can't download right now"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Can't download this release"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Can't install this release"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Choose the folders"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Download & install · {}"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Getting the file list…"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Keep trying"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Left out"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Needs about {} · {} free on {}"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Needs about {} · {} free on {} after the download"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Needs {} · {} free on {}"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "No VPN: other players can see your IP address"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid ""
+"No other player answered, or this PC is offline. Keep trying, or close and "
+"pick a release with more players in the Game Hub."
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Not enough space"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid ""
+"Not enough space on {} for the download. Free up {}, or choose another "
+"folder."
+msgstr ""
+
+#: src/setup_ui.rs
+msgid ""
+"Not enough space on {} for the installed game. Free up {}, or install to "
+"another drive."
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "The file list didn't arrive"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "This release can't be downloaded"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "This release can't be installed"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "This release can't be looked up"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Through your VPN ({iface})"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Use a full folder path, like ~/Downloads"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Use a full folder path, like ~/Games"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Waiting for your VPN to connect"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "Without {name} the game probably won't install."
+msgstr ""
+
+#: src/setup_ui.rs
+msgid ""
+"{name} was left out. It's a Windows program, and {console} games never need "
+"one."
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "{n} Windows program was left out. {console} games never need them."
+msgid_plural ""
+"{n} Windows programs were left out. {console} games never need them."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/setup_ui.rs
+msgid "{} free on {}"
+msgstr ""
+
+#: src/setup_ui.rs
+msgid "{} of {n} file"
+msgid_plural "{} of {n} files"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/shad.rs src/words.rs
+msgid "Downloading shadPS4 {} · {}%"
+msgstr ""
+
+#: src/shad.rs src/words.rs
+msgid "Installing shadPS4…"
+msgstr ""
+
+#: src/shad.rs
+msgid "damaged zip"
+msgstr ""
+
+#: src/shad.rs
+msgid "download is corrupted (zip checksum mismatch)"
+msgstr ""
+
+#: src/shad.rs
+msgid "no {suffix} in the download"
+msgstr ""
+
+#: src/shad.rs
+msgid "not a zip file"
+msgstr ""
+
+#: src/shad.rs
+msgid "the downloaded shadPS4 does not run on this system"
+msgstr ""
+
+#: src/shad.rs
+msgid "unsupported zip compression"
+msgstr ""
+
+#: src/shad_ui.rs
+msgid "Couldn't get PS4 support: {e}. Check your connection and try again."
+msgstr ""
+
+#: src/shad_ui.rs
+msgid "Couldn't install PS4 support: {e}"
+msgstr ""
+
+#. Its progress shows in the status line.
+#: src/shad_ui.rs
+msgid "Getting PS4 support first (once, about 35 MB), then it starts"
+msgstr ""
+
+#: src/shad_ui.rs
+msgid "shadPS4 updated"
+msgstr ""
+
+#: src/sound.rs
+msgid "Choose"
+msgstr ""
+
+#: src/sound.rs
+msgid "Interface sounds"
+msgstr ""
+
+#: src/sound.rs
+msgid "Mute"
+msgstr ""
+
+#: src/sound.rs
+msgid "Sound output"
+msgstr ""
+
+#: src/sound.rs
+msgid "The launcher's clicks and chimes · a little quieter over a game"
+msgstr ""
+
+#: src/sound.rs
+msgid "The whole system's · ◂ ▸ change it"
+msgstr ""
+
+#: src/sound.rs
+msgid "Volume"
+msgstr ""
+
+#: src/storage.rs
+msgid "Added · press it in the list to put new games there"
+msgstr ""
+
+#: src/storage.rs
+msgid ""
+"Another drive (an SSD, a USB drive) or a folder on one: games can download "
+"and install there"
+msgstr ""
+
+#: src/storage.rs
+msgid "Can't use it: {e}"
+msgstr ""
+
+#: src/storage.rs
+msgid "Counting…"
+msgstr ""
+
+#: src/storage.rs
+msgid "Downloaded games are set up here when you press Install"
+msgstr ""
+
+#: src/storage.rs
+msgid "Each download gets its own folder"
+msgstr ""
+
+#: src/storage.rs
+msgid "Everything else on this drive: the system, apps, your own files"
+msgstr ""
+
+#: src/storage.rs
+msgid "Free space: {}"
+msgstr ""
+
+#: src/storage.rs
+msgid "Internal storage"
+msgstr ""
+
+#: src/storage.rs
+msgid "Media gallery"
+msgstr ""
+
+#: src/storage.rs
+msgid "New games already go here"
+msgstr ""
+
+#: src/storage.rs
+msgid "New games go here now"
+msgstr ""
+
+#: src/storage.rs
+msgid "New games go here · {}"
+msgstr ""
+
+#: src/storage.rs
+msgid "No screenshots yet · Share takes one in a game"
+msgstr ""
+
+#: src/storage.rs
+msgid "Not added: can't write there ({e})"
+msgstr ""
+
+#: src/storage.rs
+msgid "Not added: no folder there (is the drive connected?)"
+msgstr ""
+
+#: src/storage.rs
+msgid "Press to put new games here · {}"
+msgstr ""
+
+#: src/storage.rs
+msgid "Size: {}"
+msgstr ""
+
+#: src/storage.rs
+msgid "Taken off the list"
+msgstr ""
+
+#: src/storage.rs
+msgid "This one stays: it's where SwarmPlay started"
+msgstr ""
+
+#: src/storage.rs
+msgid "{} · its games and downloads are still there"
+msgstr ""
+
+#: src/theme.rs
+msgid "A PNG or JPEG file, like ~/Pictures/wallpaper.png"
+msgstr ""
+
+#: src/theme.rs
+msgid "Accent colour"
+msgstr ""
+
+#: src/theme.rs
+msgid "Aurora"
+msgstr ""
+
+#: src/theme.rs
+msgid "Blue"
+msgstr ""
+
+#: src/theme.rs
+msgid "Buttons, highlights and the focus glow"
+msgstr ""
+
+#: src/theme.rs
+msgid "Can't open this picture · showing {}"
+msgstr ""
+
+#: src/theme.rs
+msgid "Deep blue"
+msgstr ""
+
+#: src/theme.rs
+msgid "Ember"
+msgstr ""
+
+#: src/theme.rs
+msgid "Game art"
+msgstr ""
+
+#: src/theme.rs
+msgid "Green"
+msgstr ""
+
+#: src/theme.rs
+msgid "Midnight"
+msgstr ""
+
+#: src/theme.rs
+msgid "On Welcome and behind Settings · a game always shows its own art"
+msgstr ""
+
+#: src/theme.rs
+msgid "Orange"
+msgstr ""
+
+#: src/theme.rs
+msgid "Pink"
+msgstr ""
+
+#: src/theme.rs
+msgid "Shown as your wallpaper"
+msgstr ""
+
+#: src/theme.rs
+msgid "Teal"
+msgstr ""
+
+#: src/theme.rs
+msgid "Violet"
+msgstr ""
+
+#: src/theme.rs
+msgid "Wallpaper"
+msgstr ""
+
+#: src/theme.rs
+msgid "Your image"
+msgstr ""
+
+#: src/toast.rs
+msgctxt "Notifications"
+msgid "All"
+msgstr ""
+
+#: src/toast.rs
+msgid "Charge it soon"
+msgstr ""
+
+#: src/toast.rs
+msgid "Controller & system"
+msgstr ""
+
+#: src/toast.rs
+msgid "Controller battery {}%"
+msgstr ""
+
+#: src/toast.rs
+msgid "Controller connected"
+msgstr ""
+
+#: src/toast.rs
+msgid "Controller disconnected"
+msgstr ""
+
+#: src/toast.rs
+msgid "Download stuck"
+msgstr ""
+
+#: src/toast.rs
+msgid "Downloads paused"
+msgstr ""
+
+#: src/toast.rs
+msgid "EARLIER"
+msgstr ""
+
+#: src/toast.rs
+msgid "For 1 hour"
+msgstr ""
+
+#: src/toast.rs
+msgid "Important only"
+msgstr ""
+
+#: src/toast.rs
+msgid "Installs"
+msgstr ""
+
+#: src/toast.rs
+msgid "Little room left for games"
+msgstr ""
+
+#: src/toast.rs src/welcome.rs
+msgid "New in the catalog"
+msgstr ""
+
+#: src/toast.rs
+msgctxt "Notifications"
+msgid "None"
+msgstr ""
+
+#: src/toast.rs
+msgid "TODAY"
+msgstr ""
+
+#: src/toast.rs
+msgid "The VPN disconnected · they go on when it's back"
+msgstr ""
+
+#: src/toast.rs
+msgid "Until tomorrow"
+msgstr ""
+
+#: src/toast.rs
+msgid "Until turned off"
+msgstr ""
+
+#: src/toast.rs
+msgid "now"
+msgstr ""
+
+#: src/toast.rs
+msgid "yesterday"
+msgstr ""
+
+#: src/toast.rs
+msgid "{name} · {gb} GB free"
+msgstr ""
+
+#: src/toast.rs
+msgid "{n} day"
+msgid_plural "{n} days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/toast.rs
+msgid "{n} new game in the Library"
+msgid_plural "{n} new games in the Library"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/toast.rs
+msgid "{n} second"
+msgid_plural "{n} seconds"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/toast.rs
+msgid "{} h"
+msgstr ""
+
+#: src/toast.rs
+msgid "{} min"
+msgstr ""
+
+#: src/toast.rs
+msgid "{} · no one is sharing it right now"
+msgstr ""
+
+#: src/trailer.rs
+msgid "Could not start the video player"
+msgstr ""
+
+#: src/trailer.rs
+msgid "The trailer couldn't be played"
+msgstr ""
+
+#: src/trailer.rs
+msgid "This libmpv can't draw video for the launcher"
+msgstr ""
+
+#: src/trailer.rs
+msgid "Trailers need libmpv (install mpv)"
+msgstr ""
+
+#: src/update.rs
+msgid "Can't update automatically: {e}"
+msgstr ""
+
+#: src/update.rs
+msgid "Couldn't restart: {err}"
+msgstr ""
+
+#: src/update.rs src/words.rs
+msgid "Downloading SwarmPlay {} · {}%"
+msgstr ""
+
+#: src/update.rs
+msgid "Downloading it now"
+msgstr ""
+
+#: src/update.rs
+msgid ""
+"Finish your game first: the launcher can restart once no game is running"
+msgstr ""
+
+#: src/update.rs
+msgid "Installing SwarmPlay {}…"
+msgstr ""
+
+#: src/update.rs
+msgid "Restart SwarmPlay to finish"
+msgstr ""
+
+#: src/update.rs
+msgid "Settings → Updates to get it"
+msgstr ""
+
+#: src/update.rs
+msgid "SwarmPlay {} is out"
+msgstr ""
+
+#: src/update.rs
+msgid "SwarmPlay {} is ready"
+msgstr ""
+
+#: src/update.rs
+msgid "could not unpack the update"
+msgstr ""
+
+#: src/update.rs
+msgid "no install folder"
+msgstr ""
+
+#: src/update.rs
+msgid "no output"
+msgstr ""
+
+#: src/update.rs
+msgid "running from a source build (update with git pull + ./install.sh)"
+msgstr ""
+
+#: src/update.rs
+msgid "the new version does not run on this system ({})"
+msgstr ""
+
+#: src/update.rs
+msgid "this release has no Linux build yet"
+msgstr ""
+
+#: src/update.rs
+msgid ""
+"{} is not writable (installed system-wide? re-run the install command with "
+"sudo)"
+msgstr ""
+
+#: src/util.rs
+msgid "{h} hr"
+msgstr ""
+
+#: src/util.rs
+msgid "{h} hr {m} min"
+msgstr ""
+
+#: src/util.rs
+msgid "{m} min"
+msgstr ""
+
+#: src/util.rs
+msgid "{n} day ago"
+msgid_plural "{n} days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/util.rs
+msgid "{s} sec"
+msgstr ""
+
+#: src/versions.rs
+msgid "Availability: {}"
+msgstr ""
+
+#: src/versions.rs
+msgid "Doesn't run with Wine yet"
+msgstr ""
+
+#: src/versions.rs
+msgid "Doesn't run yet"
+msgstr ""
+
+#: src/versions.rs
+msgid "Native Linux game"
+msgstr ""
+
+#: src/versions.rs
+msgid "Native game"
+msgstr ""
+
+#: src/versions.rs
+msgid "Needs Proton or Wine"
+msgstr ""
+
+#: src/versions.rs
+msgid "PROTONDB · RUNS WITH WINE"
+msgstr ""
+
+#: src/versions.rs
+msgid "PROTONDB · WINE"
+msgstr ""
+
+#: src/versions.rs
+msgid "RUNS WITH"
+msgstr ""
+
+#: src/versions.rs
+msgid "Runs with Wine · {}"
+msgstr ""
+
+#: src/versions.rs
+msgid "Runs with Wine, included"
+msgstr ""
+
+#: src/versions.rs
+msgid "Runs with {runner}"
+msgstr ""
+
+#: src/versions.rs
+msgid "WINDOWS GAME"
+msgstr ""
+
+#: src/versions.rs
+msgid "WINDOWS GAME · RUNS WITH"
+msgstr ""
+
+#: src/versions.rs
+msgid "Wine, included"
+msgstr ""
+
+#: src/vpn.rs
+msgid "Add a VPN"
+msgstr ""
+
+#: src/vpn.rs
+msgid "Choose a WireGuard .conf or OpenVPN .ovpn file"
+msgstr ""
+
+#: src/vpn.rs
+msgid "NetworkManager (nmcli) isn't installed"
+msgstr ""
+
+#. "Connection 'wg-se' (uuid) successfully added."
+#: src/vpn.rs
+msgid "NetworkManager didn't name the connection"
+msgstr ""
+
+#: src/vpn.rs
+msgid "VPN files"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Browse the whole Library"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Can't read {dir}"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Controller"
+msgstr ""
+
+#: src/welcome.rs
+msgid "For games in {dir}"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Get games in the Library"
+msgstr ""
+
+#: src/welcome.rs
+msgid "None connected"
+msgstr ""
+
+#: src/welcome.rs
+msgid "None played yet"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Nothing this fortnight"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Out now · press to get it"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Pair one over Bluetooth or plug it in"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Restart to update"
+msgstr ""
+
+#: src/welcome.rs
+msgid "SwarmPlay {v} is ready"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Up to date"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Update ready"
+msgstr ""
+
+#: src/welcome.rs
+msgid "Your games"
+msgstr ""
+
+#: src/welcome.rs
+msgid "{n} connected"
+msgid_plural "{n} connected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/welcome.rs
+msgid "{n} downloading"
+msgid_plural "{n} downloading"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/welcome.rs
+msgid "{n} installed"
+msgid_plural "{n} installed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/welcome.rs
+msgid "{n} new game"
+msgid_plural "{n} new games"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/welcome.rs
+msgid "{n} paused"
+msgid_plural "{n} paused"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/welcome.rs
+msgid "{} GB free"
+msgstr ""
+
+#: src/welcome.rs
+msgid "{} TB free"
+msgstr ""
+
+#: src/welcome.rs
+msgid "{} played in all"
+msgstr ""
+
+#: src/welcome.rs
+msgid "{}% of all of them"
+msgstr ""
+
+#: src/welcome.rs
+msgid "{}% · charging"
+msgstr ""
+
+#: src/words.rs
+msgid "Getting game pictures · {p}%"
+msgstr ""
+
+#: src/words.rs
+msgid "Getting game pictures…"
+msgstr ""
+
+#: src/words.rs
+msgid "Getting the launcher's update"
+msgstr ""
+
+#: src/words.rs
+msgid "Getting {console} support"
+msgstr ""
+
+#: src/words.rs
+msgctxt "Availability"
+msgid "Good"
+msgstr ""
+
+#: src/words.rs
+msgid "Loading the game list…"
+msgstr ""
+
+#: src/words.rs
+msgctxt "Availability"
+msgid "Low"
+msgstr ""
+
+#: src/words.rs
+msgctxt "Availability"
+msgid "None"
+msgstr ""
+
+#: src/words.rs
+msgid "Setting up {console} support…"
+msgstr ""
+
+#: src/words.rs
+msgctxt "Availability"
+msgid "Unknown"
+msgstr ""
+
+#: src/words.rs
+msgid "Updating the {console} game list…"
+msgstr ""
+
+#: ui/app.slint:302
+msgid "Starting with KytyPS5…"
+msgstr ""
+
+#: ui/app.slint:626
+msgid "Already have games on this PC? Add the folder they're in."
+msgstr ""
+
+#: ui/app.slint:927
+msgid "Availability"
+msgstr ""
+
+#: ui/app.slint:986
+msgid "Search games"
+msgstr ""
+
+#: ui/app.slint:1016
+msgid "Comfortable"
+msgstr ""
+
+#: ui/app.slint:1016
+msgid "Compact"
+msgstr ""
+
+#: ui/app.slint:1016
+msgid "Roomy"
+msgstr ""
+
+#: ui/app.slint:1057
+msgid "Genre"
+msgstr ""
+
+#: ui/app.slint:1102
+msgid "Games"
+msgstr ""
+
+#: ui/app.slint:1102 ui/app.slint:2603
+msgid "Library"
+msgstr ""
+
+#: ui/app.slint:1157
+msgid "Resume"
+msgstr ""
+
+#: ui/app.slint:1157
+msgid "Stop"
+msgstr ""
+
+#: ui/app.slint:1407 ui/app.slint:1410 ui/app.slint:1411 ui/app.slint:1414
+#: ui/app.slint:1417 ui/app.slint:1418 ui/app.slint:2249 ui/app.slint:2258
+#: ui/downloads.slint:384
+msgid "Select"
+msgstr ""
+
+#: ui/app.slint:1410 ui/app.slint:1411
+msgid "Control Center"
+msgstr ""
+
+#: ui/app.slint:1410 ui/app.slint:1411 ui/app.slint:1414 ui/app.slint:1415
+#: ui/app.slint:2698 ui/app.slint:4064 ui/app.slint:4081
+msgid "Options"
+msgstr ""
+
+#: ui/app.slint:1410 ui/app.slint:1411
+msgid "Search"
+msgstr ""
+
+#: ui/app.slint:1410 ui/app.slint:1411 ui/app.slint:1414 ui/app.slint:1415
+msgid "Trailer"
+msgstr ""
+
+#: ui/app.slint:1414 ui/app.slint:1415 ui/app.slint:1417 ui/app.slint:1418
+#: ui/app.slint:2256 ui/app.slint:2259 ui/app.slint:3284 ui/app.slint:4008
+#: ui/downloads.slint:385
+msgid "Back"
+msgstr ""
+
+#. What Download gets, when the title (a store's name) doesn't say it all.
+#: ui/app.slint:1496
+msgid "Release: {}"
+msgstr ""
+
+#: ui/app.slint:1529
+msgid "Compatibility"
+msgstr ""
+
+#: ui/app.slint:1571
+msgid "Versions"
+msgstr ""
+
+#: ui/app.slint:1609
+msgid "Best for this PC"
+msgstr ""
+
+#: ui/app.slint:1612
+msgid "Showing"
+msgstr ""
+
+#: ui/app.slint:1626
+msgid "Each version has its own saves and updates."
+msgstr ""
+
+#: ui/app.slint:1649
+msgid "Choose another release"
+msgstr ""
+
+#: ui/app.slint:1668
+msgid "Trailers & screenshots"
+msgstr ""
+
+#: ui/app.slint:1716
+msgid "Details"
+msgstr ""
+
+#: ui/app.slint:1743
+msgid "+  Technical details & installed game"
+msgstr ""
+
+#: ui/app.slint:1743
+msgid "−  Hide technical details"
+msgstr ""
+
+#: ui/app.slint:1764
+msgid "About"
+msgstr ""
+
+#: ui/app.slint:1828 ui/app.slint:2603 ui/overlay.slint:147
+msgid "Settings"
+msgstr ""
+
+#: ui/app.slint:2115
+msgid "Not set"
+msgstr ""
+
+#: ui/app.slint:2225
+msgid "Version {} · Linux"
+msgstr ""
+
+#: ui/app.slint:2226
+msgid "PS5 games on KytyPS5 · PS4 games on shadPS4"
+msgstr ""
+
+#: ui/app.slint:2250 ui/app.slint:2259 ui/app.slint:3394 ui/app.slint:3395
+msgid "Close"
+msgstr ""
+
+#: ui/app.slint:2255
+msgid "Remove"
+msgstr ""
+
+#: ui/app.slint:2258 ui/downloads.slint:500
+msgid "Change"
+msgstr ""
+
+#: ui/app.slint:2258 ui/app.slint:3889 ui/app.slint:4008 ui/app.slint:4009
+msgid "Open"
+msgstr ""
+
+#: ui/app.slint:2526
+msgid "NOW PLAYING · {}"
+msgstr ""
+
+#: ui/app.slint:2532 ui/overlay.slint:85
+msgid "Back to game"
+msgstr ""
+
+#: ui/app.slint:2532 ui/overlay.slint:86
+msgid "Close game"
+msgstr ""
+
+#: ui/app.slint:2556 ui/overlay.slint:101
+msgid "DOWNLOADS"
+msgstr ""
+
+#: ui/app.slint:2558
+msgid "Nothing downloading"
+msgstr ""
+
+#: ui/app.slint:2565
+msgid "Open Downloads"
+msgstr ""
+
+#: ui/app.slint:2581
+msgid "NOTIFICATIONS"
+msgstr ""
+
+#: ui/app.slint:2591
+msgid "Open notifications"
+msgstr ""
+
+#: ui/app.slint:2603
+msgid "Controls"
+msgstr ""
+
+#: ui/app.slint:2604 ui/overlay.slint:148
+msgid "Power"
+msgstr ""
+
+#: ui/app.slint:2604
+msgid "Quit"
+msgstr ""
+
+#: ui/app.slint:2688
+msgid "No controller connected: you'll play with the keyboard."
+msgstr ""
+
+#: ui/app.slint:2689
+msgid "Games play best with a controller. Connect one before starting a game."
+msgstr ""
+
+#: ui/app.slint:2696 ui/app.slint:2698
+msgid "Arrows"
+msgstr ""
+
+#: ui/app.slint:2696 ui/app.slint:2698 ui/app.slint:4064 ui/app.slint:4081
+msgid "D-pad"
+msgstr ""
+
+#: ui/app.slint:2696 ui/app.slint:2698
+msgid "Move"
+msgstr ""
+
+#: ui/app.slint:2815
+msgid "Welcome back"
+msgstr ""
+
+#: ui/app.slint:2815
+msgid "Welcome back, {}"
+msgstr ""
+
+#: ui/app.slint:2823
+msgid "Getting AzrakOS ready"
+msgstr ""
+
+#: ui/app.slint:2823
+msgid "Welcome"
+msgstr ""
+
+#: ui/app.slint:2830
+msgid "Setting up SwarmPlay"
+msgstr ""
+
+#: ui/app.slint:2837
+msgid "You can install it later from Settings."
+msgstr ""
+
+#: ui/app.slint:2964
+msgid "Skip and continue"
+msgstr ""
+
+#: ui/app.slint:2964
+msgid "Start"
+msgstr ""
+
+#: ui/app.slint:3188
+msgid "Before you restart"
+msgstr ""
+
+#: ui/app.slint:3191
+msgid ""
+"A blue screen comes up once after the restart. On it, use a keyboard's arrow "
+"keys and Enter:"
+msgstr ""
+
+#: ui/app.slint:3199
+msgid "Choose "
+msgstr ""
+
+#: ui/app.slint:3202
+msgid "Type the password "
+msgstr ""
+
+#: ui/app.slint:3221
+msgid ""
+"This lets NVIDIA's graphics driver start. Skipped it? AzrakOS still starts; "
+"the PC asks again later."
+msgstr ""
+
+#: ui/app.slint:3337
+msgid "A name, initials (tlou) or a genre"
+msgstr ""
+
+#: ui/app.slint:3394 ui/app.slint:3536 ui/app.slint:3889
+msgid "Delete"
+msgstr ""
+
+#: ui/app.slint:3394 ui/app.slint:3395
+msgid "Show results"
+msgstr ""
+
+#: ui/app.slint:3394 ui/app.slint:3536 ui/app.slint:4066
+msgid "Space"
+msgstr ""
+
+#: ui/app.slint:3395 ui/app.slint:3537
+msgid "Press the key"
+msgstr ""
+
+#: ui/app.slint:3439
+msgid "Join {}"
+msgstr ""
+
+#: ui/app.slint:3472
+msgid "Password"
+msgstr ""
+
+#: ui/app.slint:3502
+msgid "Connecting to {}…"
+msgstr ""
+
+#: ui/app.slint:3503
+msgid "Choose the letters below"
+msgstr ""
+
+#: ui/app.slint:3503
+msgid "Type with your keyboard, or choose the letters below"
+msgstr ""
+
+#: ui/app.slint:3536 ui/app.slint:3537 ui/app.slint:3624
+msgid "Cancel"
+msgstr ""
+
+#: ui/app.slint:3536 ui/app.slint:3537
+msgid "Join"
+msgstr ""
+
+#: ui/app.slint:3536
+msgid "Shift"
+msgstr ""
+
+#: ui/app.slint:3536
+msgid "Symbols"
+msgstr ""
+
+#: ui/app.slint:3537
+msgid "Hide password"
+msgstr ""
+
+#: ui/app.slint:3537
+msgid "Show password"
+msgstr ""
+
+#: ui/app.slint:3646
+msgid "Loading trailer…"
+msgstr ""
+
+#: ui/app.slint:3722
+msgctxt "Trailer"
+msgid "Pause"
+msgstr ""
+
+#: ui/app.slint:3722
+msgctxt "Trailer"
+msgid "Play"
+msgstr ""
+
+#: ui/app.slint:3786
+msgid "Click to open"
+msgstr ""
+
+#: ui/app.slint:3786
+msgid "PS  to see it"
+msgstr ""
+
+#: ui/app.slint:3807
+msgid "Notifications"
+msgstr ""
+
+#: ui/app.slint:3815
+msgid "No notifications"
+msgstr ""
+
+#: ui/app.slint:3816
+msgid "Downloads, games ready to play and updates show up here."
+msgstr ""
+
+#: ui/app.slint:3839
+msgid "Earlier"
+msgstr ""
+
+#: ui/app.slint:3839
+msgid "Today"
+msgstr ""
+
+#: ui/app.slint:3880
+msgid "Clear all"
+msgstr ""
+
+#: ui/app.slint:3928
+msgid ""
+"Games can go on any of these. A drive plugged in but not mounted is mounted "
+"when chosen."
+msgstr ""
+
+#: ui/app.slint:3998
+msgid "No folders in here"
+msgstr ""
+
+#: ui/app.slint:4009
+msgid "Up"
+msgstr ""
+
+#: ui/app.slint:4009
+msgid "Use this folder"
+msgstr ""
+
+#: ui/app.slint:4041
+msgid "Keyboard controls in games"
+msgstr ""
+
+#: ui/app.slint:4048
+msgid "PS4 games · shadPS4"
+msgstr ""
+
+#: ui/app.slint:4048
+msgid "PS5 games · KytyPS5"
+msgstr ""
+
+#: ui/app.slint:4057
+msgid "◂ ▸ to switch"
+msgstr ""
+
+#: ui/app.slint:4063
+msgid "B  (or keypad 6)"
+msgstr ""
+
+#: ui/app.slint:4063
+msgid "N  (or keypad 2)"
+msgstr ""
+
+#: ui/app.slint:4063
+msgid "V  (or keypad 4)"
+msgstr ""
+
+#: ui/app.slint:4063 ui/app.slint:4080
+msgid "□  Square"
+msgstr ""
+
+#: ui/app.slint:4063 ui/app.slint:4080
+msgid "○  Circle"
+msgstr ""
+
+#: ui/app.slint:4063 ui/app.slint:4080
+msgid "✕  Cross"
+msgstr ""
+
+#: ui/app.slint:4064 ui/app.slint:4081
+msgid "Arrow keys"
+msgstr ""
+
+#: ui/app.slint:4064
+msgid "C  (or keypad 8)"
+msgstr ""
+
+#: ui/app.slint:4064 ui/app.slint:4080
+msgid "△  Triangle"
+msgstr ""
+
+#: ui/app.slint:4065 ui/app.slint:4082
+msgid "Left stick"
+msgstr ""
+
+#: ui/app.slint:4065 ui/app.slint:4082
+msgid "Right stick"
+msgstr ""
+
+#: ui/app.slint:4066 ui/app.slint:4083
+msgid "Touchpad"
+msgstr ""
+
+#: ui/app.slint:4083
+msgid "Left Shift  /  Left Ctrl"
+msgstr ""
+
+#: ui/app.slint:4095
+msgid ""
+"F7 turns the mouse into the right stick (press it again to release the "
+"mouse)."
+msgstr ""
+
+#: ui/app.slint:4095
+msgid ""
+"shadPS4 keeps its key layout in its own settings file; these are its "
+"defaults."
+msgstr ""
+
+#: ui/app.slint:4097
+msgid ""
+"Games play best with a controller: DualSense, DualShock 4, Xbox and most "
+"others work\n"
+"over USB or Bluetooth with no setup. Connect it before starting a game."
+msgstr ""
+
+#: ui/downloads.slint:161
+msgid "No downloads"
+msgstr ""
+
+#: ui/downloads.slint:163
+msgid ""
+"Pick a game in the Library and press Download. It installs by itself when "
+"it's done."
+msgstr ""
+
+#: ui/downloads.slint:163
+msgid "Switch filters with L1 and R1."
+msgstr ""
+
+#: ui/downloads.slint:163
+msgid "Switch filters with Q and E."
+msgstr ""
+
+#: ui/downloads.slint:230
+msgid "Play"
+msgstr ""
+
+#: ui/downloads.slint:355
+msgid "Delete {}?"
+msgstr ""
+
+#: ui/downloads.slint:356
+msgid ""
+"Deleted files can't be brought back. Downloading again is always possible."
+msgstr ""
+
+#: ui/downloads.slint:379
+msgid "Cancel never deletes what you've downloaded"
+msgstr ""
+
+#: ui/downloads.slint:386
+msgid "Enter Select · Esc Back"
+msgstr ""
+
+#: ui/downloads.slint:420
+msgid "Install game"
+msgstr ""
+
+#: ui/downloads.slint:420
+msgid "Set up a download"
+msgstr ""
+
+#: ui/downloads.slint:423
+msgid ""
+"Extract or copy this completed download into your game library. Installation "
+"runs in the background, checks free space and validates the game folder "
+"before publishing it. Existing games are never overwritten; original "
+"downloads are kept."
+msgstr ""
+
+#: ui/downloads.slint:423
+msgid ""
+"Looking up this magnet contacts trackers, DHT and peers and reveals your IP "
+"address, even before its private flag is known."
+msgstr ""
+
+#: ui/downloads.slint:423
+msgid ""
+"Only download content you are authorized to obtain and share. {} Transfers "
+"upload pieces, capped at 128 KiB/s. After completion, seeding continues by "
+"default while the launcher is open; switch it off in Settings or stop an "
+"individual seed in Downloads."
+msgstr ""
+
+#: ui/downloads.slint:429
+msgid "Destination · an owned subfolder will be created here"
+msgstr ""
+
+#: ui/downloads.slint:429
+msgid "Game library destination · confirm where the game will be installed"
+msgstr ""
+
+#: ui/downloads.slint:441
+msgid ""
+"First: retrieve metadata only. Then: review the file list and size and "
+"choose Start download. Installation is a separate explicit step."
+msgstr ""
+
+#: ui/downloads.slint:446
+msgid "Install"
+msgstr ""
+
+#: ui/downloads.slint:446
+msgid "Look up metadata"
+msgstr ""
+
+#: ui/downloads.slint:500
+msgid "Done"
+msgstr ""
+
+#: ui/downloads.slint:590
+msgid "Download & install"
+msgstr ""
+
+#: ui/downloads.slint:618
+msgid "Files"
+msgstr ""
+
+#: ui/downloads.slint:622
+msgid "Select all"
+msgstr ""
+
+#: ui/downloads.slint:668
+msgid "Getting the file list from other players…"
+msgstr ""
+
+#: ui/downloads.slint:687
+msgid "Download to"
+msgstr ""
+
+#: ui/downloads.slint:693
+msgid "Install to"
+msgstr ""
+
+#: ui/downloads.slint:699
+msgid ""
+"Only download games you're allowed to. The download stays after installing, "
+"so other players can get it too."
+msgstr ""
+
+#: ui/library.slint:63
+msgid "Sort by"
+msgstr ""
+
+#: ui/overlay.slint:78
+msgid "PLAYING"
+msgstr ""
+
+#: ui/overlay.slint:86
+msgid "Press again to close"
+msgstr ""
+
+#: ui/overlay.slint:102
+msgid "CAPTURE"
+msgstr ""
+
+#: ui/overlay.slint:102
+msgid "Take a screenshot"
+msgstr ""
+
+#: ui/overlay.slint:145
+msgid "Home"
+msgstr ""
+
+#: ui/overlay.slint:197
+msgid "← → Volume   Enter Done   Esc Done"
+msgstr ""
+
+#: ui/overlay.slint:197
+msgid "◂ ▸ Volume   ✕ Done   ○ Done"
+msgstr ""
+
+#: ui/overlay.slint:198
+msgid "Enter Select   Esc Back to game"
+msgstr ""
+
+#: ui/overlay.slint:198
+msgid "✕ Select   ○ Back to game   PS Back to game"
+msgstr ""
+
+#: ui/widgets.slint:269
+msgid "INSTALLED"
+msgstr ""
+
+#: ui/widgets.slint:269
+msgid "NEW"
+msgstr ""
+
+#: ui/widgets.slint:269
+msgid "● PLAYING"
+msgstr ""

@@ -6,6 +6,7 @@ use crate::app::*;
 use crate::settings::SId;
 use crate::{util, SettingData};
 use slint::{Color, ComponentHandle};
+use tr::tr;
 
 /// The wallpapers, in the order Settings steps through them; ui/app.slint draws each by its
 /// position ("Your image" is the user's picture).
@@ -16,6 +17,40 @@ const YOUR_IMAGE: usize = 5;
 pub const ACCENTS: [(&str, u32); 6] = [
     ("Blue", 0x0a6cff), ("Violet", 0x7c5cff), ("Teal", 0x14b8a6), ("Orange", 0xff7a1a), ("Pink", 0xff4fa3), ("Green", 0x22c55e),
 ];
+
+/// A wallpaper (WALLPAPERS' name, which the config keeps), as shown.
+pub fn wallpaper_label(key: &str) -> String {
+    wallpaper_text(key).unwrap_or_else(|| key.to_string())
+}
+
+fn wallpaper_text(key: &str) -> Option<String> {
+    Some(match key {
+        "Game art" => tr!("Game art"),
+        "Deep blue" => tr!("Deep blue"),
+        "Midnight" => tr!("Midnight"),
+        "Aurora" => tr!("Aurora"),
+        "Ember" => tr!("Ember"),
+        "Your image" => tr!("Your image"),
+        _ => return None,
+    })
+}
+
+/// An accent colour (ACCENTS' name, which the config keeps), as shown.
+pub fn accent_label(key: &str) -> String {
+    accent_text(key).unwrap_or_else(|| key.to_string())
+}
+
+fn accent_text(key: &str) -> Option<String> {
+    Some(match key {
+        "Blue" => tr!("Blue"),
+        "Violet" => tr!("Violet"),
+        "Teal" => tr!("Teal"),
+        "Orange" => tr!("Orange"),
+        "Pink" => tr!("Pink"),
+        "Green" => tr!("Green"),
+        _ => return None,
+    })
+}
 
 fn rgb(hex: u32) -> Color {
     Color::from_rgb_u8((hex >> 16) as u8, (hex >> 8) as u8, hex as u8)
@@ -51,22 +86,22 @@ impl App {
         let cfg = self.cfg.lock().unwrap().clone();
         let row = |kind: i32, label: &str| SettingData { kind, label: label.into(), ..Default::default() };
         let mut rows = Vec::new();
-        let mut r = row(3, "Wallpaper");
-        r.value = cfg.theme_wallpaper.clone().into();
-        r.hint = "On Welcome and behind Settings · a game always shows its own art".into();
+        let mut r = row(3, &tr!("Wallpaper"));
+        r.value = wallpaper_label(&cfg.theme_wallpaper).into();
+        r.hint = tr!("On Welcome and behind Settings · a game always shows its own art").into();
         rows.push((SId::ThemeWallpaper, r));
         if cfg.theme_wallpaper == WALLPAPERS[YOUR_IMAGE] {
-            let mut r = row(1, "Your image");
+            let mut r = row(1, &tr!("Your image"));
             r.value = util::display_path(&cfg.theme_image).into();
             let readable = slint::Image::load_from_path(&util::expand_home(&cfg.theme_image)).is_ok();
-            (r.hint, r.hint_kind) = if cfg.theme_image.is_empty() { ("A PNG or JPEG file, like ~/Pictures/wallpaper.png".into(), 0) }
-                else if readable { ("Shown as your wallpaper".into(), 1) }
-                else { ("Can't open this picture · showing Deep blue".into(), 2) };
+            (r.hint, r.hint_kind) = if cfg.theme_image.is_empty() { (tr!("A PNG or JPEG file, like ~/Pictures/wallpaper.png").into(), 0) }
+                else if readable { (tr!("Shown as your wallpaper").into(), 1) }
+                else { (tr!("Can't open this picture · showing {}", wallpaper_label("Deep blue")).into(), 2) };
             rows.push((SId::ThemeImage, r));
         }
-        let mut r = row(3, "Accent colour");
-        r.value = cfg.theme_accent.clone().into();
-        r.hint = "Buttons, highlights and the focus glow".into();
+        let mut r = row(3, &tr!("Accent colour"));
+        r.value = accent_label(&cfg.theme_accent).into();
+        r.hint = tr!("Buttons, highlights and the focus glow").into();
         rows.push((SId::ThemeAccent, r));
         rows
     }
@@ -116,5 +151,11 @@ mod tests {
         assert_eq!(step(&WALLPAPERS, "Game art", -1), "Your image");
         assert_eq!(step(&WALLPAPERS, "Your image", 1), "Game art");
         assert_eq!(step(&WALLPAPERS, "Gone", 1), "Deep blue", "an unknown name counts as the first");
+    }
+
+    #[test]
+    fn every_choice_has_a_label() {
+        for w in WALLPAPERS { assert_eq!(wallpaper_text(w).as_deref(), Some(w)); }
+        for (a, _) in ACCENTS { assert_eq!(accent_text(a).as_deref(), Some(a)); }
     }
 }

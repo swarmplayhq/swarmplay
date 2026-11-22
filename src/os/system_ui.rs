@@ -7,6 +7,7 @@ use crate::settings::SId;
 use crate::os::power::Power;
 use crate::os::system::{self, Device, Network, Output, Update, Wifi};
 use crate::SettingData;
+use tr::tr;
 
 #[derive(Default)]
 pub struct SysUi {
@@ -77,24 +78,24 @@ impl App {
         let busy = |id: SId| s.busy.as_ref().filter(|(b, _)| *b == id).map(|(_, t)| t.clone());
         let mut rows = vec![(SId::Header, row(0, "SYSTEM"))];
         if system::on_usb() {
-            let mut r = row(4, "Install AzrakOS on this PC");
-            (r.value, r.value_kind) = ("Start".into(), 3);
-            r.hint = "You're running AzrakOS from the USB stick · installing erases the disk you choose".into();
+            let mut r = row(4, &tr!("Install AzrakOS on this PC"));
+            (r.value, r.value_kind) = (tr!("Start").into(), 3);
+            r.hint = tr!("You're running AzrakOS from the USB stick · installing erases the disk you choose").into();
             rows.push((SId::InstallOs, r));
         }
 
-        let mut r = row(4, "Internet");
+        let mut r = row(4, &tr!("Internet"));
         (r.value, r.value_kind) = match (busy(SId::Internet), s.network.kind) {
             (Some(text), _) => (text.into(), 0),
-            (None, "") => ("Not connected · choose Wi-Fi".into(), 3),
-            (None, "Cable") => ("Cable · Connected".into(), 1),
+            (None, "") => (tr!("Not connected · choose Wi-Fi").into(), 3),
+            (None, "Cable") => (tr!("Cable · Connected").into(), 1),
             (None, kind) => (format!("{kind} · {}", s.network.name).into(), 1),
         };
         let cable = s.network.kind == "Cable";
         r.hint = match (s.wifi_open, cable) {
-            (true, true) => "Press a network to join · the cable is used while it's plugged in",
-            (true, false) => "Press a network to join",
-            (false, _) => "Press to see Wi-Fi networks",
+            (true, true) => tr!("Press a network to join · the cable is used while it's plugged in"),
+            (true, false) => tr!("Press a network to join"),
+            (false, _) => tr!("Press to see Wi-Fi networks"),
         }.into();
         rows.push((SId::Internet, r));
         if s.wifi_open {
@@ -107,38 +108,38 @@ impl App {
                     r.value = text.into();
                 } else if w.in_use {
                     // With a cable in, Wi-Fi stays connected but isn't the one used.
-                    let text = if cable { "Connected · backup" } else { "Connected" };
+                    let text = if cable { tr!("Connected · backup") } else { tr!("Connected") };
                     (r.value, r.value_kind, r.icon) = (text.into(), 1, "check".into());
                 } else if !w.secured {
-                    r.value = "Open · no password".into();
+                    r.value = tr!("Open · no password").into();
                 }
                 rows.push((SId::WifiNet(i as u16), r));
             }
             if shown < s.wifi.len() {
-                let mut r = row(4, "More networks…");
-                (r.value, r.value_kind) = (format!("{} more", s.wifi.len() - shown).into(), 3);
+                let mut r = row(4, &tr!("More networks…"));
+                (r.value, r.value_kind) = (tr!("{} more", s.wifi.len() - shown).into(), 3);
                 rows.push((SId::WifiMore, r));
             }
         }
 
         if !system::bt_available() {
             let mut r = row(4, "Bluetooth");
-            r.value = "Not on this PC".into();
-            r.hint = "Wired controllers work as they are · a USB Bluetooth adapter adds wireless ones".into();
+            r.value = tr!("Not on this PC").into();
+            r.hint = tr!("Wired controllers work as they are · a USB Bluetooth adapter adds wireless ones").into();
             rows.push((SId::BtPair, r));
             return self.system_rows_rest(rows);
         }
-        let mut r = row(4, "Pair a controller or headset");
+        let mut r = row(4, &tr!("Pair a controller or headset"));
         (r.value, r.value_kind) = match busy(SId::BtPair) {
             // Counting down, so a long search never looks stuck.
-            Some(_) => (format!("Searching · {} s", (s.scan_until - crate::util::now_secs()).ceil().max(1.0)).into(), 0),
-            None => ("Search".into(), 3),
+            Some(_) => (tr!("Searching · {} s", (s.scan_until - crate::util::now_secs()).ceil().max(1.0)).into(), 0),
+            None => (tr!("Search").into(), 3),
         };
-        r.hint = "DualSense: hold PS and Create until the light flashes · Xbox: hold the pair button".into();
+        r.hint = tr!("DualSense: hold PS and Create until the light flashes · Xbox: hold the pair button").into();
         rows.push((SId::BtPair, r));
         for (i, d) in s.found.iter().enumerate() {
             let mut r = row(4, &d.name);
-            r.value = busy(SId::BtFound(i as u16)).unwrap_or_else(|| "Pair".into()).into();
+            r.value = busy(SId::BtFound(i as u16)).unwrap_or_else(|| tr!("Pair")).into();
             r.value_kind = 3;
             rows.push((SId::BtFound(i as u16), r));
         }
@@ -147,11 +148,11 @@ impl App {
             let armed = s.forget.is_some_and(|(j, at)| j == i && crate::util::now_secs() - at < 5.0);
             (r.value, r.value_kind) = match busy(SId::BtDevice(i as u16)) {
                 Some(text) => (text.into(), 0),
-                None if armed => ("Press again to forget it".into(), 2),
-                None if *on => ("Connected".into(), 1),
-                None => ("Not connected".into(), 0),
+                None if armed => (tr!("Press again to forget it").into(), 2),
+                None if *on => (tr!("Connected").into(), 1),
+                None => (tr!("Not connected").into(), 0),
             };
-            r.hint = if *on { "Press twice to forget it" } else { "Press to connect · press again to forget" }.into();
+            r.hint = if *on { tr!("Press twice to forget it") } else { tr!("Press to connect · press again to forget") }.into();
             rows.push((SId::BtDevice(i as u16), r));
         }
 
@@ -170,10 +171,10 @@ impl App {
         // (The sound output is in Settings → Sound, src/sound.rs.)
 
         if let Some(u) = &s.update {
-            let mut r = row(4, "System");
+            let mut r = row(4, &tr!("System"));
             (r.value, r.value_kind, r.hint) = match &u.staged {
-                Some(next) => (format!("Restart to update to {next}").into(), 3, format!("Press to restart and update · now running {}", u.version).into()),
-                None => (format!("{} · Up to date", u.version).into(), 1, "Updates download by themselves and wait for a restart".into()),
+                Some(next) => (tr!("Restart to update to {next}", next).into(), 3, tr!("Press to restart and update · now running {}", u.version).into()),
+                None => (tr!("{} · Up to date", u.version).into(), 1, tr!("Updates download by themselves and wait for a restart").into()),
             };
             rows.push((SId::SystemUpdate, r));
         }
@@ -187,9 +188,9 @@ impl App {
                 self.sys.wifi_open = !self.sys.wifi_open;
                 self.sys.wifi_all = false;
                 if self.sys.wifi_open {
-                    self.sys_task(SId::Internet, "Looking for Wi-Fi…", |app, list: Result<Vec<Wifi>, String>| match list {
+                    self.sys_task(SId::Internet, &tr!("Looking for Wi-Fi…"), |app, list: Result<Vec<Wifi>, String>| match list {
                         Ok(list) => app.sys.wifi = list,
-                        Err(e) => app.note_setting(SId::Internet, &format!("Wi-Fi isn't available: {e}"), 2),
+                        Err(e) => app.note_setting(SId::Internet, &tr!("Wi-Fi isn't available: {e}", e), 2),
                     }, system::wifi_list);
                 }
             }
@@ -208,7 +209,7 @@ impl App {
                 }
                 // Saved networks and open ones connect straight away; others ask for the password.
                 if w.secured && !saved_wifi(&w.ssid) {
-                    self.wifi_join_open(&w.ssid, strength(w.signal), w.wep);
+                    self.wifi_join_open(&w.ssid, &strength(w.signal), w.wep);
                     return true;
                 }
                 self.wifi_connect(i);
@@ -223,10 +224,10 @@ impl App {
                         app.refresh_settings();
                     }
                 }));
-                self.sys_task(SId::BtPair, "Searching…", |app, found: Vec<Device>| {
+                self.sys_task(SId::BtPair, &tr!("Searching…"), |app, found: Vec<Device>| {
                     app.sys.scan_tick.stop();
                     if found.is_empty() {
-                        app.note_setting(SId::BtPair, "Nothing found: put the controller in pairing mode, then search again", 0);
+                        app.note_setting(SId::BtPair, &tr!("Nothing found: put the controller in pairing mode, then search again"), 0);
                     }
                     app.sys.found = found;
                 }, || system::bt_scan(15));
@@ -237,7 +238,7 @@ impl App {
                     return true;
                 }
                 let address = d.address.clone();
-                self.sys_task(SId::BtFound(i), "Pairing…", move |app, r: Result<(), String>| {
+                self.sys_task(SId::BtFound(i), &tr!("Pairing…"), move |app, r: Result<(), String>| {
                     match r {
                         Ok(()) => {
                             app.sys.found.retain(|f| f != &d);
@@ -252,7 +253,7 @@ impl App {
                                 }
                             }
                         }
-                        Err(e) => app.note_setting_named(SId::BtFound(i), &d.name, &format!("Couldn't pair: {e}"), 2),
+                        Err(e) => app.note_setting_named(SId::BtFound(i), &d.name, &tr!("Couldn't pair: {e}", e), 2),
                     }
                     app.sys_changed();
                 }, move || system::bt_pair(&address));
@@ -267,15 +268,15 @@ impl App {
                 if self.sys.forget.is_some_and(|(j, at)| j == i && now - at < 5.0) {
                     self.sys.forget = None;
                     let address = d.address.clone();
-                    self.sys_task(SId::BtDevice(i as u16), "Forgetting…", move |app, r: Result<(), String>| {
-                        if let Err(e) = r { app.note_setting_named(SId::BtDevice(i as u16), &d.name, &format!("Couldn't forget it: {e}"), 2) }
+                    self.sys_task(SId::BtDevice(i as u16), &tr!("Forgetting…"), move |app, r: Result<(), String>| {
+                        if let Err(e) = r { app.note_setting_named(SId::BtDevice(i as u16), &d.name, &tr!("Couldn't forget it: {e}", e), 2) }
                         app.sys_changed();
                     }, move || system::bt_remove(&address));
                 } else if !on {
                     // Not connected: connect it. If that fails (it's off, or gone for good), a
                     // second press forgets it, as the hint says.
                     let address = d.address.clone();
-                    self.sys_task(SId::BtDevice(i as u16), "Connecting…", move |app, r: Result<(), String>| {
+                    self.sys_task(SId::BtDevice(i as u16), &tr!("Connecting…"), move |app, r: Result<(), String>| {
                         // Its row says "Connected", or "Press again to forget it".
                         if r.is_err() {
                             app.sys_forget_soon(i);
@@ -321,7 +322,7 @@ impl App {
         let n = self.sys.outputs.len() as i32;
         let next = (self.sys.output.map_or(0, |i| i as i32 + dir)).rem_euclid(n) as usize;
         if let Err(e) = system::set_output(&self.sys.outputs[next].name) {
-            self.note_setting(SId::SoundOutput, &format!("Didn't change: {e}"), 2);
+            self.note_setting(SId::SoundOutput, &tr!("Didn't change: {e}", e), 2);
             return true;
         }
         // The row names where sound goes now.
@@ -344,11 +345,11 @@ impl App {
     fn wifi_connect(&mut self, i: u16) {
         let Some(w) = self.sys.wifi.get(i as usize).cloned() else { return };
         let ssid = w.ssid.clone();
-        self.sys_task(SId::WifiNet(i), "Connecting…", move |app, r: Result<(), String>| {
+        self.sys_task(SId::WifiNet(i), &tr!("Connecting…"), move |app, r: Result<(), String>| {
             match r {
                 Ok(()) => app.wifi_joined(&w.ssid),
                 Err(e) => app.note_setting_named(SId::WifiNet(i), &w.ssid, &if e.contains("Secrets were required") || e.contains("password") {
-                    "Couldn't connect: check the password and try again".to_string() } else { format!("Couldn't connect: {e}") }, 2),
+                    tr!("Couldn't connect: check the password and try again") } else { tr!("Couldn't connect: {e}", e) }, 2),
             }
             app.sys_changed();
         }, move || system::wifi_connect(&ssid, None));
@@ -417,10 +418,10 @@ fn bars(signal: u8) -> i32 {
     }
 }
 
-fn strength(signal: u8) -> &'static str {
+fn strength(signal: u8) -> String {
     match signal {
-        70.. => "Strong",
-        40..=69 => "Good",
-        _ => "Weak",
+        70.. => tr!("Strong"),
+        40..=69 => tr!("Good"),
+        _ => tr!("Weak"),
     }
 }

@@ -9,6 +9,7 @@ use crate::app::*;
 use crate::audio::{self, Sound};
 use crate::{NoteRow, ToastData};
 use serde::{Deserialize, Serialize};
+use tr::tr;
 
 /// How a notification is coloured (ui: 0 info, 1 done, 2 needs a look, 3 failed).
 pub const INFO: i32 = 0;
@@ -23,7 +24,8 @@ const STACK: usize = 3;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Cat { Downloads, Installs, Games, Updates, Catalog, System }
 
-/// The kinds, as Settings → Notifications names them.
+/// The kinds, as Settings → Notifications names them. The names are also what the config keeps
+/// (notify_off), so they stay English; `cat_label` is what's shown.
 pub const CATS: [(Cat, &str); 6] = [
     (Cat::Downloads, "Downloads"), (Cat::Installs, "Installs"), (Cat::Games, "Games"),
     (Cat::Updates, "Updates"), (Cat::Catalog, "New in the catalog"), (Cat::System, "Controller & system"),
@@ -141,15 +143,67 @@ pub fn route(r: &Rules, n: &Note, now: f64, in_game: bool, background: bool) -> 
 /// "now", "5 min", "2 h", "yesterday", "3 days".
 pub fn age(now: f64, t: f64) -> String {
     let s = (now - t).max(0.0);
-    if s < 60.0 { "now".into() } else if s < 3600.0 { format!("{} min", (s / 60.0) as u64) }
-    else if s < 86400.0 { format!("{} h", (s / 3600.0) as u64) } else if s < 2.0 * 86400.0 { "yesterday".into() }
-    else { format!("{} days", (s / 86400.0) as u64) }
+    if s < 60.0 { tr!("now") } else if s < 3600.0 { tr!("{} min", (s / 60.0) as u64) }
+    else if s < 86400.0 { tr!("{} h", (s / 3600.0) as u64) } else if s < 2.0 * 86400.0 { tr!("yesterday") }
+    else { let d = (s / 86400.0) as u64; tr!("{n} day" | "{n} days" % d) }
 }
 
-/// Games' names → the setting's words for "during games".
+/// Games' names → the setting's words for "during games". These, DND's and the kinds' names are
+/// the config's values (English keys); the `*_label` functions are what Settings shows.
 pub const DURING_GAMES: [&str; 3] = ["All", "Important only", "None"];
 pub const DURATIONS: [u32; 3] = [4, 6, 10];
 pub const DND: [&str; 4] = ["Off", "For 1 hour", "Until tomorrow", "Until turned off"];
+
+/// A kind of notification (CATS' name), as shown.
+pub fn cat_label(name: &str) -> String {
+    cat_text(name).unwrap_or_else(|| name.to_string())
+}
+
+fn cat_text(name: &str) -> Option<String> {
+    Some(match name {
+        "Downloads" => tr!("Downloads"),
+        "Installs" => tr!("Installs"),
+        "Games" => tr!("Games"),
+        "Updates" => tr!("Updates"),
+        "New in the catalog" => tr!("New in the catalog"),
+        "Controller & system" => tr!("Controller & system"),
+        _ => return None,
+    })
+}
+
+/// "During games" (DURING_GAMES' value), as shown.
+pub fn during_games_label(key: &str) -> String {
+    during_games_text(key).unwrap_or_else(|| key.to_string())
+}
+
+fn during_games_text(key: &str) -> Option<String> {
+    Some(match key {
+        "All" => tr!("Notifications" => "All"),
+        "Important only" => tr!("Important only"),
+        "None" => tr!("Notifications" => "None"),
+        _ => return None,
+    })
+}
+
+/// Do not disturb (DND's value), as shown.
+pub fn dnd_label(key: &str) -> String {
+    dnd_text(key).unwrap_or_else(|| key.to_string())
+}
+
+fn dnd_text(key: &str) -> Option<String> {
+    Some(match key {
+        "Off" => tr!("Off"),
+        "For 1 hour" => tr!("For 1 hour"),
+        "Until tomorrow" => tr!("Until tomorrow"),
+        "Until turned off" => tr!("Until turned off"),
+        _ => return None,
+    })
+}
+
+/// How long a pop-up stays (DURATIONS' value).
+pub fn duration_label(secs: u32) -> String {
+    tr!("{n} second" | "{n} seconds" % secs)
+}
 
 impl App {
     fn rules(&self) -> Rules {
@@ -190,7 +244,7 @@ impl App {
                 if sound { audio::play(Sound::Notify); }
             }
             Show::Overlay => {
-                let data = ToastData { title: title.into(), sub: body.into(), icon: icon.into(), kind, id: id as i32, time: "now".into() };
+                let data = ToastData { title: title.into(), sub: body.into(), icon: icon.into(), kind, id: id as i32, time: tr!("now").into() };
                 let seq = self.toast_seq;
                 self.ov_toast(&data, seq);
                 if sound { audio::play(Sound::Notify); }
@@ -212,17 +266,17 @@ impl App {
         let ui = self.ui();
         ui.set_toasts(model(toasts));
         ui.set_notif_count(self.notes.unread() as i32);
-        ui.set_notif_last(self.notes.notes.first().map(|n| n.title.clone()).unwrap_or_else(|| "Nothing new".into()).into());
+        ui.set_notif_last(self.notes.notes.first().map(|n| n.title.clone()).unwrap_or_else(|| tr!("Nothing new")).into());
         if self.overlay == Overlay::Notifications { self.push_note_rows(); }
     }
 
     fn push_note_rows(&mut self) {
         let now = crate::util::now_secs();
         let today = now - (now % 86400.0);
-        let mut last_group = "";
+        let mut last_group = 0;
         let rows: Vec<NoteRow> = self.notes.notes.iter().map(|n| {
-            let group = if n.time >= today { "TODAY" } else { "EARLIER" };
-            let header = if group != last_group { last_group = group; group } else { "" };
+            let group = if n.time >= today { 1 } else { 2 };
+            let header = if group != last_group { last_group = group; if group == 1 { tr!("TODAY") } else { tr!("EARLIER") } } else { String::new() };
             NoteRow { group: header.into(), title: n.title.clone().into(), body: n.body.clone().into(), age: age(now, n.time).into(),
                 kind: n.kind, icon: n.icon.clone().into(), unread: !n.read, has_action: n.action != Action::None }
         }).collect();
@@ -324,7 +378,7 @@ impl App {
         std::thread::spawn(move || {
             let mut cmd = std::process::Command::new("notify-send");
             cmd.args(["-a", "SwarmPlay", "-i", crate::update::ICON_NAME, &n.title, &n.body]);
-            if has_action { cmd.arg("--action=open=Open"); }
+            if has_action { cmd.arg(format!("--action=open={}", tr!("Open"))); }
             let Ok(out) = cmd.output() else { return };
             if String::from_utf8_lossy(&out.stdout).trim() == "open" {
                 let _ = slint::invoke_from_event_loop(move || with_app(move |app| {
@@ -347,10 +401,10 @@ impl App {
         if !first {
             let came: Vec<String> = pads.iter().filter(|p| !self.pads_seen.contains(p)).cloned().collect();
             for p in &came {
-                self.notify(Cat::System, DONE, "gamepad", "Controller connected", p, Action::None, &format!("pad:{p}"), false);
+                self.notify(Cat::System, DONE, "gamepad", &tr!("Controller connected"), p, Action::None, &format!("pad:{p}"), false);
             }
             for p in self.pads_seen.clone().iter().filter(|p| !pads.contains(p)) {
-                self.notify(Cat::System, INFO, "gamepad", "Controller disconnected", p, Action::None, &format!("pad:{p}"), false);
+                self.notify(Cat::System, INFO, "gamepad", &tr!("Controller disconnected"), p, Action::None, &format!("pad:{p}"), false);
             }
         }
         self.pads_seen = pads;
@@ -358,7 +412,7 @@ impl App {
         if let Some(b) = crate::battery::controllers().first().copied() {
             if b.percent <= 15 && !b.plugged && !self.pad_low_told {
                 self.pad_low_told = true;
-                self.notify(Cat::System, WARN, "gamepad", &format!("Controller battery {}%", b.percent), "Charge it soon", Action::None, "pad-battery", true);
+                self.notify(Cat::System, WARN, "gamepad", &tr!("Controller battery {}%", b.percent), &tr!("Charge it soon"), Action::None, "pad-battery", true);
             } else if b.plugged || b.percent > 20 {
                 self.pad_low_told = false;
             }
@@ -368,7 +422,8 @@ impl App {
         if day != self.low_space_day {
             if let Some(p) = self.storage_places().into_iter().find(|p| p.default && p.total > 0 && p.free < 20 << 30) {
                 self.low_space_day = day;
-                self.notify(Cat::System, WARN, "disk", "Little room left for games", &format!("{} · {:.0} GB free", p.name, p.free as f64 / (1u64 << 30) as f64),
+                let gb = crate::i18n::num(p.free as f64 / (1u64 << 30) as f64, 0);
+                self.notify(Cat::System, WARN, "disk", &tr!("Little room left for games"), &tr!("{name} · {gb} GB free", name = p.name, gb),
                     Action::Settings("STORAGE".into()), "low-space", false);
             }
         }
@@ -379,14 +434,14 @@ impl App {
                 if e.0 != j.done { *e = (j.done, now, false); }
                 else if now - e.1 > 600.0 && !e.2 {
                     e.2 = true;
-                    self.notify(Cat::Downloads, WARN, "download", "Download stuck", &format!("{} · no one is sharing it right now", j.name),
+                    self.notify(Cat::Downloads, WARN, "download", &tr!("Download stuck"), &tr!("{} · no one is sharing it right now", j.name),
                         Action::Downloads(j.key.clone()), &format!("stuck:{}", j.key), false);
                 }
             } else {
                 self.dl_moved.remove(&j.key);
             }
             if j.waiting_vpn && self.vpn_told.insert(j.key.clone()) {
-                self.notify(Cat::Downloads, WARN, "lock", "Downloads paused", "The VPN disconnected · they go on when it's back",
+                self.notify(Cat::Downloads, WARN, "lock", &tr!("Downloads paused"), &tr!("The VPN disconnected · they go on when it's back"),
                     Action::Downloads(j.key.clone()), "vpn", true);
             } else if !j.waiting_vpn {
                 self.vpn_told.remove(&j.key);
@@ -405,7 +460,7 @@ impl App {
         let body = names.iter().take(3).copied().collect::<Vec<_>>().join(" · ");
         let n = names.len();
         { let mut c = self.cfg.lock().unwrap(); c.last_digest_day = day; c.save(); }
-        self.notify(Cat::Catalog, INFO, "sparkle", &format!("{n} new game{} in the Library", if n == 1 { "" } else { "s" }), &body, Action::Library, "digest", false);
+        self.notify(Cat::Catalog, INFO, "sparkle", &tr!("{n} new game in the Library" | "{n} new games in the Library" % n), &body, Action::Library, "digest", false);
     }
 
     /// The stack's cards go when their time is up (from the tick).
@@ -457,5 +512,16 @@ mod tests {
         assert_eq!(age(1000.0, 400.0), "10 min");
         assert_eq!(age(10000.0, 2000.0), "2 h");
         assert_eq!(age(200000.0, 100000.0), "yesterday");
+        assert_eq!(age(400000.0, 100000.0), "3 days");
+    }
+
+    #[test]
+    fn every_choice_has_a_label() {
+        // Every key has its own label (none falls through to the raw key, which would stay
+        // English when translated); in English a label is its key.
+        for (_, name) in CATS { assert_eq!(cat_text(name).as_deref(), Some(name)); }
+        for k in DURING_GAMES { assert_eq!(during_games_text(k).as_deref(), Some(k)); }
+        for k in DND { assert_eq!(dnd_text(k).as_deref(), Some(k)); }
+        for s in DURATIONS { assert_eq!(duration_label(s), format!("{s} seconds")); }
     }
 }

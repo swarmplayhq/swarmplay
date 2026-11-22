@@ -83,15 +83,15 @@ impl App {
     pub fn open_power_menu(&mut self) {
         let mk = |id: &'static str, label: &str| ActionDef { id, label: label.into(), icon: "power", primary: false, danger: false, round: false };
         self.menu_actions = if crate::os::system::on_os() {
-            vec![mk("power_off", "Turn off"), mk("power_restart", "Restart"), mk("app_restart", "Restart SwarmPlay")]
+            vec![mk("power_off", &tr::tr!("Turn off")), mk("power_restart", &tr::tr!("Restart")), mk("app_restart", &tr::tr!("Restart SwarmPlay"))]
         } else {
-            vec![mk("app_restart", "Restart SwarmPlay"), mk("quit", "Quit SwarmPlay")]
+            vec![mk("app_restart", &tr::tr!("Restart SwarmPlay")), mk("quit", &tr::tr!("Quit SwarmPlay"))]
         };
         self.menu_target = None;
         audio::play(Sound::Select);
         self.ui().set_menu_anchor(2);
         self.push_overlay(Overlay::Menu, Z_MENU, 0);
-        self.push_menu("Power");
+        self.push_menu(&tr::tr!("Power"));
     }
 
     /// A choice on the Power card.

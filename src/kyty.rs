@@ -11,6 +11,7 @@
 //! Kyty writes its data relative to its working directory, so each version folder gets symlinks
 //! to `data/`: saves and shader caches survive updates and rollbacks.
 
+use tr::tr;
 use crate::util::{atomic_write, http_json, now_secs};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -103,7 +104,7 @@ fn pick_release(releases: &serde_json::Value) -> Result<Release, String> {
         .filter(|r| r["draft"].as_bool() != Some(true) && r["prerelease"].as_bool() != Some(true))
         .collect();
     if list.is_empty() {
-        return Err("no releases found".into());
+        return Err(tr!("no releases found"));
     }
     list.sort_by(|a, b| b["published_at"].as_str().unwrap_or("").cmp(a["published_at"].as_str().unwrap_or("")));
     list.into_iter().find_map(|r| {
@@ -171,7 +172,7 @@ fn download(rel: &Release, dest: &Path, progress: &dyn Fn(u64, u64)) -> Result<(
 
 /// Stream `url` to `dest`, verifying its SHA-256 when one is given.
 pub fn download_file(url: &str, size: u64, sha256: &str, dest: &Path, progress: &dyn Fn(u64, u64)) -> Result<(), String> {
-    let resp = DOWNLOADER.get(url).call().map_err(|e| format!("download failed: {e}"))?;
+    let resp = DOWNLOADER.get(url).call().map_err(|e| tr!("download failed: {}", e.to_string()))?;
     let total = resp.header("Content-Length").and_then(|s| s.parse().ok()).unwrap_or(size);
     let mut reader = resp.into_reader();
     let mut file = std::fs::File::create(dest).map_err(|e| e.to_string())?;
@@ -192,7 +193,7 @@ pub fn download_file(url: &str, size: u64, sha256: &str, dest: &Path, progress: 
     if !sha256.is_empty() {
         let got = format!("{:x}", hasher.finalize());
         if !got.eq_ignore_ascii_case(sha256) {
-            return Err("download is corrupted (checksum mismatch)".into());
+            return Err(tr!("download is corrupted (checksum mismatch)"));
         }
     }
     Ok(())
@@ -261,14 +262,14 @@ pub fn install(rel: &Release, progress: &dyn Fn(String, f32)) -> Result<(), Stri
         let pct = if total > 0 { done * 100 / total } else { 0 };
         if pct != last.get() {
             last.set(pct);
-            progress(format!("Downloading KytyPS5 {} · {pct}%", pretty(&rel.tag)), pct as f32 / 100.0 * 0.9);
+            progress(tr!("Downloading KytyPS5 {} · {}%", pretty(&rel.tag), pct), pct as f32 / 100.0 * 0.9);
         }
     })
     .inspect_err(|_| {
         let _ = std::fs::remove_file(&archive);
     })?;
 
-    progress("Installing KytyPS5…".into(), 0.95);
+    progress(tr!("Installing KytyPS5…"), 0.95);
     let staging = versions.join(format!("{}.tmp", rel.tag));
     let _ = std::fs::remove_dir_all(&staging);
     std::fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
@@ -276,7 +277,7 @@ pub fn install(rel: &Release, progress: &dyn Fn(String, f32)) -> Result<(), Stri
     let _ = std::fs::remove_file(&archive);
     if !ok {
         let _ = std::fs::remove_dir_all(&staging);
-        return Err("could not extract the archive (is `tar` installed?)".into());
+        return Err(tr!("could not extract the archive (is `tar` installed?)"));
     }
     // Some archives wrap everything in one top-level folder.
     let mut dir = staging.clone();
@@ -288,7 +289,7 @@ pub fn install(rel: &Release, progress: &dyn Fn(String, f32)) -> Result<(), Stri
     let emu = dir.join("kyty_emulator");
     if binary_version(&emu).is_none() {
         let _ = std::fs::remove_dir_all(&staging);
-        return Err("the downloaded emulator does not run on this system".into());
+        return Err(tr!("the downloaded emulator does not run on this system"));
     }
     link_data_dirs(&dir)?;
     let final_dir = versions.join(&rel.tag);
@@ -317,7 +318,7 @@ pub fn install(rel: &Release, progress: &dyn Fn(String, f32)) -> Result<(), Stri
 pub fn rollback() -> Result<String, String> {
     let mut st = load_state();
     if st.previous.is_empty() || !root().join("versions").join(&st.previous).is_dir() {
-        return Err("no previous version to roll back to".into());
+        return Err(tr!("no previous version to roll back to"));
     }
     switch_current(&st.previous)?;
     st.skip = st.installed.clone();

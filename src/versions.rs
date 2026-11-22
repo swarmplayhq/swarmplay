@@ -2,6 +2,7 @@
 //! you have, else the one that plays best on this PC and can be downloaded. Only what's known is
 //! said: emulator results, this PC's verdict, ProtonDB, how many share it. No promised frame rates.
 
+use tr::tr;
 use crate::app::*;
 use crate::compat::Outlook;
 use crate::platform::Platform;
@@ -46,26 +47,26 @@ impl Plays<'_> {
     pub fn headline(&self) -> String {
         match self {
             Plays::Console(o) => o.headline().into(),
-            Plays::Native => "Native Linux game".into(),
-            Plays::Wine(_, false, None) => "Needs Proton or Wine".into(),
-            Plays::Wine(Some("borked"), ..) => "Doesn't run with Wine yet".into(),
-            Plays::Wine(Some(tier), ..) => format!("Runs with Wine · {}", title_case(tier)),
-            Plays::Wine(None, true, _) => "Runs with Wine, included".into(),
-            Plays::Wine(None, false, Some(runner)) => format!("Runs with {runner}"),
+            Plays::Native => tr!("Native Linux game"),
+            Plays::Wine(_, false, None) => tr!("Needs Proton or Wine"),
+            Plays::Wine(Some("borked"), ..) => tr!("Doesn't run with Wine yet"),
+            Plays::Wine(Some(tier), ..) => tr!("Runs with Wine · {}", title_case(tier)),
+            Plays::Wine(None, true, _) => tr!("Runs with Wine, included"),
+            Plays::Wine(None, false, Some(runner)) => tr!("Runs with {runner}", runner),
         }
     }
 
     /// The Game Hub's "how it runs" box for a PC game: its label, its value and (as on its tile)
     /// its colour. None for console games, whose page says it in its verdict line.
-    pub fn hub_fact(&self) -> Option<(&'static str, String, i32)> {
+    pub fn hub_fact(&self) -> Option<(String, String, i32)> {
         let (label, value) = match self {
             Plays::Console(_) => return None,
-            Plays::Native => ("ON LINUX", "Native game".into()),
-            Plays::Wine(_, false, None) => ("WINDOWS GAME", "Needs Proton or Wine".into()),
-            Plays::Wine(Some("borked"), ..) => ("PROTONDB · WINE", "Doesn't run yet".into()),
-            Plays::Wine(Some(tier), ..) => ("PROTONDB · RUNS WITH WINE", title_case(tier)),
-            Plays::Wine(None, true, _) => ("RUNS WITH", "Wine, included".into()),
-            Plays::Wine(None, false, Some(runner)) => ("WINDOWS GAME · RUNS WITH", (*runner).into()),
+            Plays::Native => (tr!("ON LINUX"), tr!("Native game")),
+            Plays::Wine(_, false, None) => (tr!("WINDOWS GAME"), tr!("Needs Proton or Wine")),
+            Plays::Wine(Some("borked"), ..) => (tr!("PROTONDB · WINE"), tr!("Doesn't run yet")),
+            Plays::Wine(Some(tier), ..) => (tr!("PROTONDB · RUNS WITH WINE"), title_case(tier)),
+            Plays::Wine(None, true, _) => (tr!("RUNS WITH"), tr!("Wine, included")),
+            Plays::Wine(None, false, Some(runner)) => (tr!("WINDOWS GAME · RUNS WITH"), (*runner).into()),
         };
         Some((label, value, self.kind()))
     }
@@ -315,9 +316,9 @@ impl App {
             };
             let g = &self.games[i];
             let detail = if installed {
-                "Installed".to_string()
+                tr!("Installed")
             } else {
-                [format!("Availability: {}", Availability::of(g.g.seeders).label()), crate::present::size_label(&g.g).unwrap_or_default()]
+                [tr!("Availability: {}", Availability::of(g.g.seeders).label()), crate::present::size_label(&g.g).unwrap_or_default()]
                     .into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" · ")
             };
             crate::VersionData {

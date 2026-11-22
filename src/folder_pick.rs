@@ -12,6 +12,7 @@ use crate::audio::{self, Sound};
 use crate::settings::SId;
 use crate::{util, PickRow};
 use std::path::{Path, PathBuf};
+use tr::tr;
 
 /// What the folder chosen is for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -22,8 +23,8 @@ pub enum PickFor {
 }
 
 impl PickFor {
-    fn title(self) -> &'static str {
-        match self { PickFor::Place => "Add a place", PickFor::Install => "Install new games to", PickFor::Download => "Save downloads to" }
+    fn title(self) -> String {
+        match self { PickFor::Place => tr!("Add a place"), PickFor::Install => tr!("Install new games to"), PickFor::Download => tr!("Save downloads to") }
     }
     fn row(self) -> SId {
         match self { PickFor::Place => SId::StorageAdd, PickFor::Install => SId::InstallDir, PickFor::Download => SId::DownloadDir }
@@ -94,7 +95,7 @@ pub fn unmounted(lsblk: &str) -> Vec<Drive> {
             let label = v.get("label").and_then(|x| x.as_str()).filter(|l| !l.is_empty());
             let removable = v.get("rm").and_then(|x| x.as_bool().or_else(|| x.as_str().map(|s| s == "1"))).unwrap_or(false);
             out.push(Drive {
-                name: label.map(str::to_string).unwrap_or_else(|| format!("{} drive", crate::storage::size(size))),
+                name: label.map(str::to_string).unwrap_or_else(|| tr!("{} drive", crate::storage::size(size))),
                 root: None,
                 device: v.get("path").and_then(|x| x.as_str()).unwrap_or("").to_string(),
                 free: 0,
@@ -135,7 +136,7 @@ fn writable(path: &Path) -> bool {
 fn drives() -> Vec<Drive> {
     let home = util::expand_home("~");
     let (free, total) = space(&home);
-    let mut list = vec![Drive { name: "Home folder".into(), root: Some(home), device: String::new(), free, total, removable: false }];
+    let mut list = vec![Drive { name: tr!("Home folder"), root: Some(home), device: String::new(), free, total, removable: false }];
     for (root, device) in mounted(&std::fs::read_to_string("/proc/self/mountinfo").unwrap_or_default()) {
         let (free, total) = space(&root);
         // Too small for a game (a boot stick's own little partition).
@@ -165,7 +166,7 @@ fn folders(dir: &Path) -> Vec<PathBuf> {
 
 fn free_line(d: &Drive) -> String {
     use crate::storage::size;
-    if d.total == 0 { String::new() } else { format!("{} free of {}", size(d.free), size(d.total)) }
+    if d.total == 0 { String::new() } else { tr!("{free} free of {total}", free = size(d.free), total = size(d.total)) }
 }
 
 impl App {
@@ -182,50 +183,52 @@ impl App {
         let Some(p) = self.pick.as_mut() else { return };
         let mut rows = Vec::new();
         let mut entries = Vec::new();
+        // The first drive is always the home folder (drives()); its name is translated.
+        let is_home = |d: &Drive| d.name == tr!("Home folder");
         let (title, path) = match &p.at {
             None => {
                 for (i, d) in p.drives.iter().enumerate() {
                     let mut sub = match (&d.root, p.busy == Some(i)) {
-                        (_, true) => "Mounting…".to_string(),
-                        (None, _) => format!("Not mounted · {} · ✕ mounts it", crate::storage::size(d.total)),
+                        (_, true) => tr!("Mounting…"),
+                        (None, _) => tr!("Not mounted · {} · ✕ mounts it", crate::storage::size(d.total)),
                         (Some(_), _) => free_line(d),
                     };
-                    if d.removable && d.root.is_some() { sub = format!("Removable · {sub}"); }
+                    if d.removable && d.root.is_some() { sub = tr!("Removable · {sub}", sub); }
                     rows.push(PickRow {
                         label: d.name.clone().into(), sub: sub.into(),
-                        icon: if d.name == "Home folder" { "user".into() } else { "disk".into() },
+                        icon: if is_home(d) { "user".into() } else { "disk".into() },
                         kind: 0, has_bar: d.root.is_some() && d.total > 0,
                         bar: if d.total > 0 { 1.0 - d.free as f32 / d.total as f32 } else { 0.0 },
                         warn: d.root.is_some() && d.total > 0 && d.free < 20 << 30,
                     });
                     entries.push(Entry::Drive(i));
                 }
-                (format!("{} · choose a drive", p.purpose.title()), String::new())
+                (tr!("{} · choose a drive", p.purpose.title()), String::new())
             }
             Some((di, dir)) => {
                 let d = &p.drives[*di];
                 let top = d.root.as_deref() == Some(dir.as_path());
                 let can = writable(dir);
                 let (label, sub) = match p.purpose {
-                    PickFor::Place => (if top && d.name != "Home folder" { "Use this drive" } else { "Use this folder" }, format!("Games and downloads go in {}", util::display_path(&dir.join("SwarmPlay").to_string_lossy()))),
-                    PickFor::Install => ("Install new games here", util::display_path(&dir.to_string_lossy())),
-                    PickFor::Download => ("Save downloads here", util::display_path(&dir.to_string_lossy())),
+                    PickFor::Place => (if top && !is_home(d) { tr!("Use this drive") } else { tr!("Use this folder") }, tr!("Games and downloads go in {}", util::display_path(&dir.join("SwarmPlay").to_string_lossy()))),
+                    PickFor::Install => (tr!("Install new games here"), util::display_path(&dir.to_string_lossy())),
+                    PickFor::Download => (tr!("Save downloads here"), util::display_path(&dir.to_string_lossy())),
                 };
                 rows.push(PickRow {
                     label: label.into(),
-                    sub: if can { sub.into() } else { "Can't write here · choose a folder of yours".into() },
+                    sub: if can { sub.into() } else { tr!("Can't write here · choose a folder of yours").into() },
                     icon: "check".into(), kind: 1, has_bar: false, bar: 0.0, warn: !can,
                 });
                 entries.push(Entry::Use);
                 for f in folders(dir) {
                     let name = f.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                    let sub = if name == "SwarmPlay" { "SwarmPlay's games and downloads" } else { "" };
+                    let sub = if name == "SwarmPlay" { tr!("SwarmPlay's games and downloads") } else { String::new() };
                     rows.push(PickRow { label: name.into(), sub: sub.into(), icon: "folder".into(), kind: 2, has_bar: false, bar: 0.0, warn: false });
                     entries.push(Entry::Folder(f));
                 }
                 let rel = dir.strip_prefix(d.root.as_deref().unwrap_or(Path::new("/"))).map(|r| r.to_string_lossy().into_owned()).unwrap_or_default();
                 let path = if rel.is_empty() { d.name.clone() } else { format!("{} › {}", d.name, rel.replace('/', " › ")) };
-                (p.purpose.title().to_string(), format!("{path}   ·   {}", free_line(d)))
+                (p.purpose.title(), format!("{path}   ·   {}", free_line(d)))
             }
         };
         p.entries = entries;
@@ -310,8 +313,8 @@ impl App {
                         let out = std::process::Command::new("udisksctl").args(["mount", "-b", &device])
                             .stdin(std::process::Stdio::null()).output();
                         let res = match out {
-                            Ok(o) if o.status.success() => mounted_at(&String::from_utf8_lossy(&o.stdout)).ok_or_else(|| "it didn't say where".to_string()),
-                            Ok(o) => Err(String::from_utf8_lossy(&o.stderr).lines().last().unwrap_or("it failed").trim().to_string()),
+                            Ok(o) if o.status.success() => mounted_at(&String::from_utf8_lossy(&o.stdout)).ok_or_else(|| tr!("it didn't say where")),
+                            Ok(o) => Err(String::from_utf8_lossy(&o.stderr).lines().last().map(|l| l.trim().to_string()).unwrap_or_else(|| tr!("it failed"))),
                             Err(e) => Err(e.to_string()),
                         };
                         let _ = slint::invoke_from_event_loop(move || with_app(move |app| app.pick_mounted(di, res)));
@@ -327,7 +330,7 @@ impl App {
             Entry::Use => {
                 let Some((_, dir)) = p.at.clone() else { return };
                 if !writable(&dir) {
-                    p.note = "Can't write there: choose a folder of yours, or the drive's own top".into();
+                    p.note = tr!("Can't write there: choose a folder of yours, or the drive's own top");
                     audio::play(Sound::Back);
                     return self.push_pick();
                 }
@@ -356,7 +359,7 @@ impl App {
                 if self.overlay == Overlay::Folders { self.set_focus(Z_PICK, 0); }
             }
             Err(e) => {
-                p.note = format!("Couldn't mount it: {e}");
+                p.note = tr!("Couldn't mount it: {e}", e);
                 audio::play(Sound::Back);
                 self.push_pick();
             }
@@ -372,13 +375,13 @@ impl App {
                 let dev = |p: &Path| { use std::os::unix::fs::MetadataExt; std::fs::metadata(p).map(|m| m.dev()).unwrap_or(0) };
                 if self.storage_places().iter().any(|p| p.dev == dev(dir) && p.added.is_none()) {
                     // Already a place: a folder on it becomes where new games go instead.
-                    self.note_setting(SId::StorageAdd, "That drive is already in the list · use Install new games to for a folder on it", 0);
+                    self.note_setting(SId::StorageAdd, &tr!("That drive is already in the list · use Install new games to for a folder on it"), 0);
                 } else {
                     self.storage_add(&path);
                 }
             }
             PickFor::Install => {
-                if let Err(e) = std::fs::create_dir_all(dir) { return self.note_setting(purpose.row(), &format!("Not changed: {e}"), 2); }
+                if let Err(e) = std::fs::create_dir_all(dir) { return self.note_setting(purpose.row(), &tr!("Not changed: {e}", e), 2); }
                 {
                     let mut c = self.cfg.lock().unwrap();
                     c.install_dir = path.clone();
@@ -386,13 +389,13 @@ impl App {
                     c.save();
                 }
                 audio::play(Sound::Select);
-                self.note_setting(purpose.row(), &format!("New games are set up in {shown} now"), 1);
+                self.note_setting(purpose.row(), &tr!("New games are set up in {shown} now", shown), 1);
             }
             PickFor::Download => {
                 self.cfg.lock().unwrap().download_dir = path;
                 self.cfg.lock().unwrap().save();
                 audio::play(Sound::Select);
-                self.note_setting(purpose.row(), &format!("Downloads go to {shown} now"), 1);
+                self.note_setting(purpose.row(), &tr!("Downloads go to {shown} now", shown), 1);
             }
         }
         Self::storage_recount();

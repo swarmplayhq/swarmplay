@@ -7,6 +7,7 @@
 //! controller is paired), from what's cheap to read: /proc and /sys, one statvfs, the emulators'
 //! small state files.
 
+use tr::tr;
 use crate::app::*;
 use crate::audio::{self, Sound};
 use crate::{util, WidgetData};
@@ -65,18 +66,18 @@ impl App {
         let pads = crate::gamepad::connected();
         let battery = crate::battery::controllers().into_iter().next();
         let Some(name) = pads.first() else {
-            return widget(Icons::Gamepad, "Controller", "None connected", "Pair one over Bluetooth or plug it in", -1.0, 0);
+            return widget(Icons::Gamepad, &tr!("Controller"), &tr!("None connected"), &tr!("Pair one over Bluetooth or plug it in"), -1.0, 0);
         };
-        let more = if pads.len() > 1 { format!(" · {} connected", pads.len()) } else { String::new() };
+        let more = if pads.len() > 1 { format!(" · {}", tr!("{n} connected" | "{n} connected" % pads.len())) } else { String::new() };
         match battery {
             Some(b) => widget(
-                Icons::Gamepad, "Controller",
-                &format!("{}%{}", b.percent, if b.plugged { " · charging" } else { "" }),
+                Icons::Gamepad, &tr!("Controller"),
+                &if b.plugged { tr!("{}% · charging", b.percent) } else { format!("{}%", b.percent) },
                 &format!("{name}{more}"),
                 b.percent as f32 / 100.0,
                 if b.plugged || b.percent > 20 { GOOD } else { WARN },
             ),
-            None => widget(Icons::Gamepad, "Controller", "Connected", &format!("{name}{more}"), -1.0, GOOD),
+            None => widget(Icons::Gamepad, &tr!("Controller"), &tr!("Connected"), &format!("{name}{more}"), -1.0, GOOD),
         }
     }
 
@@ -85,10 +86,10 @@ impl App {
         match crate::downloads::free_space(&util::expand_home(&dir)) {
             Some(free) => {
                 let gb = free as f64 / (1u64 << 30) as f64;
-                let value = if gb >= 1024.0 { format!("{:.1} TB free", gb / 1024.0) } else { format!("{gb:.0} GB free") };
-                widget(Icons::Folder, "Storage", &value, &format!("For games in {dir}"), -1.0, if gb < 50.0 { WARN } else { 0 })
+                let value = if gb >= 1024.0 { tr!("{} TB free", crate::i18n::num(gb / 1024.0, 1)) } else { tr!("{} GB free", crate::i18n::num(gb, 0)) };
+                widget(Icons::Folder, &tr!("Storage"), &value, &tr!("For games in {dir}", dir), -1.0, if gb < 50.0 { WARN } else { 0 })
             }
-            None => widget(Icons::Folder, "Storage", "Unknown", &format!("Can't read {dir}"), -1.0, WARN),
+            None => widget(Icons::Folder, &tr!("Storage"), &tr!("Unknown"), &tr!("Can't read {dir}", dir), -1.0, WARN),
         }
     }
 
@@ -97,14 +98,15 @@ impl App {
         let active: Vec<_> = jobs.iter().filter(|j| j.state.active()).collect();
         if active.is_empty() {
             let paused = jobs.iter().filter(|j| j.state == crate::downloads::State::Paused).count();
-            let sub = if paused > 0 { format!("{paused} paused") } else { "Get games in the Library".to_string() };
-            return widget(Icons::Download, "Downloads", "Nothing downloading", &sub, -1.0, 0);
+            let sub = if paused > 0 { tr!("{n} paused" | "{n} paused" % paused) } else { tr!("Get games in the Library") };
+            return widget(Icons::Download, &tr!("Downloads"), &tr!("Nothing downloading"), &sub, -1.0, 0);
         }
         let (done, total) = active.iter().fold((0u64, 0u64), |(d, t), j| (d + j.done, t + j.total));
         let progress = if total > 0 { done as f32 / total as f32 } else { 0.0 };
-        let value = if active.len() == 1 { format!("{:.0}%", progress * 100.0) } else { format!("{} downloading", active.len()) };
-        let sub = if active.len() == 1 { active[0].name.clone() } else { format!("{:.0}% of all of them", progress * 100.0) };
-        widget(Icons::Download, "Downloads", &value, &sub, progress, GOOD)
+        let percent = format!("{:.0}", progress * 100.0);
+        let value = if active.len() == 1 { format!("{percent}%") } else { tr!("{n} downloading" | "{n} downloading" % active.len()) };
+        let sub = if active.len() == 1 { active[0].name.clone() } else { tr!("{}% of all of them", percent) };
+        widget(Icons::Download, &tr!("Downloads"), &value, &sub, progress, GOOD)
     }
 
     fn news_widget(&self) -> WidgetData {
@@ -115,28 +117,28 @@ impl App {
             if !names.contains(&g.name.as_str()) { names.push(&g.name); }
         }
         if names.is_empty() {
-            return widget(Icons::Sparkle, "New in the catalog", "Nothing this fortnight", "Browse the whole Library", -1.0, 0);
+            return widget(Icons::Sparkle, &tr!("New in the catalog"), &tr!("Nothing this fortnight"), &tr!("Browse the whole Library"), -1.0, 0);
         }
-        let value = if names.len() == 1 { "1 new game".to_string() } else { format!("{} new games", names.len()) };
-        widget(Icons::Sparkle, "New in the catalog", &value, &names.iter().take(2).copied().collect::<Vec<_>>().join(" · "), -1.0, 0)
+        let value = tr!("{n} new game" | "{n} new games" % names.len());
+        widget(Icons::Sparkle, &tr!("New in the catalog"), &value, &names.iter().take(2).copied().collect::<Vec<_>>().join(" · "), -1.0, 0)
     }
 
     fn games_widget(&self) -> WidgetData {
         let games: Vec<usize> = self.row.iter().filter_map(|r| match r { RowItem::Local(l) => Some(*l), _ => None }).collect();
         let played: f64 = games.iter().map(|l| self.playtime(&self.locals[*l].l).total).sum();
-        let value = if games.len() == 1 { "1 installed".to_string() } else { format!("{} installed", games.len()) };
-        let sub = if played >= 60.0 { format!("{} played in all", util::fmt_duration_words(played)) } else { "None played yet".to_string() };
-        widget(Icons::Grid, "Your games", &value, &sub, -1.0, 0)
+        let value = tr!("{n} installed" | "{n} installed" % games.len());
+        let sub = if played >= 60.0 { tr!("{} played in all", util::fmt_duration_words(played)) } else { tr!("None played yet") };
+        widget(Icons::Grid, &tr!("Your games"), &value, &sub, -1.0, 0)
     }
 
     /// SwarmPlay's own update first (what needs you), then the emulators.
     fn emulators_widget(&self) -> WidgetData {
         if let Some(v) = &self.upd.installed {
-            return widget(Icons::Gear, "Updates", "Restart to update", &format!("SwarmPlay {v} is ready"), -1.0, WARN);
+            return widget(Icons::Gear, &tr!("Updates"), &tr!("Restart to update"), &tr!("SwarmPlay {v} is ready", v), -1.0, WARN);
         }
         if self.app_update_available() {
             let v = self.upd.latest.as_ref().map(|r| r.version.clone()).unwrap_or_default();
-            return widget(Icons::Gear, "Updates", &format!("SwarmPlay {v}"), "Out now · press to get it", -1.0, WARN);
+            return widget(Icons::Gear, &tr!("Updates"), &format!("SwarmPlay {v}"), &tr!("Out now · press to get it"), -1.0, WARN);
         }
         let (kyty, shad) = (crate::kyty::load_state(), crate::shad::load_state());
         let kyty_v = crate::kyty::pretty(&kyty.installed);
@@ -144,8 +146,8 @@ impl App {
         let shad_v = crate::shad::pretty(&shad.installed);
         let parts: Vec<String> = [("SwarmPlay", crate::update::current_version()), ("KytyPS5", kyty_v.to_string()), ("shadPS4", shad_v)].iter()
             .filter(|(_, v)| !v.is_empty()).map(|(n, v)| format!("{n} {v}")).collect();
-        let (value, kind) = if self.updates_need_you() { ("Update ready", WARN) } else { ("Up to date", GOOD) };
-        widget(Icons::Gear, "Updates", value, &parts.join(" · "), -1.0, kind)
+        let (value, kind) = if self.updates_need_you() { (tr!("Update ready"), WARN) } else { (tr!("Up to date"), GOOD) };
+        widget(Icons::Gear, &tr!("Updates"), &value, &parts.join(" · "), -1.0, kind)
     }
 
     pub fn act_welcome(&mut self, a: Act) {

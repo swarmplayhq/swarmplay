@@ -3,6 +3,7 @@
 //! Only names, sizes and file contents come out of it: unrar "tests" each file and hands its bytes
 //! to a callback, so it never creates, names or writes a file itself.
 
+use tr::tr;
 use anyhow::{ensure, Context, Result};
 use std::{
     ffi::CString,
@@ -133,10 +134,10 @@ extern "C" fn callback(msg: c_uint, user: c_long, p1: c_long, p2: c_long) -> c_i
             // SAFETY: a NUL-terminated wide string from unrar.
             let name = unsafe { wide(p1 as *const libc::wchar_t, 4096) };
             if p2 == 1 && state.volumes.contains(&name) { return 1; }
-            fail(state, anyhow::anyhow!("Missing RAR volume {}", text(&name).unwrap_or_default().rsplit('/').next().unwrap_or("")))
+            fail(state, anyhow::anyhow!(tr!("Missing RAR volume {}", text(&name).unwrap_or_default().rsplit('/').next().unwrap_or(""))))
         }
-        UCM_NEEDPASSWORD | UCM_NEEDPASSWORDW => fail(state, anyhow::anyhow!("Password-protected archives are unsupported")),
-        UCM_LARGEDICT => fail(state, anyhow::anyhow!("RAR needs a {} GiB dictionary; more memory than an install may take", p1 / (1024 * 1024))),
+        UCM_NEEDPASSWORD | UCM_NEEDPASSWORDW => fail(state, anyhow::anyhow!(tr!("Password-protected archives are unsupported"))),
+        UCM_LARGEDICT => fail(state, anyhow::anyhow!(tr!("RAR needs a {} GiB dictionary; more memory than an install may take", p1 / (1024 * 1024)))),
         _ => 0,
     }
 }
@@ -166,8 +167,8 @@ impl Archive {
     /// `volumes` in order; unrar finds each next volume by name and may open only these.
     pub fn open(volumes: &[String]) -> Result<Self> {
         static WORKS: std::sync::OnceLock<Result<(), String>> = std::sync::OnceLock::new();
-        WORKS.get_or_init(|| probe().map_err(|e| format!("{e:#}"))).clone().map_err(|e| anyhow::anyhow!(
-            "This build of the launcher can't read RAR archives ({e}): its C++ compiler left unrar's start-up code out. Rebuild it with the system compiler (CXX=c++)"))?;
+        WORKS.get_or_init(|| probe().map_err(|e| format!("{e:#}"))).clone().map_err(|e| anyhow::anyhow!(tr!(
+            "This build of the launcher can't read RAR archives ({e}): its C++ compiler left unrar's start-up code out. Rebuild it with the system compiler (CXX=c++)", e)))?;
         Self::open_unchecked(volumes)
     }
 
@@ -190,20 +191,20 @@ impl Archive {
         let result = data.open_result;
         let archive = Self { handle, state, _lock: lock };
         // A file that isn't a RAR still gets a handle, with the reason in open_result.
-        if result != 0 || handle.is_null() { return Err(archive.error(result as c_int, "Open RAR archive")); }
+        if result != 0 || handle.is_null() { return Err(archive.error(result as c_int, &tr!("Open RAR archive"))); }
         Ok(archive)
     }
 
     fn error(&self, code: c_int, action: &str) -> anyhow::Error {
         let reason = match code {
-            ffi::ERAR_NO_MEMORY => "not enough memory",
-            ffi::ERAR_BAD_DATA => "damaged data (checksum mismatch)",
-            ffi::ERAR_BAD_ARCHIVE | ffi::ERAR_UNKNOWN_FORMAT => "not a RAR archive, or a damaged one",
-            ffi::ERAR_EOPEN => "a volume is missing or can't be opened",
-            ffi::ERAR_EREAD => "read error",
-            ffi::ERAR_MISSING_PASSWORD | ffi::ERAR_BAD_PASSWORD => "password-protected archives are unsupported",
-            25 => "its dictionary is larger than an install may use",
-            _ => "unknown error",
+            ffi::ERAR_NO_MEMORY => tr!("not enough memory"),
+            ffi::ERAR_BAD_DATA => tr!("damaged data (checksum mismatch)"),
+            ffi::ERAR_BAD_ARCHIVE | ffi::ERAR_UNKNOWN_FORMAT => tr!("not a RAR archive, or a damaged one"),
+            ffi::ERAR_EOPEN => tr!("a volume is missing or can't be opened"),
+            ffi::ERAR_EREAD => tr!("read error"),
+            ffi::ERAR_MISSING_PASSWORD | ffi::ERAR_BAD_PASSWORD => tr!("password-protected archives are unsupported"),
+            25 => tr!("its dictionary is larger than an install may use"),
+            _ => tr!("unknown error"),
         };
         anyhow::anyhow!("{action}: {reason} (unrar {code})")
     }
@@ -223,7 +224,7 @@ impl Archive {
             h.redir_name_size = link.len() as c_uint;
             let code = unsafe { ffi::RARReadHeaderEx(self.handle, &*h as *const HeaderData as *const ffi::HeaderDataEx) };
             if code == ffi::ERAR_END_ARCHIVE && self.state.error.is_none() { return Ok(None); }
-            self.take(code, "Read RAR header")?;
+            self.take(code, &tr!("Read RAR header"))?;
             // Fields are copied out: a packed field can't be borrowed.
             let (flags, attr, host, redir) = (h.flags, h.file_attr, h.host_os, h.redir_type);
             // The rest of a file begun in the previous volume (skipping it moved on to this one).
@@ -260,7 +261,7 @@ impl Archive {
         self.state.sink = Some(unsafe { std::mem::transmute::<*mut Sink<'_>, *mut Sink<'static>>(sink as *mut Sink<'_>) });
         let code = unsafe { ffi::RARProcessFileW(self.handle, ffi::RAR_TEST, std::ptr::null(), std::ptr::null()) };
         self.state.sink = None;
-        self.take(code, "Read RAR data")
+        self.take(code, &tr!("Read RAR data"))
     }
 
     pub fn skip(&mut self) -> Result<()> {

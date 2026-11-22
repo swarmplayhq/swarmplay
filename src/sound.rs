@@ -7,6 +7,7 @@ use crate::os::system::{self, Output};
 use crate::settings::SId;
 use crate::SettingData;
 use std::process::Command;
+use tr::tr;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct State {
@@ -67,25 +68,25 @@ impl App {
         let s = &self.sound;
         let mut rows = Vec::new();
         if let Some(v) = s.volume {
-            let mut r = row(3, "Volume");
-            r.value = if s.muted { "Muted".into() } else { format!("{v}%").into() };
+            let mut r = row(3, &tr!("Volume"));
+            r.value = if s.muted { tr!("Muted").into() } else { format!("{v}%").into() };
             r.has_bar = true;
             r.bar = if s.muted { 0.0 } else { (v as f32 / 100.0).min(1.0) };
-            r.hint = "The whole system's · ◂ ▸ change it".into();
+            r.hint = tr!("The whole system's · ◂ ▸ change it").into();
             rows.push((SId::SoundVolume, r));
-            let mut r = row(2, "Mute");
+            let mut r = row(2, &tr!("Mute"));
             r.on = s.muted;
             rows.push((SId::SoundMute, r));
         }
         if !s.outputs.is_empty() {
-            let mut r = row(3, "Sound output");
-            r.value = s.output.and_then(|i| s.outputs.get(i)).map(|o| o.label.clone()).unwrap_or_else(|| "Choose".into()).into();
+            let mut r = row(3, &tr!("Sound output"));
+            r.value = s.output.and_then(|i| s.outputs.get(i)).map(|o| o.label.clone()).unwrap_or_else(|| tr!("Choose")).into();
             rows.push((SId::SoundOut, r));
         }
         let level = self.cfg.lock().unwrap().sounds_level.clamp(1, 3);
-        let mut r = row(3, "Interface sounds");
-        r.value = crate::audio::LEVELS[if sounds_on { level as usize } else { 0 }].into();
-        r.hint = "The launcher's clicks and chimes · a little quieter over a game".into();
+        let mut r = row(3, &tr!("Interface sounds"));
+        r.value = crate::audio::level_label(if sounds_on { level as usize } else { 0 }).into();
+        r.hint = tr!("The launcher's clicks and chimes · a little quieter over a game").into();
         rows.push((SId::Sounds, r));
         rows
     }
@@ -130,7 +131,7 @@ impl App {
             _ => return false,
         };
         if let Err(e) = result {
-            self.note_setting(id, &format!("Didn't change: {e}"), 2);
+            self.note_setting(id, &tr!("Didn't change: {error}", error = e), 2);
         }
         // Heard at the new volume (Mute: a switch's click).
         crate::audio::play(match id {

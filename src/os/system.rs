@@ -5,6 +5,7 @@
 
 use std::path::Path;
 use std::process::Command;
+use tr::tr;
 
 /// Written into the OS image (built in github.com/AzrakHQ/azrak-os).
 pub const MARKER: &str = "/usr/lib/azrak-os/release";
@@ -19,13 +20,13 @@ pub fn on_os() -> bool {
 fn run_for(seconds: u64, program: &str, args: &[&str]) -> Result<String, String> {
     use std::process::Stdio;
     let mut child = Command::new(program).args(args).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped())
-        .spawn().map_err(|_| format!("{program} isn't installed"))?;
+        .spawn().map_err(|_| tr!("{program} isn't installed", program))?;
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
     while child.try_wait().map_err(|e| e.to_string())?.is_none() {
         if std::time::Instant::now() > deadline {
             let _ = child.kill();
             let _ = child.wait();
-            return Err(format!("{program} didn't answer"));
+            return Err(tr!("{program} didn't answer", program));
         }
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
@@ -35,8 +36,8 @@ fn run_for(seconds: u64, program: &str, args: &[&str]) -> Result<String, String>
         Ok(text)
     } else {
         let err = String::from_utf8_lossy(&out.stderr);
-        Err(err.lines().chain(text.lines()).map(str::trim).find(|l| !l.is_empty()).unwrap_or("failed")
-            .trim_start_matches("Error: ").to_string())
+        Err(err.lines().chain(text.lines()).map(str::trim).find(|l| !l.is_empty())
+            .map(|l| l.trim_start_matches("Error: ").to_string()).unwrap_or_else(|| tr!("failed")))
     }
 }
 
@@ -204,8 +205,8 @@ fn parse_outputs(json: &str) -> Vec<Output> {
         let description = s["description"].as_str().unwrap_or(&name);
         let port = s["active_port"].as_str().unwrap_or("");
         // "GA102 High Definition Audio Controller Digital Stereo (HDMI)" says less than "TV (HDMI)".
-        let label = if port.starts_with("hdmi") || description.contains("HDMI") { "TV or monitor (HDMI)".to_string() }
-            else if port.contains("headphones") { "Headphones".to_string() }
+        let label = if port.starts_with("hdmi") || description.contains("HDMI") { tr!("TV or monitor (HDMI)") }
+            else if port.contains("headphones") { tr!("Headphones") }
             else { description.replace(" Analog Stereo", "").replace(" Digital Stereo", "") };
         Some(Output { name, label })
     }).collect()
@@ -250,7 +251,10 @@ impl Disk {
     /// "512 GB": disks are sold in decimal gigabytes, so that's the number on the box.
     pub fn size(&self) -> String {
         let gb = self.bytes as f64 / 1e9;
-        if gb >= 1000.0 { format!("{:.1} TB", gb / 1000.0).replace(".0 TB", " TB") } else { format!("{gb:.0} GB") }
+        if gb >= 1000.0 {
+            let tb = crate::i18n::num(gb / 1000.0, 1);
+            format!("{} TB", tb.trim_end_matches(".0").trim_end_matches(",0"))
+        } else { format!("{gb:.0} GB") }
     }
 }
 
@@ -269,7 +273,7 @@ fn parse_disks(text: &str) -> Vec<Disk> {
         let bytes = f.next()?.parse().ok()?;
         let windows = f.next()? == "1";
         let usb = f.next()? == "1";
-        let model = f.next().unwrap_or("Disk").replace('_', " ").trim().to_string();
+        let model = f.next().map(|m| m.replace('_', " ").trim().to_string()).unwrap_or_else(|| tr!("Disk"));
         Some(Disk { path, bytes, model, windows, usb })
     }).collect()
 }
@@ -316,7 +320,7 @@ pub fn install(disk: &str, mut each: impl FnMut(InstallEvent)) -> InstallEvent {
     let child = command.arg(disk).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn();
     let mut child = match child {
         Ok(c) => c,
-        Err(e) => return InstallEvent::Failed(format!("The installer didn't start: {e}")),
+        Err(e) => return InstallEvent::Failed(tr!("The installer didn't start: {e}", e)),
     };
     let mut end = None;
     if let Some(out) = child.stdout.take() {
@@ -329,7 +333,7 @@ pub fn install(disk: &str, mut each: impl FnMut(InstallEvent)) -> InstallEvent {
         }
     }
     let ok = child.wait().is_ok_and(|s| s.success());
-    end.unwrap_or_else(|| InstallEvent::Failed(if ok { "The installer stopped without finishing.".into() } else { "The installer stopped.".into() }))
+    end.unwrap_or_else(|| InstallEvent::Failed(if ok { tr!("The installer stopped without finishing.") } else { tr!("The installer stopped.") }))
 }
 
 // ------------------------------------------------------------------ power and updates

@@ -3,13 +3,18 @@
 //! Results update with every letter, and the row above the keys holds the best matches to
 //! open straight away, or recent searches before anything is typed.
 //! Controller: ✕ presses the key, □ deletes, △ adds a space, R2 or Options shows the results,
-//! ○ closes. A keyboard types straight in, as on the Wi-Fi card.
+//! ○ closes. A keyboard types straight in, as on the Wi-Fi card. The "áç" key swaps the letters
+//! for accented ones (and punctuation), and back.
 
+use tr::tr;
 use crate::app::*;
 use crate::audio::{self, Sound};
 
 /// Character rows, centered under each other like a keyboard's.
 const ROWS: [&str; 4] = ["1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm"];
+/// The same rows with the accents key on: as many keys a row (so the highlight stays put when
+/// it's pressed), for names and passwords in Portuguese and the like.
+const ACCENTED: [&str; 4] = ["1234567890", "áàâãéêíóôõ", "úüçñèìòäö", "-'._@&!"];
 /// As wide as the widest row, in keys.
 const WIDTH: f32 = 10.0;
 /// Rows: the suggestions, the characters, then the actions.
@@ -21,11 +26,18 @@ const MAX_RECENT: usize = 8;
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Action {
     Space,
+    Accents,
     Delete,
     Clear,
     Done,
 }
-const ACTIONS: [(Action, f32); 4] = [(Action::Space, 3.0), (Action::Delete, 2.0), (Action::Clear, 2.0), (Action::Done, 3.0)];
+const ACTIONS: [(Action, f32); 5] =
+    [(Action::Space, 3.0), (Action::Accents, 1.5), (Action::Delete, 1.5), (Action::Clear, 1.5), (Action::Done, 2.5)];
+
+/// The character rows as they are now.
+fn rows(accents: bool) -> [&'static str; 4] {
+    if accents { ACCENTED } else { ROWS }
+}
 
 /// What a key of the row above the letters does.
 #[derive(Clone, PartialEq, Debug)]
@@ -45,6 +57,8 @@ pub struct SearchKeys {
     /// The suggestions on screen, so a press picks the one shown even if the results changed
     /// behind it.
     pub shown: Vec<Suggestion>,
+    /// The accented letters are on the keys (the "áç" key).
+    pub accents: bool,
 }
 
 /// How many keys `row` has, with `suggestions` in the first.
@@ -216,12 +230,13 @@ impl App {
             SUGGESTIONS => return self.sk_pick(col),
             ACTION_ROW => match ACTIONS[col].0 {
                 Action::Space => self.sk_type(' '),
+                Action::Accents => self.sk.accents = !self.sk.accents,
                 Action::Delete => self.sk_delete(),
                 Action::Clear => self.sk_set_query(String::new()),
                 Action::Done => return self.sk_done(),
             },
             r => {
-                if let Some(c) = ROWS[r - 1].chars().nth(col) {
+                if let Some(c) = rows(self.sk.accents)[r - 1].chars().nth(col) {
                     self.sk_type(c);
                 }
             }
@@ -313,8 +328,8 @@ impl App {
         let width = WIDTH / suggestions.len().max(1) as f32;
         ui.set_sk_suggestions(m(suggestions.iter().enumerate()
             .map(|(c, (_, label))| key(label, width, s.row == SUGGESTIONS && s.col == c, false)).collect()));
-        ui.set_sk_suggestions_label(if suggestions.is_empty() { "" } else if self.query.trim().is_empty() { "Recent searches" } else { "Best matches" }.into());
-        let rows: Vec<slint::ModelRc<crate::WjKey>> = ROWS.iter().enumerate().map(|(r, chars)| m(chars.chars().enumerate()
+        ui.set_sk_suggestions_label(if suggestions.is_empty() { String::new() } else if self.query.trim().is_empty() { tr!("Recent searches") } else { tr!("Best matches") }.into());
+        let rows: Vec<slint::ModelRc<crate::WjKey>> = rows(s.accents).iter().enumerate().map(|(r, chars)| m(chars.chars().enumerate()
             .map(|(c, ch)| key(&ch.to_string(), 1.0, s.row == r + 1 && s.col == c, false)).collect())).collect();
         let mut rows = rows.into_iter();
         ui.set_sk_row1(rows.next().unwrap_or_default());
@@ -323,12 +338,14 @@ impl App {
         ui.set_sk_row4(rows.next().unwrap_or_default());
         ui.set_sk_actions(m(ACTIONS.iter().enumerate().map(|(c, (a, width))| {
             let label = match a {
-                Action::Space => "Space",
-                Action::Delete => "Delete",
-                Action::Clear => "Clear",
-                Action::Done => "Show results",
+                Action::Space => tr!("Space"),
+                // What pressing it brings: the accents, or the plain letters back.
+                Action::Accents => if s.accents { "abc".to_string() } else { "áç".to_string() },
+                Action::Delete => tr!("Delete"),
+                Action::Clear => tr!("Clear"),
+                Action::Done => tr!("Show results"),
             };
-            key(label, *width, s.row == ACTION_ROW && s.col == c, *a == Action::Done)
+            crate::WjKey { on: *a == Action::Accents && s.accents, ..key(&label, *width, s.row == ACTION_ROW && s.col == c, *a == Action::Done) }
         }).collect()));
         let n = self.filtered.len();
         ui.set_sk_count(if self.query.trim().is_empty() {
@@ -336,11 +353,9 @@ impl App {
         } else if !self.search_note.is_empty() {
             self.search_note.clone()
         } else if n == 0 {
-            "No matches".into()
-        } else if n == 1 {
-            "1 game".into()
+            tr!("No matches")
         } else {
-            format!("{n} games")
+            tr!("{n} game" | "{n} games" % n)
         }.into());
         ui.set_sk_count_warn(!self.search_note.is_empty() || (n == 0 && !self.query.trim().is_empty()));
         ui.set_sk_enter_done(s.typed || (s.row == ACTION_ROW && ACTIONS[s.col].0 == Action::Done));
@@ -399,6 +414,13 @@ mod tests {
         let total: f32 = ACTIONS.iter().map(|(_, w)| w).sum();
         assert_eq!(total, WIDTH);
         assert!(ROWS.iter().all(|r| r.len() as f32 <= WIDTH));
+        // The accented rows have as many keys, so the highlight stays on a key when they swap.
+        for (plain, accented) in ROWS.iter().zip(ACCENTED) {
+            assert_eq!(plain.chars().count(), accented.chars().count(), "{accented}");
+        }
+        for c in "áàâãéêíóôõúç".chars() {
+            assert!(ACCENTED.iter().any(|r| r.contains(c)), "{c} is on the keys");
+        }
     }
 
     #[test]

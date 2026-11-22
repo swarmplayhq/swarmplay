@@ -4,6 +4,7 @@
 //! error instead of reading outside the image or naming a path outside the installer's stage.
 //! The image is read from a file, or from inside a PlayStation PFS image (`pfs.rs`).
 
+use tr::tr;
 use anyhow::{ensure, Context, Result};
 use std::{fs::File, os::unix::fs::FileExt};
 
@@ -60,7 +61,7 @@ impl Volume {
     pub fn open_image(file: Box<dyn Image>) -> Result<Self> {
         let mut b = [0u8; 512];
         file.read_image_at(&mut b, 0).context("Read exFAT boot sector")?;
-        ensure!(&b[3..11] == SIGNATURE && b[510] == 0x55 && b[511] == 0xAA, "Not an exFAT image");
+        ensure!(&b[3..11] == SIGNATURE && b[510] == 0x55 && b[511] == 0xAA, tr!("Not an exFAT image"));
         let u32_at = |o: usize| u32::from_le_bytes(b[o..o + 4].try_into().unwrap()) as u64;
         let (sector_shift, cluster_shift) = (b[108] as u32, b[109] as u32);
         ensure!((9..=12).contains(&sector_shift) && sector_shift + cluster_shift <= 25, "Unsupported exFAT sector or cluster size");
@@ -70,7 +71,7 @@ impl Volume {
         let len = file.len()?;
         ensure!(count >= 1 && fat_len >= (count + 2) * 4 && fat + fat_len <= len, "Invalid exFAT allocation table");
         ensure!(heap.checked_add(count * cluster).is_some_and(|end| end <= len),
-            "The exFAT image is shorter than its header says; wait until the download is complete");
+            tr!("The exFAT image is shorter than its header says; wait until the download is complete"));
         ensure!(root >= 2 && root - 2 < count, "Invalid exFAT root folder");
         Ok(Self { file, cluster, fat, heap, count: count as u32, root: root as u32 })
     }
@@ -227,7 +228,7 @@ fn parse_folder(data: &[u8]) -> Result<Vec<Raw>> {
         let end = i + 32 * (1 + secondary);
         ensure!(end <= data.len(), "exFAT folder entry is cut off");
         let set = &data[i..end];
-        ensure!(checksum(set) == u16::from_le_bytes([set[2], set[3]]), "exFAT folder entry checksum mismatch; the image is damaged");
+        ensure!(checksum(set) == u16::from_le_bytes([set[2], set[3]]), tr!("exFAT folder entry checksum mismatch; the image is damaged"));
         let attributes = u16::from_le_bytes([set[4], set[5]]);
         let s = &set[32..64];
         ensure!(s[0] == 0xC0, "exFAT file entry has no stream extension");

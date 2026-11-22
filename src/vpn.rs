@@ -5,6 +5,7 @@
 //! provider's file and switched on and off through NetworkManager.
 
 use std::collections::HashSet;
+use tr::tr;
 use std::path::Path;
 use std::process::Command;
 
@@ -130,7 +131,7 @@ fn parse_saved(text: &str) -> Vec<Saved> {
 }
 
 fn nmcli(args: &[&str]) -> Result<String, String> {
-    let out = Command::new("nmcli").args(args).output().map_err(|_| "NetworkManager (nmcli) isn't installed".to_string())?;
+    let out = Command::new("nmcli").args(args).output().map_err(|_| tr!("NetworkManager (nmcli) isn't installed"))?;
     let text = String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr);
     if out.status.success() {
         Ok(text)
@@ -145,11 +146,11 @@ pub fn nm_import(file: &Path) -> Result<String, String> {
     let kind = match file.extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase).as_deref() {
         Some("conf") => "wireguard",
         Some("ovpn") => "openvpn",
-        _ => return Err("Choose a WireGuard .conf or OpenVPN .ovpn file".into()),
+        _ => return Err(tr!("Choose a WireGuard .conf or OpenVPN .ovpn file")),
     };
     let out = nmcli(&["connection", "import", "type", kind, "file", &file.to_string_lossy()])?;
     // "Connection 'wg-se' (uuid) successfully added."
-    let name = out.split('\'').nth(1).map(str::to_string).ok_or("NetworkManager didn't name the connection")?;
+    let name = out.split('\'').nth(1).map(str::to_string).ok_or_else(|| tr!("NetworkManager didn't name the connection"))?;
     nm_up(&name)?;
     Ok(name)
 }
@@ -173,8 +174,8 @@ pub fn has_file_dialog() -> bool {
 pub fn choose_file() -> Result<Option<std::path::PathBuf>, ()> {
     let home = std::env::var("HOME").unwrap_or_default();
     let tries: [(&str, Vec<String>); 2] = [
-        ("kdialog", vec!["--title".into(), "Add a VPN".into(), "--getopenfilename".into(), home.clone(), "*.conf *.ovpn|VPN files".into()]),
-        ("zenity", vec!["--file-selection".into(), "--title=Add a VPN".into(), "--file-filter=VPN files | *.conf *.ovpn".into()]),
+        ("kdialog", vec!["--title".into(), tr!("Add a VPN"), "--getopenfilename".into(), home.clone(), format!("*.conf *.ovpn|{}", tr!("VPN files"))]),
+        ("zenity", vec!["--file-selection".into(), format!("--title={}", tr!("Add a VPN")), format!("--file-filter={} | *.conf *.ovpn", tr!("VPN files"))]),
     ];
     for (tool, args) in tries {
         if let Ok(out) = Command::new(tool).args(&args).output() {

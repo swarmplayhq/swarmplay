@@ -6,6 +6,7 @@ use crate::audio::{self, Sound};
 use crate::config::{PRESENT_MODES, RESOLUTIONS};
 use crate::util;
 use crate::{SettingData, SettingSection};
+use tr::tr;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum SId {
@@ -73,6 +74,7 @@ pub enum SId {
     ThemeAccent,
     // Launcher
     Display,
+    Language,
     Sounds,
     Share,
     // Advanced
@@ -94,6 +96,15 @@ pub fn vpn_signature() -> String {
     crate::vpn::list().iter().map(|v| format!("{}:{} ", v.name, v.connected)).collect()
 }
 
+/// A download's progress on its row, which already names the app: "Downloading KytyPS5 0.4 · 45%"
+/// → "0.4 · 45%" (from the version on, in any language); without it, the whole text.
+fn from_version(progress: &str, version: Option<&str>) -> String {
+    match version.filter(|v| !v.is_empty()).and_then(|v| progress.find(v)) {
+        Some(i) => progress[i..].to_string(),
+        None => progress.to_string(),
+    }
+}
+
 /// Where a row went after Settings was rebuilt: the same row and name; else the same kind of row
 /// with that name (a device that moved in the list); else the same row.
 fn same_row(row: (SId, &str), rows: &[(SId, &str)]) -> Option<usize> {
@@ -103,9 +114,6 @@ fn same_row(row: (SId, &str), rows: &[(SId, &str)]) -> Option<usize> {
         .or_else(|| rows.iter().position(|r| r.0 == row.0))
 }
 
-fn plural(n: usize, one: &str) -> String {
-    format!("{n} {one}{}", if n == 1 { "" } else { "s" })
-}
 
 impl App {
     /// Sections in the order players need them; expert options folded under Advanced.
@@ -116,31 +124,31 @@ impl App {
 
         rows.extend(self.system_rows());
         header(&mut rows, "GAMES");
-        let mut r = row(1, "Game folders");
+        let mut r = row(1, &tr!("Game folders"));
         r.value = cfg.game_dirs.iter().map(|d| util::display_path(d)).collect::<Vec<_>>().join("; ").into();
-        r.hint = format!("{} found · more than one folder? Put a ; between them", plural(self.locals.len(), "installed game")).into();
+        r.hint = tr!("{n} installed game found · more than one folder? Put a ; between them" | "{n} installed games found · more than one folder? Put a ; between them" % self.locals.len()).into();
         rows.push((SId::Dirs, r));
-        rows.push((SId::Rescan, row(4, "Rescan game folders")));
+        rows.push((SId::Rescan, row(4, &tr!("Rescan game folders"))));
 
         header(&mut rows, "STORAGE");
         rows.extend(self.storage_rows().0);
 
         header(&mut rows, "PLAYING");
-        let mut r = row(2, "Play games in fullscreen");
+        let mut r = row(2, &tr!("Play games in fullscreen"));
         r.on = cfg.fullscreen;
         rows.push((SId::Fullscreen, r));
-        let mut r = row(2, "Return to the launcher when a game closes");
+        let mut r = row(2, &tr!("Return to the launcher when a game closes"));
         r.on = cfg.return_on_exit;
         rows.push((SId::ReturnOnExit, r));
         let connected = !crate::gamepad::connected().is_empty();
-        let mut r = row(4, "Controller & keyboard");
+        let mut r = row(4, &tr!("Controller & keyboard"));
         r.value = crate::gamepad::status().into();
         r.value_kind = if connected { 1 } else { 0 };
-        r.hint = if connected { "Your controller works in games with no setup" } else { "Games play best with a controller · open to see the keyboard keys" }.into();
+        r.hint = if connected { tr!("Your controller works in games with no setup") } else { tr!("Games play best with a controller · open to see the keyboard keys") }.into();
         rows.push((SId::Controls, r));
-        let mut r = row(2, "Controller in Windows games");
+        let mut r = row(2, &tr!("Controller in Windows games"));
         r.on = cfg.wine_sdl_pads;
-        r.hint = "Shows any controller (DualShock, DualSense…) to Windows games as an Xbox one · takes effect at the next start".into();
+        r.hint = tr!("Shows any controller (DualShock, DualSense…) to Windows games as an Xbox one · takes effect at the next start").into();
         rows.push((SId::WineSdlPads, r));
         rows.push((SId::ThisPc, self.this_pc_row()));
         rows.extend(self.overlay_rows(&cfg));
@@ -158,46 +166,46 @@ impl App {
         let connected = crate::vpn::active(&cfg.vpn_interface);
         let nm = crate::vpn::nm_available();
         let saved = if nm { crate::vpn::nm_saved() } else { Vec::new() };
-        let mut r = row(2, "Download only through a VPN");
+        let mut r = row(2, &tr!("Download only through a VPN"));
         r.on = cfg.vpn_only;
         (r.hint, r.hint_kind) = match (&connected, cfg.vpn_only) {
-            (_, false) => ("Hides your IP address from other players · uses your own VPN".into(), 0),
-            (Some(iface), true) => (format!("Protected · downloads only use {iface}").into(), 1),
-            (None, true) => ("Downloads wait until your VPN is connected".into(), 2),
+            (_, false) => (tr!("Hides your IP address from other players · uses your own VPN").into(), 0),
+            (Some(iface), true) => (tr!("Protected · downloads only use {iface}", iface).into(), 1),
+            (None, true) => (tr!("Downloads wait until your VPN is connected").into(), 2),
         };
         rows.push((SId::VpnOnly, r));
-        let mut r = row(4, "Your VPN");
+        let mut r = row(4, &tr!("Your VPN"));
         let active_saved = saved.iter().find(|v| v.active);
         (r.value, r.value_kind, r.hint) = if !self.vpn_busy.is_empty() {
             (self.vpn_busy.clone().into(), 0, "".into())
         } else if let Some(v) = active_saved {
-            (format!("{} · Connected", v.name).into(), 1, "Press to disconnect".into())
+            (tr!("{} · Connected", v.name).into(), 1, tr!("Press to disconnect").into())
         } else if let Some(iface) = &connected {
-            (format!("{iface} · Connected").into(), 1, "Connected by your VPN app".into())
+            (tr!("{} · Connected", iface).into(), 1, tr!("Connected by your VPN app").into())
         } else if let Some(v) = saved.first() {
-            (format!("{} · Connect", v.name).into(), 3, "Not connected".into())
+            (tr!("{} · Connect", v.name).into(), 3, tr!("Not connected").into())
         } else if nm {
-            ("Add one".into(), 3, "From your VPN provider: a WireGuard .conf or OpenVPN .ovpn file".into())
+            (tr!("Add one").into(), 3, tr!("From your VPN provider: a WireGuard .conf or OpenVPN .ovpn file").into())
         } else {
-            ("None".into(), 0, "Connect your VPN app, and downloads use it".into())
+            (tr!("None").into(), 0, tr!("Connect your VPN app, and downloads use it").into())
         };
         rows.push((SId::Vpn, r));
         // Without a file dialog, its path is typed here (even for the first one).
         let dialog = crate::vpn::has_file_dialog();
         if nm && (!saved.is_empty() || !dialog) {
-            let mut r = row(if dialog { 4 } else { 1 }, "Add a VPN from a file");
+            let mut r = row(if dialog { 4 } else { 1 }, &tr!("Add a VPN from a file"));
             r.value = if dialog { "WireGuard .conf · OpenVPN .ovpn".into() } else { "".into() };
-            r.hint = if dialog { "Download the file from your VPN provider's website" } else { "Type the path of a WireGuard .conf or OpenVPN .ovpn file" }.into();
+            r.hint = if dialog { tr!("Download the file from your VPN provider's website") } else { tr!("Type the path of a WireGuard .conf or OpenVPN .ovpn file") }.into();
             rows.push((SId::VpnAdd, r));
         }
-        let mut r = row(2, "Keep sharing finished downloads");
+        let mut r = row(2, &tr!("Keep sharing finished downloads"));
         r.on = cfg.seed_after_download;
-        r.hint = "Helps other players download faster · uploads at most 128 KiB/s".into();
+        r.hint = tr!("Helps other players download faster · uploads at most 128 KiB/s").into();
         rows.push((SId::SeedCompleted, r));
         // No controller button opens Downloads (the top bar's icon does), so a controller player
         // just presses this row; Ctrl+D is only worth showing to keyboard players.
-        let mut r = row(4, "Open downloads");
-        r.value = if self.pad_hints { "Open".into() } else { "Open · Ctrl+D".into() };
+        let mut r = row(4, &tr!("Open downloads"));
+        r.value = if self.pad_hints { tr!("Open").into() } else { tr!("Open · Ctrl+D").into() };
         rows.push((SId::Downloads, r));
 
         header(&mut rows, "UPDATES");
@@ -205,17 +213,17 @@ impl App {
         let cur = crate::update::current_version();
         let latest = self.upd.latest.as_ref().map(|r| r.version.clone());
         let mut r = row(4, "SwarmPlay");
-        r.hint = "This app".into();
+        r.hint = tr!("This app").into();
         let (value, kind) = if let Some(v) = &self.upd.installed {
-            (format!("Restart to finish · {v}"), 3)
+            (tr!("Restart to finish · {v}", v), 3)
         } else if self.upd.busy {
-            (self.upd.progress.replace("Downloading SwarmPlay ", ""), 0)
+            (from_version(&self.upd.progress, latest.as_deref()), 0)
         } else if self.upd.checking {
-            ("Checking…".to_string(), 0)
+            (tr!("Checking…"), 0)
         } else if self.app_update_available() {
-            (latest.map(|l| format!("Update to {l}")).unwrap_or_default(), 3)
+            (latest.map(|l| tr!("Update to {l}", l)).unwrap_or_default(), 3)
         } else if latest.is_some() {
-            (format!("{cur} · Up to date"), 1)
+            (tr!("{cur} · Up to date", cur), 1)
         } else {
             (cur.to_string(), 0)
         };
@@ -230,21 +238,21 @@ impl App {
         let managed = self.kyty_managed();
         let kyty_state = crate::kyty::load_state();
         let mut r = row(4, "KytyPS5");
-        r.hint = "Runs PS5 games".into();
+        r.hint = tr!("Runs PS5 games").into();
         let (value, kind) = if self.kyty.busy {
-            (self.kyty.progress.replace("Downloading KytyPS5 ", ""), 0)
+            (from_version(&self.kyty.progress, self.kyty.latest.as_ref().map(|l| crate::kyty::pretty(&l.tag)).as_deref()), 0)
         } else if self.kyty.checking {
-            ("Checking…".to_string(), 0)
+            (tr!("Checking…"), 0)
         } else if !managed && !ok {
-            ("Install".to_string(), 3)
+            (tr!("Install"), 3)
         } else if !managed {
-            r.hint = format!("Runs PS5 games · you use your own build{} · switching keeps your saves",
+            r.hint = tr!("Runs PS5 games · you use your own build{} · switching keeps your saves",
                 self.kyty.version.strip_prefix("Self-built").map(|v| format!(" ({})", v.trim())).unwrap_or_default()).into();
-            ("Switch to official builds".to_string(), 3)
+            (tr!("Switch to official builds"), 3)
         } else if self.kyty_update_available() {
-            (self.kyty.latest.as_ref().map(|l| format!("Update to {}", crate::kyty::pretty(&l.tag))).unwrap_or_default(), 3)
+            (self.kyty.latest.as_ref().map(|l| tr!("Update to {l}", l = crate::kyty::pretty(&l.tag))).unwrap_or_default(), 3)
         } else if self.kyty.latest.is_some() {
-            (format!("{} · Up to date", crate::kyty::pretty(&kyty_state.installed)), 1)
+            (tr!("{cur} · Up to date", cur = crate::kyty::pretty(&kyty_state.installed)), 1)
         } else {
             (crate::kyty::pretty(&kyty_state.installed), 0)
         };
@@ -259,19 +267,19 @@ impl App {
         let shad_installed = crate::shad::installed();
         let mut r = row(4, "shadPS4");
         r.hint = if shad_installed {
-            "Runs PS4 games"
+            tr!("Runs PS4 games")
         } else if cfg.shad_auto_update {
-            "Runs PS4 games · installs by itself in the background"
+            tr!("Runs PS4 games · installs by itself in the background")
         } else {
-            "Runs PS4 games · installs when you first play one"
+            tr!("Runs PS4 games · installs when you first play one")
         }
         .into();
         let (value, kind) = if self.shad.busy {
             (self.shad.progress.clone(), 0)
         } else if !shad_installed {
-            ("Install".to_string(), 3)
+            (tr!("Install"), 3)
         } else if shad_state.latest == shad_state.installed {
-            (format!("{} · Up to date", crate::shad::pretty(&shad_state.installed)), 1)
+            (tr!("{cur} · Up to date", cur = crate::shad::pretty(&shad_state.installed)), 1)
         } else {
             (crate::shad::pretty(&shad_state.installed), 0)
         };
@@ -281,20 +289,20 @@ impl App {
         }
         rows.push((SId::ShadUpdate, r));
 
-        let mut r = row(2, "Update automatically");
+        let mut r = row(2, &tr!("Update automatically"));
         r.on = cfg.app_auto_update && cfg.kyty_auto_update && cfg.shad_auto_update;
-        r.hint = "Checks every few hours · updates wait until you close your game".into();
+        r.hint = tr!("Checks every few hours · updates wait until you close your game").into();
         rows.push((SId::AutoUpdate, r));
         // Rollbacks only when there is something to go back to.
-        let mut rollback_hint = "For when an update breaks a game";
+        let mut rollback_hint = tr!("For when an update breaks a game");
         if managed && !kyty_state.previous.is_empty() && crate::kyty::root().join("versions").join(&kyty_state.previous).is_dir() {
-            let mut r = row(4, "Go back to the previous KytyPS5");
+            let mut r = row(4, &tr!("Go back to the previous KytyPS5"));
             r.value = crate::kyty::pretty(&kyty_state.previous).into();
             r.hint = std::mem::take(&mut rollback_hint).into();
             rows.push((SId::KytyRollback, r));
         }
         if !shad_state.previous.is_empty() && crate::shad::root().join("versions").join(&shad_state.previous).is_dir() {
-            let mut r = row(4, "Go back to the previous shadPS4");
+            let mut r = row(4, &tr!("Go back to the previous shadPS4"));
             r.value = crate::shad::pretty(&shad_state.previous).into();
             r.hint = rollback_hint.into();
             rows.push((SId::ShadRollback, r));
@@ -304,66 +312,70 @@ impl App {
         rows.extend(self.theme_rows());
 
         header(&mut rows, "LAUNCHER");
-        let mut r = row(3, "Display");
+        let mut r = row(3, &tr!("Language"));
+        r.value = crate::i18n::current().name().into();
+        rows.push((SId::Language, r));
+        let mut r = row(3, &tr!("Display"));
         r.value = match self.monitors.iter().find(|m| m.name == cfg.monitor) {
             Some(m) => format!("{} · {}×{}", m.name, m.w, m.h),
-            None => "Primary display".into(),
+            None => tr!("Primary display"),
         }
         .into();
         rows.push((SId::Display, r));
         let unshared = self.my_results.unshared().len();
-        let mut r = row(4, "Share your game ratings");
-        (r.value, r.value_kind) = if unshared > 0 { (format!("{unshared} to share").into(), 3) } else { ("Nothing new".into(), 0) };
+        let mut r = row(4, &tr!("Share your game ratings"));
+        (r.value, r.value_kind) = if unshared > 0 { (tr!("{unshared} to share", unshared).into(), 3) } else { (tr!("Nothing new").into(), 0) };
         r.hint = if self.my_results.games.is_empty() {
-            "Rate a game from its Options menu after you play it, then share it here".into()
+            tr!("Rate a game from its Options menu after you play it, then share it here").into()
         } else {
-            "Tells the emulator teams which games work on Linux · needs a free GitHub account".into()
+            tr!("Tells the emulator teams which games work on Linux · needs a free GitHub account").into()
         };
         rows.push((SId::Share, r));
 
         // Its own section: out of the way without a switch to show it.
         header(&mut rows, "ADVANCED");
         {
-            let mut r = row(1, "KytyPS5 location");
+            let mut r = row(1, &tr!("KytyPS5 location"));
             r.value = util::display_path(&cfg.emulator).into();
-            (r.hint, r.hint_kind) = if ok { ("Found".into(), 1) } else { ("Nothing runnable at this path".into(), 2) };
+            (r.hint, r.hint_kind) = if ok { (tr!("Found").into(), 1) } else { (tr!("Nothing runnable at this path").into(), 2) };
             rows.push((SId::Emulator, r));
-            let mut r = row(3, "Resolution (PS5 games)");
+            let mut r = row(3, &tr!("Resolution (PS5 games)"));
             r.value = format!("{} × {}", cfg.width, cfg.height).into();
             rows.push((SId::Resolution, r));
-            let mut r = row(3, "Present mode (PS5 games)");
-            r.value = PRESENT_MODES.iter().find(|(k, _)| *k == cfg.present_mode).map(|(_, l)| *l).unwrap_or(cfg.present_mode.as_str()).into();
-            r.hint = "Try V-Sync if the picture tears".into();
+            let mut r = row(3, &tr!("Present mode (PS5 games)"));
+            r.value = crate::config::present_label(&cfg.present_mode).into();
+            r.hint = tr!("Try V-Sync if the picture tears").into();
             rows.push((SId::Present, r));
-            let mut r = row(2, "AMD CPU patches (PS5 games)");
+            let mut r = row(2, &tr!("AMD CPU patches (PS5 games)"));
             r.on = cfg.amd_cpu;
-            r.hint = "Only for AMD processors".into();
+            r.hint = tr!("Only for AMD processors").into();
             rows.push((SId::Amd, r));
-            let mut r = row(1, "Extra KytyPS5 arguments");
+            let mut r = row(1, &tr!("Extra KytyPS5 arguments"));
             r.value = cfg.extra_args.clone().into();
-            r.hint = "For example --vblank-frequency 60 --tessellation".into();
+            r.hint = tr!("For example --vblank-frequency 60 --tessellation").into();
             rows.push((SId::Extra, r));
 
-            let mut r = row(4, "Check for new releases");
+            let mut r = row(4, &tr!("Check for new releases"));
             r.value = if self.syncing {
-                "Reloading…".into()
+                tr!("Reloading…").into()
             } else {
                 let snapshot = self.games.first().map(|game| util::fmt_date(util::parse_iso_date(&game.g.peers_observed))).unwrap_or_default();
-                format!("{} · {}", plural(self.games.len(), "release"), if snapshot.is_empty() { "date unknown" } else { &snapshot }).into()
+                let snapshot = if snapshot.is_empty() { tr!("date unknown") } else { snapshot };
+                tr!("{n} release · {date}" | "{n} releases · {date}" % self.games.len(), date = snapshot).into()
             };
-            r.hint = "Checks by itself every 6 hours · the list is updated daily, with seeder counts from that day".into();
+            r.hint = tr!("Checks by itself every 6 hours · the list is updated daily, with seeder counts from that day").into();
             rows.push((SId::Refresh, r));
         }
 
         header(&mut rows, "");
         if crate::os::system::on_os() {
             // The launcher is the whole screen here: quitting it would only start it again.
-            rows.push((SId::Restart, row(4, "Restart")));
-            let mut r = row(4, "Shut down");
+            rows.push((SId::Restart, row(4, &tr!("Restart"))));
+            let mut r = row(4, &tr!("Shut down"));
             r.danger = true;
             rows.push((SId::ShutDown, r));
         } else {
-            let mut r = row(4, "Quit SwarmPlay");
+            let mut r = row(4, &tr!("Quit SwarmPlay"));
             r.value = "Ctrl+Q".into();
             r.danger = true;
             rows.push((SId::Quit, r));
@@ -418,37 +430,36 @@ impl App {
 
     /// A section's name in the left column, what it's for, and a note beside it (what needs you).
     fn section_info(&self, header: &str) -> SettingSection {
-        let mut chars = header.chars();
-        let label: String = chars.next().into_iter().chain(chars.flat_map(|c| c.to_lowercase())).collect();
+        let label = section_title(header);
         let (sub, (note, note_kind)) = match header {
-            "SYSTEM" => ("Internet, Bluetooth and updates", (String::new(), 0)),
-            "GAMES" => ("Where your games live", (String::new(), 0)),
-            "PLAYING" => ("What happens when you start a game", match crate::gamepad::connected().first() {
+            "SYSTEM" => (tr!("Internet, Bluetooth and updates"), (String::new(), 0)),
+            "GAMES" => (tr!("Where your games live"), (String::new(), 0)),
+            "PLAYING" => (tr!("What happens when you start a game"), match crate::gamepad::connected().first() {
                 Some(name) => (name.clone(), 0),
                 None => (String::new(), 0),
             }),
-            "DOWNLOADS" => ("How games are downloaded and shared", {
+            "DOWNLOADS" => (tr!("How games are downloaded and shared"), {
                 let active = self.downloads.snapshot().iter().filter(|j| j.state.active()).count();
-                if active > 0 { (format!("{active} active"), 1) } else { (String::new(), 0) }
+                if active > 0 { (tr!("{active} active", active), 1) } else { (String::new(), 0) }
             }),
-            "UPDATES" => ("The launcher and its emulators", {
+            "UPDATES" => (tr!("The launcher and its emulators"), {
                 let ready = [self.app_update_available(), self.kyty_update_available()].iter().filter(|r| **r).count();
                 // Installed and waiting: a restart is what's needed.
-                if self.upd.installed.is_some() { ("Restart".to_string(), 2) }
-                else if ready > 0 { (format!("{ready} ready"), 2) } else { (String::new(), 0) }
+                if self.upd.installed.is_some() { (tr!("Restart"), 2) }
+                else if ready > 0 { (tr!("{ready} ready", ready), 2) } else { (String::new(), 0) }
             }),
-            "THEME" => ("Wallpaper and accent colour", (String::new(), 0)),
-            "STORAGE" => ("Where games download and install, and the room left", match self.storage_places().into_iter().find(|p| p.default) {
-                Some(p) if p.total > 0 => (format!("{:.0} GB free", p.free as f64 / (1u64 << 30) as f64), if p.free < 50 << 30 { 2 } else { 0 }),
+            "THEME" => (tr!("Wallpaper and accent colour"), (String::new(), 0)),
+            "STORAGE" => (tr!("Where games download and install, and the room left"), match self.storage_places().into_iter().find(|p| p.default) {
+                Some(p) if p.total > 0 => (tr!("{gb} GB free", gb = crate::i18n::num(p.free as f64 / (1u64 << 30) as f64, 0)), if p.free < 50 << 30 { 2 } else { 0 }),
                 _ => (String::new(), 0),
             }),
-            "NOTIFICATIONS" => ("What lets you know, and when", if cfg_dnd(self) { ("Do not disturb".to_string(), 2) } else { (String::new(), 0) }),
-            "SOUND" => ("Volume and where sound goes", if self.sound.muted { ("Muted".to_string(), 2) } else { (self.sound.volume.map(|v| format!("{v}%")).unwrap_or_default(), 0) }),
-            "LAUNCHER" => ("Display and your game ratings", (String::new(), 0)),
-            "ADVANCED" => ("KytyPS5 location and video options, the game catalog", (String::new(), 0)),
-            _ => ("", (String::new(), 0)),
+            "NOTIFICATIONS" => (tr!("What lets you know, and when"), if cfg_dnd(self) { (tr!("Do not disturb"), 2) } else { (String::new(), 0) }),
+            "SOUND" => (tr!("Volume and where sound goes"), if self.sound.muted { (tr!("Muted"), 2) } else { (self.sound.volume.map(|v| format!("{v}%")).unwrap_or_default(), 0) }),
+            "LAUNCHER" => (tr!("Language, display and your game ratings"), (String::new(), 0)),
+            "ADVANCED" => (tr!("KytyPS5 location and video options, the game catalog"), (String::new(), 0)),
+            _ => (String::new(), (String::new(), 0)),
         };
-        let sub = if header == "ABOUT" { format!("SwarmPlay {}", crate::update::current_version()) } else { sub.to_string() };
+        let sub = if header == "ABOUT" { format!("SwarmPlay {}", crate::update::current_version()) } else { sub };
         // Its icon on the first page (ui/theme.slint Icons.get).
         let icon = match header {
             "SYSTEM" => "wifi", "GAMES" => "grid", "PLAYING" => "gamepad", "STORAGE" => "disk", "SOUND" => "sound", "NOTIFICATIONS" => "bell", "DOWNLOADS" => "download",
@@ -460,9 +471,9 @@ impl App {
     /// The launcher's version and whether it's up to date, under the sections.
     fn version_line(&self) -> String {
         let cur = crate::update::current_version();
-        if self.upd.installed.is_some() { format!("SwarmPlay {cur} · restart to update") }
-        else if self.app_update_available() { format!("SwarmPlay {cur} · update ready") }
-        else if self.upd.latest.is_some() { format!("SwarmPlay {cur} · up to date") }
+        if self.upd.installed.is_some() { tr!("SwarmPlay {cur} · restart to update", cur) }
+        else if self.app_update_available() { tr!("SwarmPlay {cur} · update ready", cur) }
+        else if self.upd.latest.is_some() { tr!("SwarmPlay {cur} · up to date", cur) }
         else { format!("SwarmPlay {cur}") }
     }
 
@@ -648,6 +659,28 @@ impl App {
         self.ui().set_settings_y(-(target - view * 0.35).clamp(0.0, max) * self.scale);
     }
 
+    /// The language changed: everything already handed to the window is written again in it (the
+    /// window's own texts switched by themselves). Panels that are closed build in it when opened;
+    /// the clock, downloads, installs and the battery are rewritten by the tick anyway.
+    pub fn relocalize(&mut self) {
+        // Settings first (it's where the language is chosen): its rows, the sections' titles,
+        // subtitles and notes, the version line, the title of the page that's open. The selection
+        // stays on the Language row (same_row finds a row by its id once its name changed).
+        self.refresh_settings();
+        self.push_settings_nav();
+        // Home's row and hero, the Library (sort names, genres, the list's date), the Game Hub.
+        self.push_all();
+        self.push_welcome();
+        self.push_downloads();
+        self.push_ring();
+        // The pop-ups, the Control Center's last notification, the list.
+        self.push_notes();
+        self.push_controller_status();
+        // The games' descriptions and genres in the new language (Portuguese from the BR store),
+        // fetched in the background for whatever isn't cached yet in it.
+        self.start_enrich();
+    }
+
     fn save_cfg(&mut self, f: impl FnOnce(&mut crate::config::Config)) {
         let mut c = self.cfg.lock().unwrap();
         f(&mut c);
@@ -724,6 +757,14 @@ impl App {
                 let next = PRESENT_MODES[(pos + dir).rem_euclid(PRESENT_MODES.len() as i32) as usize].0.to_string();
                 self.save_cfg(|c| c.present_mode = next);
             }
+            SId::Language => {
+                use crate::i18n::Lang;
+                let pos = Lang::ALL.iter().position(|l| *l == crate::i18n::current()).unwrap_or(0) as i32;
+                let next = Lang::ALL[(pos + dir).rem_euclid(Lang::ALL.len() as i32) as usize];
+                self.save_cfg(|c| c.language = next.code().into());
+                crate::i18n::set_lang(next);
+                self.relocalize();
+            }
             SId::Display => {
                 let names: Vec<String> = std::iter::once(String::new()).chain(self.monitors.iter().map(|m| m.name.clone())).collect();
                 let cur = self.cfg.lock().unwrap().monitor.clone();
@@ -736,7 +777,7 @@ impl App {
                 let on = dir > 0;
                 let vpn = { let c = self.cfg.lock().unwrap(); on.then(|| c.vpn_interface.clone()) };
                 if let Err(error) = self.downloads.set_vpn(vpn) {
-                    self.note_setting(SId::VpnOnly, &format!("Couldn't change it: {error}"), 2);
+                    self.note_setting(SId::VpnOnly, &tr!("Couldn't change it: {error}", error), 2);
                     return;
                 }
                 self.save_cfg(|c| c.vpn_only = on);
@@ -745,7 +786,7 @@ impl App {
             SId::SeedCompleted => {
                 let on = dir > 0;
                 if let Err(error) = self.downloads.set_seed_after_download(on) {
-                    self.note_setting(SId::SeedCompleted, &format!("Couldn't change it: {error}"), 2);
+                    self.note_setting(SId::SeedCompleted, &tr!("Couldn't change it: {error}", error), 2);
                     return;
                 }
                 self.save_cfg(|c| c.seed_after_download = on);
@@ -813,7 +854,7 @@ impl App {
                 let on = self.settings_rows[i].on;
                 self.settings_change(i, if on { -1 } else { 1 });
             }
-            SId::Resolution | SId::Present | SId::Display | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
+            SId::Resolution | SId::Present | SId::Display | SId::Language | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
             // A press turns it up a step (◂ ▸ go both ways).
             SId::SoundVolume => self.settings_change(i, 1),
             // A press goes round Off, Low, Medium, High.
@@ -873,8 +914,9 @@ impl App {
                 audio::play(Sound::Select);
                 self.rescan_library();
                 let n = self.locals.len();
-                self.note_setting(SId::Rescan, &format!("{} found", plural(n, "game")), 1);
-                self.toast("Game folders scanned", &format!("{} found", plural(n, "game")), "folder", crate::toast::DONE);
+                let found = tr!("{n} game found" | "{n} games found" % n);
+                self.note_setting(SId::Rescan, &found, 1);
+                self.toast(&tr!("Game folders scanned"), &found, "folder", crate::toast::DONE);
             }
             SId::Quit => {
                 crate::app::quit("Settings → Quit SwarmPlay");
@@ -888,12 +930,12 @@ impl App {
                 let saved = crate::vpn::nm_saved();
                 if let Some(v) = saved.iter().find(|v| v.active) {
                     let name = v.name.clone();
-                    self.vpn_task(SId::Vpn, "Disconnecting…", move || crate::vpn::nm_down(&name));
+                    self.vpn_task(SId::Vpn, &tr!("Disconnecting…"), move || crate::vpn::nm_down(&name));
                 } else if crate::vpn::active("").is_some() {
-                    self.note_setting(SId::Vpn, "Connected by your VPN app: switch it off there", 0);
+                    self.note_setting(SId::Vpn, &tr!("Connected by your VPN app: switch it off there"), 0);
                 } else if let Some(v) = saved.first() {
                     let name = v.name.clone();
-                    self.vpn_task(SId::Vpn, "Connecting…", move || crate::vpn::nm_up(&name));
+                    self.vpn_task(SId::Vpn, &tr!("Connecting…"), move || crate::vpn::nm_up(&name));
                 } else {
                     self.vpn_add(i);
                 }
@@ -927,7 +969,7 @@ impl App {
                 self.save_cfg(|c| c.game_dirs = dirs);
                 self.rescan_library();
                 let n = self.locals.len();
-                self.note_setting(SId::Dirs, &format!("{} found", plural(n, "installed game")), 1);
+                self.note_setting(SId::Dirs, &tr!("{n} installed game found" | "{n} installed games found" % n), 1);
             }
             SId::Extra => self.save_cfg(|c| c.extra_args = t),
             // Left as it opened: nothing chosen.
@@ -936,11 +978,11 @@ impl App {
             // Left as it opened: nothing chosen. A folder: not the file yet.
             SId::VpnAdd if t == "~/Downloads/" => {}
             SId::VpnAdd if util::expand_home(&t).is_dir() => {
-                self.note_setting(SId::VpnAdd, "Type the file itself, like ~/Downloads/wg0.conf", 0);
+                self.note_setting(SId::VpnAdd, &tr!("Type the file itself, like ~/Downloads/wg0.conf"), 0);
             }
             SId::VpnAdd if !t.is_empty() => {
                 let file = util::expand_home(&t);
-                self.vpn_task(SId::VpnAdd, "Adding…", move || crate::vpn::nm_import(&file).map(|_| ()));
+                self.vpn_task(SId::VpnAdd, &tr!("Adding…"), move || crate::vpn::nm_import(&file).map(|_| ()));
             }
             _ => {}
         }
@@ -950,23 +992,23 @@ impl App {
     fn this_pc_row(&self) -> SettingData {
         use crate::pc::Verdict;
         use crate::platform::Platform;
-        let mut r = row(4, "This PC");
+        let mut r = row(4, &tr!("This PC"));
         let Some(specs) = self.pc.as_ref().map(|pc| pc.specs()).filter(|_| !self.pc_checking) else {
-            (r.value, r.hint) = ("Checking…".into(), "Reads the processor, memory and graphics card".into());
+            (r.value, r.hint) = (tr!("Checking…").into(), tr!("Reads the processor, memory and graphics card").into());
             return r;
         };
         r.hint = specs.summary().into();
         let (ps5, ps4) = (self.pc_verdict(Platform::Ps5).cloned(), self.pc_verdict(Platform::Ps4).cloned());
         let (Some(ps5), Some(ps4)) = (ps5, ps4) else {
-            (r.value, r.hint_kind) = ("Check again".into(), 2);
-            r.hint = format!("{} · the graphics check didn't finish", r.hint).into();
+            (r.value, r.hint_kind) = (tr!("Check again").into(), 2);
+            r.hint = tr!("{} · the graphics check didn't finish", r.hint).into();
             return r;
         };
         let lower = |v: &Verdict| v.headline().to_lowercase();
         r.value = if ps5 == ps4 {
-            format!("PS5 and PS4 games {}", lower(&ps5)).replace("games won't start", "games won't start here")
+            tr!("PS5 and PS4 games {}", lower(&ps5)).replace("games won't start", "games won't start here")
         } else {
-            format!("PS5: {} · PS4: {}", lower(&ps5), lower(&ps4))
+            tr!("PS5: {} · PS4: {}", lower(&ps5), lower(&ps4))
         }
         .into();
         r.value_kind = if ps5 == Verdict::Good && ps4 == Verdict::Good { 1 } else if matches!((&ps5, &ps4), (Verdict::No(_), _) | (_, Verdict::No(_))) { 2 } else { 0 };
@@ -996,10 +1038,10 @@ impl App {
         }
         // Said on the row pressed: Add a VPN, or Your VPN when there's none yet.
         let id = self.settings_ids.get(i).copied().unwrap_or(SId::VpnAdd);
-        self.vpn_task(id, "Choose the file…", || match crate::vpn::choose_file() {
+        self.vpn_task(id, &tr!("Choose the file…"), || match crate::vpn::choose_file() {
             Ok(Some(file)) => crate::vpn::nm_import(&file).map(|_| ()),
             Ok(None) => Ok(()),
-            Err(()) => Err("There's no file dialog on this PC".into()),
+            Err(()) => Err(tr!("There's no file dialog on this PC")),
         });
     }
 
@@ -1014,7 +1056,7 @@ impl App {
                 with_app(move |app| {
                     app.vpn_busy.clear();
                     if let Err(error) = result {
-                        app.note_setting(id, &format!("Didn't change: {error}"), 2);
+                        app.note_setting(id, &tr!("Didn't change: {error}", error), 2);
                         audio::play(Sound::Error);
                     }
                     if app.overlay == Overlay::Settings {
@@ -1028,12 +1070,12 @@ impl App {
     /// Switch to another display. The UI scale is fixed per window at startup, so the
     /// launcher restarts itself on the new display (about a second).
     pub fn move_to_monitor(&mut self, name: &str) {
-        let label = if name.is_empty() { "the primary display".to_string() } else { name.to_string() };
+        let label = if name.is_empty() { tr!("the primary display") } else { name.to_string() };
         if !self.live.is_empty() {
-            self.note_setting(SId::Display, &format!("Moves to {label} after your game: the launcher can't restart while one is running"), 0);
+            self.note_setting(SId::Display, &tr!("Moves to {label} after your game: the launcher can't restart while one is running", label), 0);
             return;
         }
-        self.note_setting(SId::Display, &format!("Moving to {label}: the launcher restarts there"), 0);
+        self.note_setting(SId::Display, &tr!("Moving to {label}: the launcher restarts there", label), 0);
         slint::Timer::single_shot(std::time::Duration::from_millis(600), || with_app(|app| app.app_restart()));
     }
 }
@@ -1052,6 +1094,26 @@ mod tests {
         assert_eq!(same_row((SId::BtDevice(0), "Xbox"), &rows), Some(4));
         // A network row that's gone has no place.
         assert_eq!(same_row((SId::WifiNet(3), "Office"), &rows), None);
+        // The language changed: a row's name is new, its id still finds it.
+        assert_eq!(same_row((SId::Internet, "Internet (old name)"), &rows), Some(1));
+    }
+
+    #[test]
+    fn progress_shows_from_the_version() {
+        assert_eq!(from_version("Downloading SwarmPlay 1.30.0 · 45%", Some("1.30.0")), "1.30.0 · 45%");
+        assert_eq!(from_version("Baixando o SwarmPlay 1.30.0 · 45%", Some("1.30.0")), "1.30.0 · 45%");
+        assert_eq!(from_version("Installing SwarmPlay…", Some("1.30.0")), "Installing SwarmPlay…");
+        assert_eq!(from_version("Checking", None), "Checking");
+    }
+
+    #[test]
+    fn every_section_has_a_title() {
+        for key in ["SYSTEM", "GAMES", "STORAGE", "PLAYING", "SOUND", "NOTIFICATIONS", "DOWNLOADS", "UPDATES", "THEME", "LAUNCHER", "ADVANCED", "ABOUT"] {
+            let t = section_title(key);
+            assert!(!t.is_empty());
+            // In English the title is the key, written as a title.
+            assert_eq!(t.to_uppercase(), key);
+        }
     }
 }
 
@@ -1065,6 +1127,29 @@ fn note_row(noted: SId, noted_label: &str, id: SId, label: &str) -> bool {
     }
 }
 
+/// A section's title in the left column, from its key (the key stays English: it's what
+/// section_info, the icons and deep links match on).
+fn section_title(key: &str) -> String {
+    match key {
+        "SYSTEM" => tr!("System"),
+        "GAMES" => tr!("Games"),
+        "STORAGE" => tr!("Storage"),
+        "PLAYING" => tr!("Playing"),
+        "SOUND" => tr!("Sound"),
+        "NOTIFICATIONS" => tr!("Notifications"),
+        "DOWNLOADS" => tr!("Downloads"),
+        "UPDATES" => tr!("Updates"),
+        "THEME" => tr!("Theme"),
+        "LAUNCHER" => tr!("Launcher"),
+        "ADVANCED" => tr!("Advanced"),
+        "ABOUT" => tr!("About"),
+        other => {
+            let mut chars = other.chars();
+            chars.next().into_iter().chain(chars.flat_map(|c| c.to_lowercase())).collect()
+        }
+    }
+}
+
 /// Do not disturb is on now.
 fn cfg_dnd(app: &App) -> bool {
     app.cfg.lock().unwrap().notify_dnd_until > crate::util::now_secs()
@@ -1073,36 +1158,35 @@ fn cfg_dnd(app: &App) -> bool {
 impl App {
     /// Settings → Notifications.
     fn notify_rows(&self, cfg: &crate::config::Config) -> Vec<(SId, SettingData)> {
-        use crate::toast::{CATS, DND, DURATIONS};
+        use crate::toast::{CATS, DND};
         let mut rows = Vec::new();
-        let mut r = row(2, "Pop-up notifications");
+        let mut r = row(2, &tr!("Pop-up notifications"));
         r.on = cfg.notify_popups;
-        r.hint = "Small cards at the top right · everything is kept in the list (Control Center)".into();
+        r.hint = tr!("Small cards at the top right · everything is kept in the list (Control Center)").into();
         rows.push((SId::NotifPopups, r));
-        let mut r = row(3, "Show them for");
-        r.value = format!("{} seconds", cfg.notify_secs).into();
-        let _ = DURATIONS;
+        let mut r = row(3, &tr!("Show them for"));
+        r.value = crate::toast::duration_label(cfg.notify_secs).into();
         rows.push((SId::NotifSecs, r));
-        let mut r = row(2, "Sound");
+        let mut r = row(2, &tr!("Sound"));
         r.on = cfg.notify_sound;
         rows.push((SId::NotifSound, r));
-        let mut r = row(3, "During games");
-        r.value = cfg.notify_games.clone().into();
-        r.hint = "Important ones: failures, a game ready to play, a low battery".into();
+        let mut r = row(3, &tr!("During games"));
+        r.value = crate::toast::during_games_label(&cfg.notify_games).into();
+        r.hint = tr!("Important ones: failures, a game ready to play, a low battery").into();
         rows.push((SId::NotifGames, r));
-        let mut r = row(2, "When SwarmPlay is in the background");
+        let mut r = row(2, &tr!("When SwarmPlay is in the background"));
         r.on = cfg.notify_desktop;
-        r.hint = "As your desktop's notifications, with Open to go there".into();
+        r.hint = tr!("As your desktop's notifications, with Open to go there").into();
         rows.push((SId::NotifDesktop, r));
-        let mut r = row(3, "Do not disturb");
+        let mut r = row(3, &tr!("Do not disturb"));
         let now = crate::util::now_secs();
-        r.value = if cfg.notify_dnd_until <= now { DND[0].into() }
-            else if cfg.notify_dnd_until >= f64::MAX / 2.0 { DND[3].into() }
-            else { format!("Until {}", crate::util::fmt_clock_at(cfg.notify_dnd_until)).into() };
-        r.hint = "Nothing pops up but the important ones; the list keeps everything".into();
+        r.value = if cfg.notify_dnd_until <= now { crate::toast::dnd_label(DND[0]).into() }
+            else if cfg.notify_dnd_until >= f64::MAX / 2.0 { crate::toast::dnd_label(DND[3]).into() }
+            else { tr!("Until {}", crate::util::fmt_clock_at(cfg.notify_dnd_until)).into() };
+        r.hint = tr!("Nothing pops up but the important ones; the list keeps everything").into();
         rows.push((SId::NotifDnd, r));
         for (i, (_, name)) in CATS.iter().enumerate() {
-            let mut r = row(2, name);
+            let mut r = row(2, &crate::toast::cat_label(name));
             r.on = !cfg.notify_off.iter().any(|o| o == name);
             rows.push((SId::NotifCat(i as u8), r));
         }

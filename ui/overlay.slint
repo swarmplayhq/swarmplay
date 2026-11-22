@@ -87,15 +87,15 @@ export component OverlayWindow inherits Window {
                 VerticalLayout {
                     padding: (22px * S.k);
                     spacing: (6px * S.k);
-                    Text { text: "PLAYING" + (root.game-time != "" ? " · " + root.game-time : ""); font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
+                    Text { text: @tr("PLAYING") + (root.game-time != "" ? " · " + root.game-time : ""); font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
                     Text { text: root.game-name; font-size: (28px * S.k); font-weight: 600; color: Theme.text; overflow: elide; }
                     Rectangle { vertical-stretch: 1; }
                     HorizontalLayout {
                         spacing: (12px * S.k);
                         alignment: start;
                         for b[i] in [
-                            { label: "Back to game", danger: false },
-                            { label: root.confirm-close ? "Press again to close" : "Close game", danger: true },
+                            { label: @tr("Back to game"), danger: false },
+                            { label: root.confirm-close ? @tr("Press again to close") : @tr("Close game"), danger: true },
                         ]: Rectangle {
                             property <bool> f: root.idx == i;
                             width: btn-t.preferred-width + (40px * S.k);
@@ -110,8 +110,8 @@ export component OverlayWindow inherits Window {
                 }
             }
             for c[k] in [
-                { kicker: "DOWNLOADS", title: root.dl-title, sub: root.dl-sub, icon: 0 },
-                { kicker: "CAPTURE", title: "Take a screenshot", sub: root.capture-sub, icon: 1 },
+                { kicker: @tr("DOWNLOADS"), title: root.dl-title, sub: root.dl-sub, icon: 0 },
+                { kicker: @tr("CAPTURE"), title: @tr("Take a screenshot"), sub: root.capture-sub, icon: 1 },
             ]: card := Rectangle {
                 property <bool> f: root.idx == k + 2;
                 width: (400px * S.k);
@@ -149,19 +149,21 @@ export component OverlayWindow inherits Window {
 
         // Bottom row: round buttons, then the controller's battery and the clock.
         HorizontalLayout {
-            x: (96px * S.k); y: (262px * S.k);
+            x: (88px * S.k); y: (262px * S.k);
             height: (110px * S.k);
-            spacing: (26px * S.k);
+            // Columns wider than the circles (with less space between, the circles sit as far
+            // apart as ever) so a longer name fits under one ("Configurações").
+            spacing: (10px * S.k);
             alignment: start;
             for b[j] in [
-                { label: "Home", icon: 0 },
+                { label: @tr("Home"), icon: 0 },
                 { label: root.vol-edit ? "◂ " + root.volume + " ▸" : root.volume, icon: 1 },
-                { label: "Settings", icon: 2 },
-                { label: "Power", icon: 3 },
+                { label: @tr("Settings"), icon: 2 },
+                { label: @tr("Power"), icon: 3 },
             ]: VerticalLayout {
                 property <bool> f: root.idx == j + 4;
                 spacing: (10px * S.k);
-                width: (100px * S.k);
+                width: (116px * S.k);
                 HorizontalLayout {
                     alignment: center;
                     circle := Rectangle {
@@ -206,8 +208,8 @@ export component OverlayWindow inherits Window {
         Text {
             x: parent.width - self.width - (96px * S.k); y: parent.height - (44px * S.k);
             text: root.vol-edit
-                ? (root.pad-hints ? "◂ ▸ Volume   ✕ Done   ○ Done" : "← → Volume   Enter Done   Esc Done")
-                : (root.pad-hints ? "✕ Select   ○ Back to game   PS Back to game" : "Enter Select   Esc Back to game");
+                ? (root.pad-hints ? @tr("◂ ▸ Volume   ✕ Done   ○ Done") : @tr("← → Volume   Enter Done   Esc Done"))
+                : (root.pad-hints ? @tr("✕ Select   ○ Back to game   PS Back to game") : @tr("Enter Select   Esc Back to game"));
             font-size: (15px * S.k); color: Theme.hint;
         }
     }

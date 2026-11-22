@@ -6,6 +6,7 @@
 //! Later runs: a short splash while the Home screen decodes from cache. If the emulator has
 //! gone missing, it is fetched here too.
 
+use tr::tr;
 use crate::app::*;
 use crate::audio::{self, Sound};
 use crate::images::prio;
@@ -122,37 +123,36 @@ impl App {
         self.boot_feed_covers();
         let b = &self.boot;
         let status = if b.ready {
-            if b.first { "All set".to_string() } else { "Ready".to_string() }
+            if b.first { tr!("All set") } else { tr!("Ready") }
         } else if b.first {
             String::new()
         } else {
-            "Loading…".to_string()
+            tr!("Loading…")
         };
         let n = self.locals.len();
-        let installed = format!("{n} installed game{} found", if n == 1 { "" } else { "s" });
         let detail = if b.ready && n == 0 {
-            "All set · pick a game in the Library to play".to_string()
+            tr!("All set · pick a game in the Library to play")
         } else if b.ready {
-            format!("All set · {installed}")
+            tr!("All set · {n} installed game found" | "All set · {n} installed games found" % n)
         } else {
-            "This only happens once. Skip anytime — downloads continue in the background.".to_string()
+            tr!("This only happens once. Skip anytime — downloads continue in the background.")
         };
         // The step list, in players' words: Settings → Updates has the emulators' names and builds.
-        let step = |label: &str, detail: String, state: i32| crate::BootStep { label: label.into(), detail: detail.into(), state };
+        let step = |label: String, detail: String, state: i32| crate::BootStep { label: label.into(), detail: detail.into(), state };
         let mut steps = Vec::new();
         steps.push(if b.cat_failed {
-            step("Game list", "Using the saved list".into(), 3)
+            step(tr!("Game list"), tr!("Using the saved list"), 3)
         } else if b.waiting_catalog {
-            step("Game list", "Loading…".into(), 1)
+            step(tr!("Game list"), tr!("Loading…"), 1)
         } else {
-            step("Game list", format!("{} games", self.library_total), 2)
+            step(tr!("Game list"), tr!("{n} game" | "{n} games" % self.library_total), 2)
         });
         steps.push(if b.waiting_catalog {
-            step("Your Home screen", String::new(), 0)
+            step(tr!("Your Home screen"), String::new(), 0)
         } else if !b.ready {
-            step("Your Home screen", format!("{}%", (b.f_img * 100.0).round()), 1)
+            step(tr!("Your Home screen"), format!("{}%", (b.f_img * 100.0).round()), 1)
         } else {
-            step("Your Home screen", "Ready".into(), 2)
+            step(tr!("Your Home screen"), tr!("Ready"), 2)
         });
         let progress = self.boot_progress();
         let ui = self.ui();

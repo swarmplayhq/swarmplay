@@ -10,6 +10,7 @@
 //! from block 1 (mode, flags at 4, sizes at 8 and 0x10, block count at 0x60, first block at 0x64);
 //! directory entries (inode, type, name length, entry size, name) in their folder's blocks.
 
+use tr::tr;
 use anyhow::{bail, ensure, Context, Result};
 use std::io::Read;
 use std::sync::{Arc, Mutex};
@@ -52,16 +53,16 @@ impl Pfs {
     fn open(file: File) -> Result<Self> {
         let mut h = [0u8; 0x50];
         file.read_exact_at(&mut h, 0).context("Read PFS header")?;
-        ensure!(u64_at(&h, 8) == MAGIC, "Not a PFS image");
+        ensure!(u64_at(&h, 8) == MAGIC, tr!("Not a PFS image"));
         let mode = u16_at(&h, 0x1C);
-        ensure!(mode & ENCRYPTED == 0, "This PFS image is encrypted; only decrypted images can be installed");
-        ensure!(mode & (SIGNED | WIDE) == 0, "Unsupported PFS image (signed or 64-bit inodes)");
+        ensure!(mode & ENCRYPTED == 0, tr!("This PFS image is encrypted; only decrypted images can be installed"));
+        ensure!(mode & (SIGNED | WIDE) == 0, tr!("Unsupported PFS image (signed or 64-bit inodes)"));
         let block = u32_at(&h, 0x20) as u64;
         ensure!(block.is_power_of_two() && (0x1000..=0x10_0000).contains(&block), "Unsupported PFS block size");
         let (inodes, inode_blocks) = (u64_at(&h, 0x30), u64_at(&h, 0x40));
         ensure!((1..=MAX_INODES).contains(&inodes) && inode_blocks * (block / INODE) >= inodes, "Invalid PFS inode table");
         let len = file.metadata()?.len();
-        ensure!((1 + inode_blocks) * block <= len, "The PFS image is shorter than its header says; wait until the download is complete");
+        ensure!((1 + inode_blocks) * block <= len, tr!("The PFS image is shorter than its header says; wait until the download is complete"));
         ensure!(u64_at(&h, 0x48) == 0, "Unsupported PFS image (superroot isn't the first inode)");
         Ok(Self { file, len, block, inodes })
     }
@@ -77,7 +78,7 @@ impl Pfs {
         // Files and folders take consecutive blocks from the first; no indirect blocks.
         let contiguous = (1..12).map(|k| i32_at(&b, 0x64 + 4 * k)).all(|d| d == -1 || d == 0)
             && (0..5).all(|k| i32_at(&b, 0x94 + 4 * k) == 0);
-        ensure!(contiguous || blocks <= 1, "Unsupported PFS image (fragmented file)");
+        ensure!(contiguous || blocks <= 1, tr!("Unsupported PFS image (fragmented file)"));
         let extent = blocks * self.block;
         let start = if blocks == 0 { 0 } else {
             ensure!(first > 0, "Invalid PFS block number");
@@ -122,7 +123,7 @@ pub fn exfat_inside(file: File) -> Result<Box<dyn crate::exfat::Image>> {
     let entries = pfs.entries(uroot)?;
     let image = match entries.as_slice() {
         [(ino, DIR_FILE, name)] if name.to_ascii_lowercase().ends_with(".exfat") => *ino,
-        _ => bail!("Unsupported PFS image: only one holding a single exFAT game image can be installed"),
+        _ => bail!(tr!("Unsupported PFS image: only one holding a single exFAT game image can be installed")),
     };
     let node = pfs.inode(image)?;
     ensure!(node.regular, "The PFS image's exFAT image isn't a file");

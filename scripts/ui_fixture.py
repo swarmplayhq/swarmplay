@@ -21,10 +21,15 @@ STAND_IN_ID = "PPSA21564"  # ASTRO BOT: in-game on Linux, so Home shows a green 
 
 
 def seed_cache(home: Path) -> None:
-    """Copy your launcher cache (catalogs, artwork, compatibility) into the throwaway home."""
+    """Copy your launcher cache (catalogs, compatibility, thumbnails) into the throwaway home. The
+    downloaded artwork (img/, gigabytes) is linked instead: two runs side by side (check.sh's
+    English and Portuguese) would fill /tmp. Its files are named by their URL's hash, so a run can
+    only add the same file the launcher itself would."""
     real = Path.home() / ".cache/azrak"
     if real.exists():
-        shutil.copytree(real, home / ".cache/azrak", ignore=shutil.ignore_patterns(*CACHE_SKIP), dirs_exist_ok=True)
+        shutil.copytree(real, home / ".cache/azrak", ignore=shutil.ignore_patterns(*CACHE_SKIP, "img"), dirs_exist_ok=True)
+        if (real / "img").is_dir():
+            (home / ".cache/azrak/img").symlink_to(real / "img")
 
 
 def stand_in_game(games: Path, title_id: str = STAND_IN_ID) -> Path:

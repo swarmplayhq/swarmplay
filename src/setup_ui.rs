@@ -8,6 +8,7 @@ use crate::downloads::{self, Problem, State};
 use crate::util;
 use slint::Model;
 use std::path::{Path, PathBuf};
+use tr::tr;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Focus { Row(usize), ChangeDownload, ChangeInstall, Go, Cancel }
@@ -49,12 +50,12 @@ impl Setup {
     }
 }
 
-/// "21.6 GB", "84.0 MB", "2 KB", "0 KB" (the Game Hub too).
+/// "21.6 GB", "84.0 MB", "2 KB", "0 KB" (the Game Hub too); "21,6 GB" in Portuguese.
 pub fn size_label(bytes: u64) -> String {
     let b = bytes as f64;
     if bytes == 0 { return "0 KB".into(); }
-    if bytes >= 1 << 30 { format!("{:.1} GB", b / (1u64 << 30) as f64) }
-    else if bytes >= 1 << 20 { format!("{:.1} MB", b / (1u64 << 20) as f64) }
+    if bytes >= 1 << 30 { format!("{} GB", crate::i18n::num(b / (1u64 << 30) as f64, 1)) }
+    else if bytes >= 1 << 20 { format!("{} MB", crate::i18n::num(b / (1u64 << 20) as f64, 1)) }
     else { format!("{} KB", (bytes / 1024).max(1)) }
 }
 
@@ -163,33 +164,33 @@ impl App {
         let picked = setup.on.iter().filter(|on| **on).count();
         let choosable = setup.entries.iter().filter(|e| !e.blocked).count();
         let mut view = View { state: 0, message_title: String::new(), message: String::new(), total, picked, choosable,
-            notice: String::new(), notice_kind: 0, go_label: "Getting the file list…".into(), go_enabled: false,
+            notice: String::new(), notice_kind: 0, go_label: tr!("Getting the file list…"), go_enabled: false,
             dl: (String::new(), 0.0, false), inst: (String::new(), 0.0, false) };
         let failed = |title: &str, message: &str| (title.to_string(), message.to_string());
         // No problem kind: nothing could be looked up at all (too many downloads, say).
         let error = if !setup.error.is_empty() { Some((setup.error.clone(), None)) }
             // Failed, or waiting to be chosen but its file list couldn't be read back.
             else { job.as_ref().filter(|job| setup.entries.is_empty() && (job.state == State::Failed || (job.state == State::Ready && !job.error.is_empty())))
-                .map(|job| (job.error.clone(), Some(job.problem))) };
+                .map(|job| (downloads::error_text(&job.error), Some(job.problem))) };
         if let Some((error, problem)) = error {
             let retry = matches!(problem, Some(Problem::NoAnswer | Problem::Other));
             let (title, message) = if problem.is_none() {
-                view.go_label = "Can't download right now".into();
-                failed("This release can't be looked up", &error)
+                view.go_label = tr!("Can't download right now");
+                failed(&tr!("This release can't be looked up"), &error)
             } else if retry {
-                view.go_label = "Keep trying".into();
+                view.go_label = tr!("Keep trying");
                 view.go_enabled = true;
                 if problem == Some(Problem::NoAnswer) {
-                    failed("The file list didn't arrive", "No other player answered, or this PC is offline. Keep trying, or close and pick a release with more players in the Game Hub.")
+                    failed(&tr!("The file list didn't arrive"), &tr!("No other player answered, or this PC is offline. Keep trying, or close and pick a release with more players in the Game Hub."))
                 } else {
-                    failed("The file list didn't arrive", &error)
+                    failed(&tr!("The file list didn't arrive"), &error)
                 }
             } else if problem == Some(Problem::Unsupported) {
-                view.go_label = "Can't install this release".into();
-                failed("This release can't be installed", &error)
+                view.go_label = tr!("Can't install this release");
+                failed(&tr!("This release can't be installed"), &error)
             } else {
-                view.go_label = "Can't download this release".into();
-                failed("This release can't be downloaded", &error)
+                view.go_label = tr!("Can't download this release");
+                failed(&tr!("This release can't be downloaded"), &error)
             };
             view.state = if retry { 2 } else { 3 };
             view.message_title = title;
@@ -211,51 +212,61 @@ impl App {
         let dl_drive = dl_path.is_absolute().then(|| setup.drive(&dl_path)).flatten();
         let inst_drive = inst_path.is_absolute().then(|| setup.drive(&inst_path)).flatten();
         view.dl = match &dl_drive {
-            None => ("Use a full folder path, like ~/Downloads".into(), 0.0, true),
-            Some(d) if !known => (format!("{} free on {}", size_label(d.free), d.mount.display()), 0.0, false),
+            None => (tr!("Use a full folder path, like ~/Downloads"), 0.0, true),
+            Some(d) if !known => (tr!("{} free on {}", size_label(d.free), d.mount.display()), 0.0, false),
             Some(d) => {
-                if need > d.free { short = Some((d.mount.clone(), need - d.free, "the download", "choose another folder")); }
-                (format!("Needs {} · {} free on {}", size_label(need), size_label(d.free), d.mount.display()), need as f32 / d.free.max(1) as f32, need > d.free)
+                if need > d.free {
+                    short = Some((d.mount.clone(), need - d.free, false));
+                }
+                (tr!("Needs {} · {} free on {}", size_label(need), size_label(d.free), d.mount.display()), need as f32 / d.free.max(1) as f32, need > d.free)
             }
         };
         view.inst = match &inst_drive {
-            None => ("Use a full folder path, like ~/Games".into(), 0.0, true),
-            Some(d) if !known => (format!("{} free on {}", size_label(d.free), d.mount.display()), 0.0, false),
+            None => (tr!("Use a full folder path, like ~/Games"), 0.0, true),
+            Some(d) if !known => (tr!("{} free on {}", size_label(d.free), d.mount.display()), 0.0, false),
             Some(d) => {
                 // On the same drive as the download, the download takes its space first.
                 let same = dl_drive.as_ref().is_some_and(|dl| dl.shares(d));
                 let free = if same { d.free.saturating_sub(need) } else { d.free };
-                if need > free && short.is_none() { short = Some((d.mount.clone(), need - free, "the installed game", "install to another drive")); }
-                let after = if same { " after the download" } else { "" };
-                (format!("Needs about {} · {} free on {}{after}", size_label(need), size_label(free), d.mount.display()), need as f32 / free.max(1) as f32, need > free)
+                if need > free && short.is_none() { short = Some((d.mount.clone(), need - free, true)); }
+                let line = if same {
+                    tr!("Needs about {} · {} free on {} after the download", size_label(need), size_label(free), d.mount.display())
+                } else {
+                    tr!("Needs about {} · {} free on {}", size_label(need), size_label(free), d.mount.display())
+                };
+                (line, need as f32 / free.max(1) as f32, need > free)
             }
         };
         if known {
             let blocked: Vec<&downloads::Entry> = setup.entries.iter().filter(|e| e.blocked).collect();
             let biggest = setup.entries.iter().enumerate().max_by_key(|(_, e)| e.size).map(|(i, e)| (i, e.path.rsplit('/').next().unwrap_or(&e.path).to_string()));
             let console = if setup.platform == crate::platform::Platform::Ps5 { "PS5" } else { "PS4" };
-            if let Some((mount, missing, what, fix)) = &short {
-                view.notice = format!("Not enough space on {} for {what}. Free up {}, or {fix}.", mount.display(), size_label(*missing));
+            if let Some((mount, missing, installed)) = &short {
+                view.notice = if *installed {
+                    tr!("Not enough space on {} for the installed game. Free up {}, or install to another drive.", mount.display(), size_label(*missing))
+                } else {
+                    tr!("Not enough space on {} for the download. Free up {}, or choose another folder.", mount.display(), size_label(*missing))
+                };
                 view.notice_kind = 2;
             } else if blocked.len() == 1 {
                 let name = blocked[0].path.rsplit('/').next().unwrap_or(&blocked[0].path);
-                view.notice = format!("{name} was left out. It's a Windows program, and {console} games never need one.");
+                view.notice = tr!("{name} was left out. It's a Windows program, and {console} games never need one.", name, console);
                 view.notice_kind = 1;
             } else if blocked.len() > 1 {
-                view.notice = format!("{} Windows programs were left out. {console} games never need them.", blocked.len());
+                view.notice = tr!("{n} Windows program was left out. {console} games never need them." | "{n} Windows programs were left out. {console} games never need them." % blocked.len(), console);
                 view.notice_kind = 1;
             } else if let Some((_, name)) = biggest.filter(|(i, _)| picked > 0 && !setup.on[*i]) {
-                view.notice = format!("Without {name} the game probably won't install.");
+                view.notice = tr!("Without {name} the game probably won't install.", name);
                 view.notice_kind = 1;
             } else if let Some(warning) = Some(self.pc_download_warning(setup.platform)).filter(|w| !w.is_empty()) {
                 view.notice = warning;
                 view.notice_kind = 1;
             }
             let paths_bad = dl_drive.is_none() || inst_drive.is_none();
-            (view.go_label, view.go_enabled) = if picked == 0 { ("Choose at least one file".into(), false) }
-                else if short.is_some() { ("Not enough space".into(), false) }
-                else if paths_bad { ("Choose the folders".into(), false) }
-                else { (format!("Download & install · {}", size_label(total)), true) };
+            (view.go_label, view.go_enabled) = if picked == 0 { (tr!("Choose at least one file"), false) }
+                else if short.is_some() { (tr!("Not enough space"), false) }
+                else if paths_bad { (tr!("Choose the folders"), false) }
+                else { (tr!("Download & install · {}", size_label(total)), true) };
         }
         if !setup.begin_error.is_empty() && view.state == 1 {
             view.notice = setup.begin_error.clone();
@@ -283,7 +294,7 @@ impl App {
                     setup.on = shown.iter().map(|(i, e)| !e.blocked && picked[*i]).collect();
                     (setup.indices, setup.entries) = shown.into_iter().unzip();
                     // Why it couldn't start last time, until the player changes something.
-                    setup.begin_error = job.error.clone();
+                    setup.begin_error = downloads::error_text(&job.error);
                 }
             }
         }
@@ -300,7 +311,7 @@ impl App {
         let rows: Vec<crate::SetupFile> = if view.state == 1 {
             setup.entries.iter().zip(&setup.on).map(|(e, on)| {
                 let (dir, name) = match e.path.rsplit_once('/') { Some((dir, name)) => (format!("{dir}/"), name.to_string()), None => (String::new(), e.path.clone()) };
-                crate::SetupFile { dir: dir.into(), name: name.into(), size: if e.blocked { "Left out".into() } else { size_label(e.size).into() }, on: *on, blocked: e.blocked }
+                crate::SetupFile { dir: dir.into(), name: name.into(), size: if e.blocked { tr!("Left out").into() } else { size_label(e.size).into() }, on: *on, blocked: e.blocked }
             }).collect()
         } else { vec![] };
         if self.setup_model.row_count() != rows.len() {
@@ -314,10 +325,10 @@ impl App {
         let vpn = {
             let cfg = self.cfg.lock().unwrap();
             match cfg.download_vpn() {
-                None => ("No VPN: other players can see your IP address".to_string(), false),
+                None => (tr!("No VPN: other players can see your IP address"), false),
                 Some(preferred) => match crate::vpn::active(&preferred) {
-                    Some(iface) => (format!("Through your VPN ({iface})"), true),
-                    None => ("Waiting for your VPN to connect".to_string(), false),
+                    Some(iface) => (tr!("Through your VPN ({iface})", iface), true),
+                    None => (tr!("Waiting for your VPN to connect"), false),
                 },
             }
         };
@@ -330,7 +341,7 @@ impl App {
         ui.set_setup_state(view.state);
         ui.set_setup_message_title(view.message_title.into());
         ui.set_setup_message(view.message.into());
-        ui.set_setup_count(if view.state == 1 { format!("{} of {} files", view.picked, view.choosable) } else { String::new() }.into());
+        ui.set_setup_count(if view.state == 1 { tr!("{} of {n} file" | "{} of {n} files" % view.choosable, view.picked) } else { String::new() }.into());
         ui.set_setup_total(if view.state == 1 { size_label(view.total) } else { String::new() }.into());
         ui.set_setup_all_state(if view.picked == 0 { 0 } else if view.picked == view.choosable { 2 } else { 1 });
         ui.set_setup_notice(view.notice.into());

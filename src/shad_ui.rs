@@ -1,6 +1,7 @@
 //! shadPS4 (PS4 games) inside the app: installed in the background like KytyPS5, so the first
 //! PS4 game starts at once, then kept up to date, with rollback.
 
+use tr::tr;
 use crate::app::*;
 use crate::shad::{self, Release};
 use std::time::Duration;
@@ -71,7 +72,7 @@ impl App {
                         app.net_down = true;
                     }
                     if manual {
-                        app.shad.error = format!("Update check failed: {e}");
+                        app.shad.error = tr!("Update check failed: {e}", e);
                         app.refresh_settings();
                     }
                 }
@@ -82,7 +83,7 @@ impl App {
     /// PS4 games need shadPS4: download it now, then start the game.
     pub fn shad_install_then_launch(&mut self, game_id: String) {
         // Its progress shows in the status line.
-        self.note_game(&game_id, "Getting PS4 support first (once, about 35 MB), then it starts", false);
+        self.note_game(&game_id, &tr!("Getting PS4 support first (once, about 35 MB), then it starts"), false);
         self.shad.launch_after = Some(game_id);
         if self.shad.busy {
             return;
@@ -102,7 +103,7 @@ impl App {
                             app.net_down = true;
                         }
                         if let Some(id) = app.shad.launch_after.take() {
-                            app.note_game(&id, &format!("Couldn't get PS4 support: {e}. Check your connection and try again."), true);
+                            app.note_game(&id, &tr!("Couldn't get PS4 support: {e}. Check your connection and try again.", e), true);
                         }
                     }
                 }
@@ -123,7 +124,7 @@ impl App {
         }
         self.shad.busy = true;
         self.shad.error.clear();
-        self.shad.progress = "Starting download…".into();
+        self.shad.progress = tr!("Starting download…");
         self.refresh_settings();
         std::thread::spawn(move || {
             let last = std::sync::Mutex::new(String::new());
@@ -143,7 +144,7 @@ impl App {
                 app.set_status("", false);
                 match res {
                     Ok(()) => {
-                        app.notify(crate::toast::Cat::Updates, crate::toast::DONE, "check", "shadPS4 updated", &crate::shad::pretty(&crate::shad::load_state().installed),
+                        app.notify(crate::toast::Cat::Updates, crate::toast::DONE, "check", &tr!("shadPS4 updated"), &crate::shad::pretty(&crate::shad::load_state().installed),
                             crate::toast::Action::Settings("UPDATES".into()), "shad-update", false);
                         // The version shows in Settings → Updates; a game waiting for it starts.
                         if let Some(id) = launch_after.or(app.shad.launch_after.take()) {
@@ -164,7 +165,7 @@ impl App {
                         // One the player pressed Play on hears it even if the install was quiet.
                         let pressed = app.shad.launch_after.take();
                         if let Some(id) = launch_after.filter(|_| !quiet).or(pressed) {
-                            app.note_game(&id, &format!("Couldn't install PS4 support: {e}"), true);
+                            app.note_game(&id, &tr!("Couldn't install PS4 support: {e}", e), true);
                         }
                         app.shad.launch_after = None;
                     }
@@ -190,9 +191,9 @@ impl App {
             Ok(tag) => {
                 // The failed update it went back from is over.
                 self.shad.error.clear();
-                self.note_setting(crate::settings::SId::ShadUpdate, &format!("Rolled back to {}", shad::pretty(&tag)), 1);
+                self.note_setting(crate::settings::SId::ShadUpdate, &tr!("Rolled back to {}", shad::pretty(&tag)), 1);
             }
-            Err(e) => self.note_setting(crate::settings::SId::ShadRollback, &format!("Couldn't roll back: {e}"), 2),
+            Err(e) => self.note_setting(crate::settings::SId::ShadRollback, &tr!("Couldn't roll back: {e}", e), 2),
         }
         self.refresh_settings();
     }

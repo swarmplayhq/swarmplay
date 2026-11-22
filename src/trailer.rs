@@ -3,6 +3,7 @@
 //! into memory on a render thread, and the UI shows the frame as an image (the GPU scales it).
 //! Nothing shares OpenGL state with the UI renderer. Without libmpv there is no trailer button.
 
+use tr::tr;
 use std::cell::RefCell;
 use std::ffi::{c_char, c_int, c_void, CString};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -129,12 +130,12 @@ thread_local! {
 
 /// Start playing `url`. `frame` receives each new frame (from the render thread).
 pub fn open(url: &str, frame: impl Fn(slint::SharedPixelBuffer<slint::Rgba8Pixel>) + Send + 'static) -> Result<(), String> {
-    let lib = lib().ok_or("Trailers need libmpv (install mpv)")?;
+    let lib = lib().ok_or_else(|| tr!("Trailers need libmpv (install mpv)"))?;
     close();
     unsafe {
         let mpv = (lib.create)();
         if mpv.is_null() {
-            return Err("Could not start the video player".into());
+            return Err(tr!("Could not start the video player"));
         }
         for (k, v) in [
             ("vo", "libmpv"), ("hwdec", "no"), ("terminal", "no"), ("osc", "no"), ("ytdl", "no"),
@@ -145,7 +146,7 @@ pub fn open(url: &str, frame: impl Fn(slint::SharedPixelBuffer<slint::Rgba8Pixel
         }
         if (lib.initialize)(mpv) < 0 {
             (lib.terminate_destroy)(mpv);
-            return Err("Could not start the video player".into());
+            return Err(tr!("Could not start the video player"));
         }
         let api = cstr("sw");
         let mut params = [
@@ -155,7 +156,7 @@ pub fn open(url: &str, frame: impl Fn(slint::SharedPixelBuffer<slint::Rgba8Pixel
         let mut ctx: RenderCtx = std::ptr::null_mut();
         if (lib.render_create)(&mut ctx, mpv, params.as_mut_ptr()) < 0 || ctx.is_null() {
             (lib.terminate_destroy)(mpv);
-            return Err("This libmpv can't draw video for the launcher".into());
+            return Err(tr!("This libmpv can't draw video for the launcher"));
         }
         let signal = Arc::new(Signal::default());
         (lib.render_set_update_callback)(ctx, Some(on_update), Arc::as_ptr(&signal) as *mut c_void);
@@ -293,7 +294,7 @@ pub fn poll() -> Option<Status> {
                 EVENT_FILE_LOADED => p.loaded = true,
                 EVENT_END_FILE => {
                     let reason = if e.data.is_null() { 0 } else { *(e.data as *const c_int) };
-                    p.ended = Some(if reason == END_FILE_ERROR { Err("The trailer couldn't be played".into()) } else { Ok(()) });
+                    p.ended = Some(if reason == END_FILE_ERROR { Err(tr!("The trailer couldn't be played")) } else { Ok(()) });
                 }
                 _ => {}
             }

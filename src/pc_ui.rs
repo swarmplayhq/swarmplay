@@ -4,23 +4,24 @@
 use crate::app::*;
 use crate::pc::{Specs, Verdict};
 use crate::platform::Platform;
+use tr::tr;
 
 /// The reason behind a verdict, as a sentence.
 pub fn explain(v: &Verdict, platform: Platform) -> String {
     let ps5 = platform == Platform::Ps5;
     let console = platform.label();
     match v {
-        Verdict::Good => format!("{console} games should run well"),
-        Verdict::No(why) if why == "no AVX2" => "PS4 games need a processor from 2013 or later (with AVX2)".into(),
-        Verdict::No(why) if why == "no Vulkan 1.3" => "Games need a graphics card with Vulkan 1.3: update the graphics driver, or the card is too old".into(),
-        Verdict::No(why) if why == "missing features" => format!(
+        Verdict::Good => tr!("{console} games should run well", console),
+        Verdict::No(why) if why == "no AVX2" => tr!("PS4 games need a processor from 2013 or later (with AVX2)"),
+        Verdict::No(why) if why == "no Vulkan 1.3" => tr!("Games need a graphics card with Vulkan 1.3: update the graphics driver, or the card is too old"),
+        Verdict::No(why) if why == "missing features" => tr!(
             "Your graphics card lacks Vulkan features {} needs: update its driver, or the card is too old", platform.emulator()),
-        Verdict::No(_) => "No graphics driver found: install the driver for your graphics card".into(),
-        Verdict::Slow(why) if why == "GPU at low clock" => "On Linux this NVIDIA card runs on the open-source NVK driver, which keeps GTX 600–1000 series cards at a low clock speed, so games run slowly".into(),
-        Verdict::Slow(why) if why == "integrated GPU" => format!("{console} games run best on a graphics card; built-in graphics may be slow"),
-        Verdict::Slow(why) if why.ends_with("GPU") => format!("{console} games run best with {} GB of graphics memory", if ps5 { 8 } else { 4 }),
-        Verdict::Slow(why) if why.ends_with("CPU") => format!("{console} games run best on {} or more processor cores", if ps5 { 6 } else { 4 }),
-        Verdict::Slow(_) => format!("{console} games run best with {} GB of RAM", if ps5 { 16 } else { 8 }),
+        Verdict::No(_) => tr!("No graphics driver found: install the driver for your graphics card"),
+        Verdict::Slow(why) if why == "GPU at low clock" => tr!("On Linux this NVIDIA card runs on the open-source NVK driver, which keeps GTX 600–1000 series cards at a low clock speed, so games run slowly"),
+        Verdict::Slow(why) if why == "integrated GPU" => tr!("{console} games run best on a graphics card; built-in graphics may be slow", console),
+        Verdict::Slow(why) if why.ends_with("GPU") => tr!("{console} games run best with {gb} GB of graphics memory", console, gb = if ps5 { 8 } else { 4 }),
+        Verdict::Slow(why) if why.ends_with("CPU") => tr!("{console} games run best on {cores} or more processor cores", console, cores = if ps5 { 6 } else { 4 }),
+        Verdict::Slow(_) => tr!("{console} games run best with {gb} GB of RAM", console, gb = if ps5 { 16 } else { 8 }),
     }
 }
 
@@ -66,7 +67,7 @@ impl App {
     /// The Hub's line about this PC, under its verdict: "This PC: PS5 games should run well".
     pub fn pc_line(&self, t: Target) -> Option<String> {
         let platform = self.target_platform(t);
-        self.pc_verdict(platform).map(|v| format!("This PC: {}", explain(v, platform)))
+        self.pc_verdict(platform).map(|v| tr!("This PC: {}", explain(v, platform)))
     }
 
     /// Under the Hub's Download button: what pressing it means. The download's size, the folder
@@ -85,15 +86,15 @@ impl App {
         // An older version than the catalog has: said before anything is downloaded.
         let older_note = g.newer.and_then(|n| Some((g.version_shown.as_deref()?, self.games[n].version_shown.as_deref()?)))
             .map(|(this, newest)| if g.outdated {
-                format!("Older version {this}: {newest} is under Choose another release")
+                tr!("Older version {this}: {newest} is under Choose another release", this, newest)
             } else {
-                format!("Version {this}: {newest} is out, but nobody is sharing it")
+                tr!("Version {this}: {newest} is out, but nobody is sharing it", this, newest)
             });
         let mut parts: Vec<String> = size.into_iter().collect();
-        parts.push(format!("goes to {shown}"));
+        parts.push(tr!("goes to {shown}", shown));
         parts.push(match free {
-            Some(free) if short => format!("only {free:.0} GB free there"),
-            _ => "then it installs by itself".into(),
+            Some(free) if short => tr!("only {free} GB free there", free = format!("{free:.0}")),
+            _ => tr!("then it installs by itself"),
         });
         // An older version said first, unless the disk is short of space: that comes first (the
         // line is cut at the end when it's long).
@@ -107,8 +108,8 @@ impl App {
     /// For the download dialog: a warning when this game won't start or may be slow here.
     pub fn pc_download_warning(&self, platform: Platform) -> String {
         match self.pc_verdict(platform) {
-            Some(v @ Verdict::No(_)) => format!("This PC can't run {} games yet. {}.", platform.label(), explain(v, platform)),
-            Some(v @ Verdict::Slow(_)) => format!("It may run slowly on this PC. {}.", explain(v, platform)),
+            Some(v @ Verdict::No(_)) => tr!("This PC can't run {} games yet. {}.", platform.label(), explain(v, platform)),
+            Some(v @ Verdict::Slow(_)) => tr!("It may run slowly on this PC. {}.", explain(v, platform)),
             _ => String::new(),
         }
     }

@@ -1,6 +1,7 @@
 //! Joining a secured Wi-Fi network (Settings → Internet): a card with the network, its password
 //! and an on-screen keyboard, so a controller is all it takes; a keyboard types straight in.
-//! Controller: ✕ presses the key, □ deletes, △ adds a space, L1 shift, R1 symbols, R2 or Options
+//! Controller: ✕ presses the key, □ deletes, △ adds a space, L1 shift, R1 the next layer (symbols,
+//! then accented letters), R2 or Options
 //! joins, ○ cancels. Keyboard: typing leaves the highlight where it is; Enter right after typing
 //! joins, Enter after moving with the arrows presses the highlighted key. Esc cancels, Tab shows
 //! the password.
@@ -8,10 +9,13 @@
 use crate::app::*;
 use crate::audio::{self, Sound};
 use crate::os::system;
+use tr::tr;
 
 /// Character rows, ten keys each; the fifth row is ACTIONS, whose widths (in keys) add up to ten.
 const LETTERS: [&str; 4] = ["1234567890", "qwertyuiop", "asdfghjkl'", "zxcvbnm,.-"];
 const SYMBOLS: [&str; 4] = ["!@#$%^&*()", "-_=+[]{}\\|", ";:\"<>/?~`€", "£¥§°•«»¿¡ "];
+/// The accented letters (Shift makes them capitals too), for passwords in Portuguese.
+const ACCENTED: [&str; 4] = ["1234567890", "áàâãäéèêëí", "ìîïóòôõöúù", "ûüçñ,.-'_@"];
 const COLS: usize = 10;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -34,7 +38,8 @@ pub struct WifiJoin {
     pub text: String,
     pub show: bool,
     pub shift: bool,
-    pub symbols: bool,
+    /// Which characters are on the keys: 0 letters, 1 symbols, 2 accented letters.
+    pub layer: u8,
     pub row: usize,
     pub col: usize,
     pub busy: bool,
@@ -51,9 +56,9 @@ pub struct WifiJoin {
 
 impl WifiJoin {
     fn char_at(&self, row: usize, col: usize) -> Option<char> {
-        let rows = if self.symbols { SYMBOLS } else { LETTERS };
+        let rows = match self.layer { 1 => SYMBOLS, 2 => ACCENTED, _ => LETTERS };
         let c = rows.get(row)?.chars().nth(col)?;
-        Some(if self.shift && !self.symbols { c.to_ascii_uppercase() } else { c })
+        Some(if self.shift && self.layer != 1 { c.to_uppercase().next().unwrap_or(c) } else { c })
     }
 
     fn type_char(&mut self, c: char) {
@@ -119,13 +124,17 @@ impl WifiJoin {
         }
         match ACTIONS[self.col].0 {
             Action::Shift => self.shift = !self.shift,
-            Action::Layer => self.symbols = !self.symbols,
+            Action::Layer => self.next_layer(),
             Action::Space => self.type_char(' '),
             Action::Delete => self.delete(),
             Action::Show => self.show = !self.show,
             Action::Join => return true,
         }
         false
+    }
+
+    fn next_layer(&mut self) {
+        self.layer = (self.layer + 1) % 3;
     }
 
     /// Enter on a keyboard: right after typing it joins; otherwise it presses the highlighted
@@ -144,9 +153,9 @@ impl WifiJoin {
     fn not_ready(&self) -> Option<String> {
         let (n, min) = (self.text.chars().count(), if self.wep { 5 } else { 8 });
         if n == 0 {
-            Some("Type the password first".into())
+            Some(tr!("Type the password first"))
         } else if n < min {
-            Some(format!("Wi-Fi passwords have at least {min} characters"))
+            Some(tr!("Wi-Fi passwords have at least {min} characters", min))
         } else {
             None
         }
@@ -239,7 +248,7 @@ impl App {
             Act::Trailer => w.delete(),
             Act::Search => w.type_char(' '),
             Act::TabPrev => w.shift = !w.shift,
-            Act::TabNext => w.symbols = !w.symbols,
+            Act::TabNext => w.next_layer(),
             Act::PageDown | Act::Options => return self.wj_join(),
             _ => return,
         }
@@ -280,7 +289,7 @@ impl App {
                     Err(e) => {
                         audio::play(Sound::Error);
                         app.wj.error = if e.contains("Secrets were required") || e.contains("password") || e.contains("802-11-wireless-security") {
-                            "Wrong password. Check it and try again.".into()
+                            tr!("Wrong password. Check it and try again.")
                         } else {
                             e
                         };
@@ -296,7 +305,7 @@ impl App {
         let ui = self.ui();
         let w = &self.wj;
         ui.set_wj_ssid(w.ssid.clone().into());
-        ui.set_wj_sub(format!("Secured · {}", w.signal).into());
+        ui.set_wj_sub(tr!("Secured · {}", w.signal).into());
         ui.set_wj_field(if w.show { w.text.clone() } else { "●".repeat(w.text.chars().count()) }.into());
         ui.set_wj_show(w.show);
         ui.set_wj_error(w.error.clone().into());
@@ -313,14 +322,15 @@ impl App {
         // highlight never is, so only one key ever looks selected.
         let actions: Vec<crate::WjKey> = ACTIONS.iter().enumerate().map(|(i, (a, width))| {
             let (label, on, icon) = match a {
-                Action::Shift => ("Shift", w.shift, "shift"),
-                Action::Layer => (if w.symbols { "ABC" } else { "Symbols" }, false, ""),
-                Action::Space => ("Space", false, ""),
-                Action::Delete => ("Delete", false, ""),
-                Action::Show => (if w.show { "Hide" } else { "Show" }, w.show, if w.show { "eye-off" } else { "eye" }),
-                Action::Join => ("Join", false, ""),
+                Action::Shift => (tr!("Shift"), w.shift, "shift"),
+                // It names the layer it goes to next.
+                Action::Layer => (match w.layer { 0 => tr!("Symbols"), 1 => "áç".into(), _ => "ABC".into() }, false, ""),
+                Action::Space => (tr!("Space"), false, ""),
+                Action::Delete => (tr!("Delete"), false, ""),
+                Action::Show => (if w.show { tr!("Hide") } else { tr!("Show") }, w.show, if w.show { "eye-off" } else { "eye" }),
+                Action::Join => (tr!("Join"), false, ""),
             };
-            key(label, *width, w.row == 4 && w.col == i, *a == Action::Join, on, icon)
+            key(&label, *width, w.row == 4 && w.col == i, *a == Action::Join, on, icon)
         }).collect();
         let m = |v: Vec<crate::WjKey>| -> slint::ModelRc<crate::WjKey> { std::rc::Rc::new(slint::VecModel::from(v)).into() };
         let mut rows = rows.into_iter();
@@ -356,7 +366,7 @@ mod tests {
 
     #[test]
     fn keyboard_rows() {
-        assert!(LETTERS.iter().chain(SYMBOLS.iter()).all(|r| r.chars().count() == COLS));
+        assert!(LETTERS.iter().chain(SYMBOLS.iter()).chain(ACCENTED.iter()).all(|r| r.chars().count() == COLS));
         let total: f32 = ACTIONS.iter().map(|(_, w)| w).sum();
         assert_eq!(total, COLS as f32);
         // Down from the first character goes to Shift, from the last to Join, and back up.
@@ -365,6 +375,11 @@ mod tests {
         assert!((0..ACTIONS.len()).all(|a| col_to_action(action_to_col(a)) == a));
         let w = WifiJoin { shift: true, ..Default::default() };
         assert_eq!((w.char_at(1, 0), w.char_at(0, 0)), (Some('Q'), Some('1')));
+        // The accents layer: capitals with Shift, as the letters; the layer key cycles back.
+        let mut w = WifiJoin { shift: true, layer: 2, ..Default::default() };
+        assert_eq!((w.char_at(1, 0), w.char_at(3, 2)), (Some('Á'), Some('Ç')));
+        w.next_layer();
+        assert_eq!(w.layer, 0);
     }
 
     #[test]
