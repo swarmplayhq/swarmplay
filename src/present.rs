@@ -360,7 +360,11 @@ impl App {
                     tr!("Playing now")
                 } else {
                     let pt = self.playtime(&lv.l);
-                    if pt.last > 0.0 {
+                    // As a console's: when, then how long in all (from an hour on).
+                    let hours = (pt.total / 3600.0).floor() as u64;
+                    if pt.last > 0.0 && hours > 0 {
+                        format!("{} · {}", tr!("Last played {}", util::fmt_last_played(pt.last).to_lowercase()), tr!("{} h played", hours))
+                    } else if pt.last > 0.0 {
                         tr!("Last played {}", util::fmt_last_played(pt.last).to_lowercase())
                     } else {
                         tr!("Not played yet")
@@ -433,8 +437,13 @@ impl App {
             (n, true) => tr!("{n} screenshot · trailer" | "{n} screenshots · trailer" % n),
         };
         let details = g.and_then(|g| size_label(&g.g)).map(|s| tr!("{} · files and paths", s)).unwrap_or_else(|| tr!("Files and paths"));
-        [(tr!("Compatibility"), compat), (tr!("Versions"), versions), (tr!("Trailers & screenshots"), media), (tr!("Details"), details)]
-            .into_iter().map(|(k, v)| Fact { key: k.into(), value: v.into(), kind: 0 }).collect()
+        // Played: the hours first (a console's activity card says how long you've played).
+        let hours = t.local.map(|l| (self.playtime(&self.locals[l].l).total / 3600.0).floor() as u64).unwrap_or(0);
+        let details = if hours > 0 { format!("{} · {}", tr!("{} h played", hours), details) } else { details };
+        // Compatibility's colour bar: 1 plays, 2 starts or menus, 3 doesn't start (0: no result).
+        let level = match self.target_compat(t).map(|e| compat_chip(Some(e), self.target_platform(t)).dot) { Some(1) => 1, Some(2 | 3) => 2, Some(4) => 3, _ => 0 };
+        [(tr!("Compatibility"), compat, level), (tr!("Versions"), versions, 0), (tr!("Trailers & screenshots"), media, 0), (tr!("Details"), details, 0)]
+            .into_iter().map(|(k, v, kind)| Fact { key: k.into(), value: v.into(), kind }).collect()
     }
 
     fn chips_for(&self, t: Target) -> Vec<ChipData> {
@@ -552,7 +561,14 @@ impl App {
                     (h.note, h.note_warn) = (note.into(), warn);
                 }
                 self.hero_actions = self.actions_for(t, false);
-                if t.local.is_some() { peek = self.peek_cards(t); }
+                if t.local.is_some() {
+                    peek = self.peek_cards(t);
+                    // Trailers & screenshots shows its first screenshot (once it's in).
+                    let r = self.target_info(t).and_then(|i| i.shots.first().cloned()).and_then(|u| req_url(&u, 480, 0.0));
+                    self.peek_shot_key = r.as_ref().map(|r| r.key.clone()).unwrap_or_default();
+                    let img = self.get_img(&r, prio::DETAIL);
+                    self.ui().set_home_peek_shot(img.unwrap_or_default());
+                }
             }
         }
         h.actions = model(self.hero_actions.iter().map(action_data).collect());
@@ -676,6 +692,17 @@ impl App {
         }
     }
 
+    /// Once the new art has settled (its 1.6 s zoom in), it drifts in slowly, as a console's
+    /// does, until the selection changes.
+    fn bg_drift(&mut self) {
+        self.ui().set_bg_drift(false);
+        self.bg_drift_gen += 1;
+        let generation = self.bg_drift_gen;
+        slint::Timer::single_shot(std::time::Duration::from_millis(1700), move || with_app(move |app| {
+            if app.bg_drift_gen == generation { app.ui().set_bg_drift(true); }
+        }));
+    }
+
     fn apply_bg_standin(&mut self, img: Image) {
         self.bg_standin = None;
         self.bg_key = String::new();
@@ -687,6 +714,7 @@ impl App {
             ui.set_bg_a(img);
         }
         ui.set_bg_show_b(self.bg_show_b);
+        self.bg_drift();
         self.bg_changed();
     }
 
@@ -732,12 +760,16 @@ impl App {
             ui.set_bg_a(img);
         }
         ui.set_bg_show_b(self.bg_show_b);
+        self.bg_drift();
         self.bg_changed();
     }
 
     /// An image finished loading: update whatever shows it.
     pub fn refresh_images(&mut self, key: &str) {
         self.games_image(key);
+        if !self.peek_shot_key.is_empty() && key == self.peek_shot_key {
+            if let Some(img) = self.images.get(key) { self.ui().set_home_peek_shot(img); }
+        }
         // A strip thumbnail of the viewer came in (only one that did: see discover_image).
         if self.overlay == Overlay::Viewer && self.images.get(key).is_some() && self.viewer_strip_keys.iter().any(|k| k == key) { self.push_viewer(); }
         self.lib_image(key);

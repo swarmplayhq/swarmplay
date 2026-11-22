@@ -30,6 +30,7 @@ mod folder_pick;
 mod games;
 mod game_library;
 mod store;
+mod profile_card;
 mod onboard;
 mod avatar;
 mod profiles;
