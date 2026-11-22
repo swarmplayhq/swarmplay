@@ -35,7 +35,8 @@ STEPS = [
     ("01b-welcome", ["Left", "Down", "sleep:0.8"]),         # the Welcome tile's widgets
     ("01c-top-buttons", ["Up", "Up", "Right", "Right", "sleep:0.5"]),  # Search, round, focused
     ("01d-avatar", ["Right", "Right", "sleep:0.5"]),        # past Settings: you (the avatar)
-    ("02-home-new-game", ["Down", "Right", "Right", "Right"]),
+    # The first game after the Welcome (the row ends with the Game Library tile, never pressed).
+    ("02-home-new-game", ["Down", "Home", "Right", "sleep:0.4"]),
     ("02b-home-peek", ["Down", "Down", "sleep:0.8"]),  # Home scrolled to the Hub's cards
     ("03-hub", ["Return", "sleep:1.5"]),   # the Compatibility card opens the Hub (never Play)
     ("03b-hub-up-to-home", ["Up", "sleep:1"]),              # Up from the Hub's top: back to the cards
