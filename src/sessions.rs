@@ -334,6 +334,15 @@ impl Sessions {
         self.inner.lock().unwrap().playtime.get(key).copied().unwrap_or_default()
     }
 
+    /// A game moved to another folder (src/games.rs): its play time goes along (kept by its
+    /// folder when it has no title ID).
+    pub fn moved(&self, from: &str, to: &str) {
+        let mut inner = self.inner.lock().unwrap();
+        let Some(stats) = inner.playtime.remove(from) else { return };
+        inner.playtime.insert(to.to_string(), stats);
+        if let Ok(json) = serde_json::to_vec_pretty(&inner.playtime) { let _ = atomic_write(&playtime_path(), &json); }
+    }
+
     pub fn take_ended(&self) -> Vec<Ended> {
         std::mem::take(&mut self.inner.lock().unwrap().ended)
     }

@@ -27,6 +27,7 @@ mod toast;
 mod sound;
 mod storage;
 mod folder_pick;
+mod games;
 mod onboard;
 mod avatar;
 mod profiles;

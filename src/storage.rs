@@ -431,6 +431,11 @@ impl App {
         let row = |kind: i32, label: &str| SettingData { kind, label: label.into(), ..Default::default() };
         let install = util::expand_home(&cfg.install_dir);
         let mut rows = Vec::new();
+        // As a console's Storage → Games: every game, biggest first, to delete or move.
+        let mut r = row(4, &tr!("Installed games"));
+        r.value = tr!("{n} game" | "{n} games" % self.locals.len()).into();
+        r.hint = tr!("Delete games, or move them to another drive").into();
+        rows.push((SId::InstalledGames, r));
         for (i, d) in cfg.game_dirs.iter().enumerate() {
             let path = util::expand_home(d);
             let n = self.locals.iter().filter(|l| l.l.path.starts_with(&path)).count();
@@ -484,10 +489,10 @@ impl App {
     pub fn storage_part(&mut self, place: usize, part: usize) {
         let id = SId::StoragePart(place as u16, part as u8);
         match part {
+            // That drive's games, to delete or move (not the catalog).
             0 => {
-                crate::audio::play(crate::audio::Sound::Select);
-                while self.overlay != Overlay::None { let before = self.overlay; self.back(); if self.overlay == before { break; } }
-                self.switch_view(1, true);
+                let dev = self.storage_places().get(place).map(|p| p.dev);
+                self.open_games(dev, None);
             }
             1 => self.open_downloads(None),
             2 => {

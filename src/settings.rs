@@ -26,6 +26,8 @@ pub enum SId {
     // Games
     /// A game folder (src/storage.rs), and the row that adds one with the folder picker.
     GameDir(u16),
+    /// The installed games' list (src/games.rs).
+    InstalledGames,
     GameDirAdd,
     InstallDir,
     DownloadDir,
@@ -878,6 +880,7 @@ impl App {
             SId::StoragePart(n, k) => self.storage_part(n as usize, k as usize),
             SId::StorageAdd => self.open_folder_pick(crate::folder_pick::PickFor::Place),
             SId::GameDir(n) => self.game_dir_pressed(n as usize),
+            SId::InstalledGames => self.open_games(None, None),
             SId::GameDirAdd => self.open_folder_pick(crate::folder_pick::PickFor::GameFolder),
             SId::InstallDir => self.open_folder_pick(crate::folder_pick::PickFor::Install),
             SId::DownloadDir => self.open_folder_pick(crate::folder_pick::PickFor::Download),

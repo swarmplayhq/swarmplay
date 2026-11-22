@@ -244,6 +244,19 @@ impl Manager {
     }
 }
 
+impl Manager {
+    /// A game it installed went to another drive (src/games.rs): its record follows, so its
+    /// Delete deletes it there (uninstall checks the new folder as it did the old).
+    pub fn moved(&self, from: &Path, to: &Path) -> Result<()> {
+        ensure!(to.is_absolute(), "Not an absolute folder: {}", to.display());
+        let mut jobs = self.core.jobs.lock().unwrap();
+        let mut changed = false;
+        for job in jobs.iter_mut().filter(|j| j.path.as_deref() == Some(from)) { job.path = Some(to.to_path_buf()); changed = true; }
+        if changed { self.core.save(&jobs)?; }
+        Ok(())
+    }
+}
+
 impl Drop for Manager { fn drop(&mut self) { self.shutdown(); } }
 
 impl Core {

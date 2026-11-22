@@ -1,4 +1,4 @@
-import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData } from "theme.slint";
+import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData, GameRowData } from "theme.slint";
 import { FocusRing, Chip, Btn, Kicker, Badge, Switch, KeyCap, KeyboardKey, BackButton, Shimmer, Cover, Particles, AvatarCircle } from "widgets.slint";
 import { DownloadsPage, DownloadConsent, DownloadPanel, Capsule } from "downloads.slint";
 import { LibraryFilter, LibrarySortPicker } from "library.slint";
@@ -374,6 +374,8 @@ export component AppWindow inherits Window {
     in property <string> power-text;
     in property <[string]> power-buttons;
     in property <bool> power-danger;
+    // The card's icon (Icons.get); empty: the power symbol.
+    in property <string> power-icon;
     in property <int> power-sel;
     in property <bool> power-busy;
 
@@ -397,6 +399,11 @@ export component AppWindow inherits Window {
     in property <string> pick-note;
     in property <int> pick-step;
     in property <[PickRow]> pick-rows;
+    // Installed games (src/games.rs).
+    in property <string> games-title;
+    in property <string> games-sub;
+    in property <bool> games-picking;
+    in property <[GameRowData]> games-rows;
     callback toast-click(int);
 
     in property <bool> boot-first;
@@ -3769,7 +3776,7 @@ export component AppWindow inherits Window {
                                     border-radius: (18px * S.k);
                                     background: root.power-danger ? Theme.danger.with-alpha(0.16) : Theme.accent.with-alpha(0.16);
                                     if root.power-busy: Image { source: Icons.spinner; width: (32px * S.k); height: self.width; transform-rotation: pw.t * 400deg; }
-                                    if !root.power-busy: Image { source: Icons.power; colorize: root.power-danger ? #ff8f9c : #8fb6ff; width: (32px * S.k); height: self.width; }
+                                    if !root.power-busy: Image { source: root.power-icon == "" ? Icons.power : Icons.get(root.power-icon); colorize: root.power-danger ? #ff8f9c : #8fb6ff; width: (32px * S.k); height: self.width; }
                                 }
                             }
                             Rectangle { height: (22px * S.k); }
@@ -4195,6 +4202,123 @@ export component AppWindow inherits Window {
                 for h in root.pick-step == 0
                     ? (root.pad-hints ? [{ k: "✕", l: @tr("Open") }, { k: "○", l: @tr("Back") }] : [{ k: "Enter", l: @tr("Open") }, { k: "Esc", l: @tr("Back") }])
                     : (root.pad-hints ? [{ k: "✕", l: @tr("Open") }, { k: "△", l: @tr("Use this folder") }, { k: "○", l: @tr("Up") }] : [{ k: "Enter", l: @tr("Open") }, { k: "/", l: @tr("Use this folder") }, { k: "Esc", l: @tr("Up") }]): HorizontalLayout {
+                    spacing: (8px * S.k);
+                    KeyCap { text: h.k; round: root.pad-hints; }
+                    Text { text: h.l; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------ INSTALLED GAMES
+        if root.overlay == 21: Rectangle {
+            property <bool> entered: false;
+            init => { entered = true; }
+            property <bool> on: entered && root.closing != 21;
+            opacity: on ? 1 : 0;
+            transform-scale: on ? 1 : 0.985;
+            animate opacity { duration: 260ms; easing: ease-out-quad; }
+            animate transform-scale { duration: 420ms; easing: ease-out-expo; }
+            Wallpaper { kind: root.wallpaper-kind == 0 ? 1 : root.wallpaper-kind; image: root.wallpaper-image; }
+            Rectangle { background: @linear-gradient(180deg, #04060ecc 0%, #04060ee6 40%, #04060ef2 100%); }
+            TouchArea {}
+            HorizontalLayout {
+                x: (96px * S.k); y: (40px * S.k); height: (64px * S.k);
+                spacing: (18px * S.k); alignment: start;
+                Rectangle {
+                    width: (52px * S.k); height: self.width; y: (6px * S.k);
+                    border-radius: self.width / 2;
+                    background: ta-gb.has-hover ? #ffffff2e : #ffffff17;
+                    Image { source: Icons.chevl; colorize: Theme.text; width: (24px * S.k); height: self.width; }
+                    ta-gb := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.games, -1); } }
+                }
+                Text { text: root.games-title; font-size: (36px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
+            }
+            property <length> w: min((1180px * S.k), root.width - (192px * S.k));
+            Text {
+                x: (root.width - parent.w) / 2; y: (128px * S.k);
+                width: parent.w;
+                text: root.games-sub;
+                font-size: (18px * S.k); color: root.games-picking ? Theme.accent.brighter(0.4) : Theme.text2; overflow: elide;
+            }
+            if root.games-rows.length == 0: Text {
+                x: (root.width - parent.w) / 2; y: (196px * S.k);
+                width: parent.w;
+                text: @tr("No games installed here");
+                font-size: (20px * S.k); color: Theme.hint;
+            }
+            Flickable {
+                x: (root.width - parent.w) / 2 - (4px * S.k);
+                y: (176px * S.k);
+                width: parent.w + (8px * S.k);
+                height: root.height - self.y - (90px * S.k);
+                content-y: -max(0px, min(root.idx * (100px * S.k) - self.height / 2, list-g.preferred-height - self.height));
+                animate content-y { duration: 260ms; easing: ease-out-quart; }
+                interactive: false;
+                list-g := VerticalLayout {
+                    width: parent.width;
+                    padding: (4px * S.k);
+                    spacing: (4px * S.k);
+                    for r[i] in root.games-rows: Rectangle {
+                        property <bool> f: root.zone == Zone.games && root.idx == i;
+                        property <bool> shown: false;
+                        init => { self.shown = true; }
+                        opacity: self.shown ? 1 : 0;
+                        animate opacity { duration: 220ms; delay: min(i, 10) * 20ms; easing: ease-out-quad; }
+                        height: (96px * S.k);
+                        border-radius: (14px * S.k);
+                        background: f ? #ffffff1c : r.picked ? Theme.accent.with-alpha(0.12) : ta-g.has-hover ? #ffffff0d : transparent;
+                        border-width: (3px * S.k);
+                        border-color: f ? #f5f7fb : #f5f7fb00;
+                        animate background, border-color { duration: 160ms; }
+                        if !f: Rectangle { x: (20px * S.k); y: parent.height - 1px; width: parent.width - (40px * S.k); height: 1px; background: #ffffff14; }
+                        HorizontalLayout {
+                            padding-left: (18px * S.k); padding-right: (24px * S.k);
+                            spacing: (18px * S.k);
+                            // Picked with △: a tick before it.
+                            if root.games-picking: Rectangle {
+                                width: (30px * S.k); height: self.width; y: (33px * S.k);
+                                border-radius: (8px * S.k);
+                                background: r.picked ? Theme.accent : transparent;
+                                border-width: (2px * S.k);
+                                border-color: r.picked ? Theme.accent : #ffffff55;
+                                if r.picked: Image { source: Icons.check; colorize: #ffffff; width: (18px * S.k); height: self.width; }
+                            }
+                            Rectangle {
+                                width: (72px * S.k); height: self.width; y: (12px * S.k);
+                                border-radius: (12px * S.k);
+                                clip: true;
+                                background: #ffffff14;
+                                Image { source: r.image; width: parent.width; height: parent.height; image-fit: cover; opacity: r.loaded ? 1 : 0; animate opacity { duration: 240ms; } }
+                            }
+                            VerticalLayout {
+                                alignment: center; spacing: (4px * S.k); horizontal-stretch: 1;
+                                Text { text: r.label; font-size: (21px * S.k); font-weight: 600; color: Theme.text; overflow: elide; }
+                                Text { text: r.sub; font-size: (16px * S.k); color: r.busy ? Theme.accent.brighter(0.4) : Theme.text2; overflow: elide; }
+                                if r.busy: Rectangle {
+                                    height: (6px * S.k);
+                                    border-radius: (3px * S.k);
+                                    background: #ffffff1f;
+                                    Rectangle {
+                                        x: 0; width: parent.width * clamp(r.bar, 0, 1); height: parent.height;
+                                        border-radius: parent.border-radius;
+                                        background: Theme.accent;
+                                        animate width { duration: 900ms; }
+                                    }
+                                }
+                            }
+                            Text { text: r.size; font-size: (20px * S.k); font-weight: 500; color: Theme.text; vertical-alignment: center; }
+                        }
+                        ta-g := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.games, i); } }
+                    }
+                }
+            }
+            HorizontalLayout {
+                x: root.width - self.width - (96px * S.k); y: root.height - (60px * S.k);
+                width: self.preferred-width; height: (26px * S.k);
+                spacing: (22px * S.k);
+                for h in root.games-picking
+                    ? (root.pad-hints ? [{ k: "△", l: @tr("Pick") }, { k: "□", l: @tr("Delete") }, { k: "○", l: @tr("Let go") }] : [{ k: "/", l: @tr("Pick") }, { k: "T", l: @tr("Delete") }, { k: "Esc", l: @tr("Let go") }])
+                    : (root.pad-hints ? [{ k: "✕", l: @tr("Options") }, { k: "△", l: @tr("Pick") }, { k: "□", l: @tr("Delete") }, { k: "○", l: @tr("Back") }] : [{ k: "Enter", l: @tr("Options") }, { k: "/", l: @tr("Pick") }, { k: "T", l: @tr("Delete") }, { k: "Esc", l: @tr("Back") }]): HorizontalLayout {
                     spacing: (8px * S.k);
                     KeyCap { text: h.k; round: root.pad-hints; }
                     Text { text: h.l; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }

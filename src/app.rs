@@ -62,6 +62,8 @@ pub const Z_ONBOARD: i32 = 32;
 pub const Z_AVATAR: i32 = 33;
 /// Who's playing, on the start screen (src/profiles.rs).
 pub const Z_PROFILES: i32 = 34;
+/// The installed games' list (src/games.rs).
+pub const Z_GAMES: i32 = 35;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Overlay {
@@ -95,6 +97,8 @@ pub enum Overlay {
     Onboard = 19,
     /// Choosing an avatar (src/avatar.rs).
     Avatar = 20,
+    /// Installed games: delete, move to another drive (src/games.rs).
+    Games = 21,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -477,6 +481,8 @@ pub struct App {
     pub notes: crate::toast::Store,
     /// The drive and folder picker, while it's open (src/folder_pick.rs).
     pub pick: Option<crate::folder_pick::Pick>,
+    /// Installed games (src/games.rs): the list, what's picked, a move under way.
+    pub games_view: crate::games::GamesView,
     /// The first-run setup, while it's open (src/onboard.rs).
     pub ob: Option<crate::onboard::Onboard>,
     /// The grid of avatars, while it's open (src/avatar.rs).
@@ -832,6 +838,7 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         welcome_read: 0.0,
         notes: crate::toast::Store::load(),
         pick: None,
+        games_view: Default::default(),
         ob: None,
         avatar_pick: None,
         remove_armed: None,
@@ -2095,6 +2102,7 @@ impl App {
         self.settle_chosen_dirs();
         self.settle_pending_uninstall();
         self.storage_watch();
+        self.games_tick();
         self.push_installs();
         self.auto_install();
         self.push_downloads();
@@ -2396,6 +2404,9 @@ impl App {
         if zone == Z_PICK && self.overlay == Overlay::Folders {
             return self.click_folder_pick(idx);
         }
+        if zone == Z_GAMES && self.overlay == Overlay::Games {
+            return self.click_games(idx);
+        }
         if zone == Z_ONBOARD && self.overlay == Overlay::Onboard {
             return self.click_onboard(idx);
         }
@@ -2538,6 +2549,7 @@ impl App {
             Overlay::ControlCenter => self.act_control_center(a),
             Overlay::Notifications => self.act_notifications(a),
             Overlay::Folders => self.act_folder_pick(a),
+            Overlay::Games => self.act_games(a),
             Overlay::Onboard => self.act_onboard(a),
             Overlay::Avatar => self.act_avatar_pick(a),
             Overlay::Settings if self.zone == Z_SETTINGS_NAV => self.act_settings_nav(a),
@@ -2992,7 +3004,7 @@ impl App {
     /// a moment, then closes. Everything else closes at once. (Code that needs the page gone right
     /// away calls `back`.)
     pub fn back_soft(&mut self) {
-        const SOFT: [Overlay; 9] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar];
+        const SOFT: [Overlay; 10] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar, Overlay::Games];
         let ov = self.overlay;
         if !SOFT.contains(&ov) || (ov == Overlay::Downloads && self.ui().get_download_consent()) {
             return self.back();
@@ -3282,6 +3294,8 @@ impl App {
     }
 
     pub fn run_action(&mut self, id: &str, t: Target) {
+        // Information, Move, Delete (src/games.rs).
+        if self.game_care_action(id, t) { return; }
         match id {
             "play" => {
                 if let Some(l) = t.local {
@@ -3312,11 +3326,6 @@ impl App {
             "store" => {
                 if let Some(i) = self.target_info(t).filter(|i| !i.store.is_empty()) {
                     open_url(&i.store);
-                }
-            }
-            "folder" => {
-                if let Some(l) = t.local {
-                    open_url(&self.locals[l].l.path.to_string_lossy());
                 }
             }
             "log" => {
@@ -3671,7 +3680,8 @@ impl App {
         }
         let pc = self.target_platform(t) == crate::platform::Platform::Pc;
         if let Some(l) = t.local {
-            items.push(mk("folder", &tr!("Open game folder"), "folder"));
+            // Where it is and how big, on SwarmPlay's own list (no file manager).
+            items.push(mk("info", &tr!("Information"), "info"));
             items.push(mk("log", &if pc { tr!("View game log") } else { tr!("View emulator log") }, "log"));
             if pc {
                 // When the launcher picked the wrong thing to start: the next candidate.
@@ -3688,6 +3698,8 @@ impl App {
             crate::platform::Platform::Pc => tr!("ProtonDB page"),
         };
         items.push(mk("compat", &compat, "web"));
+        // Move to another drive and Delete, last before Settings (a console's Options menu).
+        items.extend(self.game_care_items(t, false));
         items.push(mk("settings", &tr!("Settings"), "gear"));
         let title = t.local.map(|l| self.locals[l].name.clone()).or_else(|| t.game.map(|g| self.games[g].name.clone())).unwrap_or_default();
         self.menu_target = Some(t);

@@ -116,6 +116,12 @@ fn existing_pc_game(dir: &Path) -> Option<LocalGame> {
     })
 }
 
+/// Whether a folder is a game the Library lists (a console game, a PC game installed by
+/// SwarmPlay or by hand): what may be deleted as one (src/games.rs).
+pub fn is_game(dir: &Path) -> bool {
+    read_param(dir).is_some() || existing_pc_game(dir).is_some()
+}
+
 /// Scan each folder, its children, and grandchildren (for "Games/<Title>/<PPSAxxxxx-app0>", or a
 /// PC game a folder deeper).
 pub fn scan(dirs: &[PathBuf]) -> Vec<LocalGame> {

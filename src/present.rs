@@ -137,7 +137,7 @@ fn logo_size(img: &Image, max_w: f32, max_h: f32) -> (f32, f32) {
 pub const TEXT_SCALE_MIN: f32 = 0.75;
 
 impl App {
-    fn get_img(&mut self, r: &Option<ImgReq>, p: u8) -> Option<Image> {
+    pub(crate) fn get_img(&mut self, r: &Option<ImgReq>, p: u8) -> Option<Image> {
         let r = r.as_ref()?;
         self.images.want(&r.key, r.src.clone(), r.w, r.crop, p)
     }
@@ -732,6 +732,7 @@ impl App {
 
     /// An image finished loading: update whatever shows it.
     pub fn refresh_images(&mut self, key: &str) {
+        self.games_image(key);
         if self.bg_standin.as_deref() == Some(key) && self.bg_pending.is_some() {
             if let Some(img) = self.images.get(key) {
                 self.apply_bg_standin(img);
