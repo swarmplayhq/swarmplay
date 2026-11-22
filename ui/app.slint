@@ -1,4 +1,4 @@
-import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData, GameRowData, LibTile, DiscoverTile, DiscoverRow, DiscoverHero } from "theme.slint";
+import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData, GameRowData, LibTile, DiscoverTile, DiscoverRow, DiscoverHero, FilterRow } from "theme.slint";
 import { FocusRing, Chip, Btn, Kicker, Badge, Switch, KeyCap, KeyboardKey, BackButton, Shimmer, Cover, Particles, AvatarCircle } from "widgets.slint";
 import { DownloadsPage, DownloadConsent, DownloadPanel, Capsule } from "downloads.slint";
 import { LibraryFilter, LibrarySortPicker } from "library.slint";
@@ -411,6 +411,10 @@ export component AppWindow inherits Window {
     in property <int> store-tab;
     in property <DiscoverHero> discover-hero;
     in property <[DiscoverRow]> discover-rows;
+    // Browse's Sort and filter (src/store.rs): its lines, what's chosen in words, the count.
+    in property <[FilterRow]> filter-rows;
+    in property <string> filter-summary;
+    in property <string> filter-count;
     in property <int> lib-tab;
     in property <[string]> lib-tabs;
     in property <[LibTile]> lib-tiles;
@@ -1101,8 +1105,8 @@ export component AppWindow inherits Window {
                     library-search := Rectangle {
                         width: min((600px * S.k), max((180px * S.k), parent.width - library-sort.width - density.width - (54px * S.k)));
                         border-radius: (31px * S.k);
-                        background: root.zone == Zone.search ? #ffffff1f : ta-search.has-hover ? #ffffff17 : #ffffff0f;
-                        border-width: root.zone == Zone.search ? (3px * S.k) : 0;
+                        background: root.zone == Zone.search && root.idx == 0 ? #ffffff1f : ta-search.has-hover ? #ffffff17 : #ffffff0f;
+                        border-width: root.zone == Zone.search && root.idx == 0 ? (3px * S.k) : 0;
                         border-color: #f5f7fb;
                         animate background { duration: 120ms; }
                         Image { x: (24px * S.k); source: Icons.search; colorize: Theme.text2; width: (24px * S.k); height: (24px * S.k); }
@@ -1133,20 +1137,23 @@ export component AppWindow inherits Window {
                     library-sort := Rectangle {
                         width: sort-row.preferred-width + (40px * S.k);
                         border-radius: (31px * S.k);
-                        background: root.zone == Zone.sort ? #ffffff1f : ta-sort.has-hover ? #ffffff17 : #ffffff0f;
-                        border-width: root.zone == Zone.sort ? (3px * S.k) : 0;
+                        // Sort and filter: its panel holds the sort, the filters and the covers' size.
+                        background: root.zone == Zone.search && root.idx == 1 ? #ffffff1f : ta-sort.has-hover ? #ffffff17 : #ffffff0f;
+                        border-width: root.zone == Zone.search && root.idx == 1 ? (3px * S.k) : 0;
                         border-color: #f5f7fb;
                         sort-row := HorizontalLayout {
                             spacing: (10px * S.k);
                             alignment: center;
-                            Text { text: root.sort-label; font-size: (20px * root.library-type-scale); color: Theme.text; vertical-alignment: center; }
-                            Image { source: Icons.chevd; colorize: Theme.text3; width: (20px * S.k); height: (20px * S.k); y: (parent.height - (20px * S.k)) / 2; }
+                            Image { source: Icons.grid; colorize: Theme.text2; width: (20px * S.k); height: (20px * S.k); y: (parent.height - (20px * S.k)) / 2; }
+                            Text { text: @tr("Sort and filter"); font-size: (20px * root.library-type-scale); color: Theme.text; vertical-alignment: center; }
                         }
-                        ta-sort := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.sort, 0); } }
+                        ta-sort := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.search, 1); } }
                     }
                     Rectangle { horizontal-stretch: 1; }
                     density := Rectangle {
-                        width: density-row.preferred-width;
+                        // Covers' size is on Sort and filter now.
+                        visible: false;
+                        width: 0;
                         border-radius: (31px * S.k); background: #ffffff0f;
                         density-row := HorizontalLayout {
                             padding: (5px * S.k); spacing: (4px * S.k);
@@ -1163,8 +1170,18 @@ export component AppWindow inherits Window {
                         }
                     }
                 }
+                // What's chosen on Sort and filter, and how many games that leaves.
+                Text {
+                    x: (96px * S.k); y: (188px * S.k); width: (root.width - (192px * S.k)) * 0.65; height: (32px * S.k);
+                    text: root.filter-summary; font-size: (18px * root.library-type-scale); color: Theme.text2; overflow: elide; vertical-alignment: center;
+                }
+                Text {
+                    x: root.width - (96px * S.k) - self.width; y: (188px * S.k); width: (root.width - (192px * S.k)) * 0.34; height: (32px * S.k);
+                    text: root.count-label; font-size: (18px * root.library-type-scale); color: Theme.hint; horizontal-alignment: right; overflow: elide; vertical-alignment: center;
+                }
                 Rectangle {
                     x: (96px * S.k);
+                    visible: false;
                     y: (192px * S.k);
                     width: root.width - (192px * S.k);
                     height: (52px * S.k);
@@ -1189,6 +1206,7 @@ export component AppWindow inherits Window {
                     }
                 }
                 Rectangle {
+                    visible: false;
                     x: (96px * S.k); y: (254px * S.k); width: root.width - (192px * S.k);
                     height: (52px * S.k);
                     Text { x: 0; y: 0; height: parent.height; text: @tr("Genre"); font-size: (17px * root.library-type-scale); font-weight: 500; color: Theme.hint; width: (76px * S.k); horizontal-alignment: left; vertical-alignment: center; }
@@ -2801,6 +2819,64 @@ export component AppWindow inherits Window {
                     spacing: (8px * S.k);
                     KeyCap { text: h.k; round: root.pad-hints; }
                     Text { text: h.l; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------ SORT AND FILTER
+        if root.overlay == 23: fp := Rectangle {
+            property <bool> entered: false;
+            init => { entered = true; }
+            property <bool> on: entered && root.closing != 23;
+            background: on ? #03050ca6 : #03050c00;
+            animate background { duration: 220ms; }
+            TouchArea { clicked => { root.click(Zone.filters, -1); } }
+            Rectangle {
+                width: (520px * S.k);
+                x: fp.on ? root.width - self.width : root.width;
+                animate x { duration: 340ms; easing: ease-out-expo; }
+                background: @linear-gradient(180deg, #121c38 0%, #0a1024 100%);
+                border-width: 1px;
+                border-color: Theme.line;
+                TouchArea {}
+                VerticalLayout {
+                    padding: (40px * S.k);
+                    padding-top: (56px * S.k);
+                    spacing: (8px * S.k);
+                    alignment: start;
+                    Text { text: @tr("Sort and filter"); font-size: (32px * S.k); font-weight: 700; color: Theme.text; }
+                    Text { text: root.filter-count; font-size: (17px * S.k); color: Theme.text2; }
+                    Rectangle { height: (18px * S.k); }
+                    for r[i] in root.filter-rows: Rectangle {
+                        property <bool> f: root.zone == Zone.filters && root.idx == i;
+                        height: (76px * S.k);
+                        border-radius: (14px * S.k);
+                        background: f ? #ffffff1c : ta-fr.has-hover ? #ffffff0d : transparent;
+                        border-width: (3px * S.k);
+                        border-color: f ? #f5f7fb : #f5f7fb00;
+                        animate background, border-color { duration: 160ms; }
+                        HorizontalLayout {
+                            padding-left: (20px * S.k); padding-right: (16px * S.k);
+                            spacing: (12px * S.k);
+                            Text { text: r.label; font-size: (19px * S.k); color: Theme.text2; vertical-alignment: center; horizontal-stretch: 1; }
+                            if f: Image { y: (parent.height - self.height) / 2; source: Icons.chevl; colorize: Theme.text; width: (18px * S.k); height: self.width; }
+                            Text { text: r.value; font-size: (19px * S.k); font-weight: 600; color: Theme.text; vertical-alignment: center; overflow: elide; }
+                            if f: Image { y: (parent.height - self.height) / 2; source: Icons.chevr; colorize: Theme.text; width: (18px * S.k); height: self.width; }
+                        }
+                        ta-fr := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.filters, i); } }
+                    }
+                }
+                HorizontalLayout {
+                    x: (40px * S.k); y: parent.height - (64px * S.k);
+                    height: (26px * S.k);
+                    spacing: (20px * S.k);
+                    for h in root.pad-hints
+                        ? [{ k: "◂ ▸", l: @tr("Change") }, { k: "○", l: @tr("Done") }]
+                        : [{ k: "← →", l: @tr("Change") }, { k: "Esc", l: @tr("Done") }]: HorizontalLayout {
+                        spacing: (8px * S.k);
+                        KeyCap { text: h.k; round: false; }
+                        Text { text: h.l; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
+                    }
                 }
             }
         }

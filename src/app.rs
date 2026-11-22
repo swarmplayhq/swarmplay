@@ -68,6 +68,8 @@ pub const Z_GAMES: i32 = 35;
 pub const Z_LIBRARY: i32 = 36;
 /// The Store's Discover: the featured game, then its rows (src/store.rs).
 pub const Z_DISCOVER: i32 = 37;
+/// The lines of Sort and filter (src/store.rs).
+pub const Z_FILTERS: i32 = 38;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Overlay {
@@ -105,6 +107,8 @@ pub enum Overlay {
     Games = 21,
     /// Your games, apart from the catalog (src/game_library.rs).
     GameLibrary = 22,
+    /// Browse's Sort and filter panel (src/store.rs).
+    Filters = 23,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -1568,7 +1572,7 @@ impl App {
         if self.filtered.is_empty() {
             // Nothing to focus: the filters, as push_grid does with an empty Library.
             if let Some(saved) = self.stack.iter_mut().find(|(_, zone, _)| *zone == Z_GRID) {
-                (saved.1, saved.2) = (Z_CHIPS, 0);
+                (saved.1, saved.2) = (Z_SEARCH, 0);
             }
             return;
         }
@@ -2427,6 +2431,9 @@ impl App {
         if zone == Z_GAMES && self.overlay == Overlay::Games {
             return self.click_games(idx);
         }
+        if zone == Z_FILTERS && self.overlay == Overlay::Filters {
+            return self.click_filters(idx);
+        }
         if zone == Z_LIBRARY && self.overlay == Overlay::GameLibrary {
             return self.click_game_library(idx);
         }
@@ -2580,6 +2587,7 @@ impl App {
             Overlay::Folders => self.act_folder_pick(a),
             Overlay::Games => self.act_games(a),
             Overlay::GameLibrary => self.act_game_library(a),
+            Overlay::Filters => self.act_filters(a),
             Overlay::Onboard => self.act_onboard(a),
             Overlay::Avatar => self.act_avatar_pick(a),
             Overlay::Settings if self.zone == Z_SETTINGS_NAV => self.act_settings_nav(a),
@@ -2685,10 +2693,17 @@ impl App {
                 }
                 _ => {}
             },
+            // Browse's header: the search (0) and Sort and filter (1); the chips moved into its panel.
             Z_SEARCH => match a {
-                Act::Right => self.move_focus(Z_SORT, 0),
+                Act::Right if self.idx == 0 => self.move_focus(Z_SEARCH, 1),
+                Act::Left if self.idx == 1 => self.move_focus(Z_SEARCH, 0),
                 Act::Up => self.move_focus(Z_TABS, 1),
-                Act::Down => self.focus_status(),
+                Act::Down if !self.filtered.is_empty() => {
+                    let first = self.first_visible_card();
+                    self.move_focus(Z_GRID, first as i32);
+                    self.focus_card_changed();
+                }
+                Act::Confirm if self.idx == 1 => self.open_filters(),
                 Act::Confirm => self.open_search(),
                 _ => {}
             },
@@ -2769,17 +2784,16 @@ impl App {
         }
     }
 
+    /// Up from the grid: Browse's header (the chips are in Sort and filter now).
     fn focus_chip(&mut self) {
-        let i = self.genre_list.iter().enumerate().skip(self.status_count).find(|(_, (g, _))| *g == self.genre).map(|(i, _)| i).unwrap_or(self.status_count);
-        self.move_focus(Z_CHIPS, i as i32);
-        self.push_genres();
+        self.move_focus(Z_SEARCH, 0);
     }
 
+
     fn focus_status(&mut self) {
-        let i = self.genre_list.iter().take(self.status_count).position(|(g, _)| *g == self.status_filter).unwrap_or(0);
-        self.move_focus(Z_CHIPS, i as i32);
-        self.push_genres();
+        self.move_focus(Z_SEARCH, 0);
     }
+
 
     /// The platform a status-row chip stands for ("PS5 games only", "PC games only"…).
     pub fn console_chip(&self, i: usize) -> Option<crate::platform::Platform> {
@@ -3036,7 +3050,7 @@ impl App {
     /// a moment, then closes. Everything else closes at once. (Code that needs the page gone right
     /// away calls `back`.)
     pub fn back_soft(&mut self) {
-        const SOFT: [Overlay; 11] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar, Overlay::Games, Overlay::GameLibrary];
+        const SOFT: [Overlay; 12] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar, Overlay::Games, Overlay::GameLibrary, Overlay::Filters];
         let ov = self.overlay;
         if !SOFT.contains(&ov) || (ov == Overlay::Downloads && self.ui().get_download_consent()) {
             return self.back();

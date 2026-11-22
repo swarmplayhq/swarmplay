@@ -159,3 +159,108 @@ impl App {
         }
     }
 }
+
+/// What each line of Sort and filter changes.
+#[derive(Clone, Copy, PartialEq)]
+enum FilterLine { Sort, Show, Console, Genre, Covers }
+
+impl App {
+    /// The lines of Sort and filter (Console only when the catalog has more than one).
+    fn filter_lines(&self) -> Vec<FilterLine> {
+        let mut v = vec![FilterLine::Sort, FilterLine::Show];
+        if self.mixed_consoles { v.push(FilterLine::Console); }
+        v.extend([FilterLine::Genre, FilterLine::Covers]);
+        v
+    }
+
+    /// The genres to step through ("All" first), as the chips listed them.
+    fn filter_genres(&self) -> Vec<String> {
+        std::iter::once("All".to_string()).chain(self.genre_list.iter().skip(self.status_count + 1).map(|(g, _)| g.clone())).collect()
+    }
+
+    /// What's chosen, in a few words: under Browse's search, and on the panel.
+    pub fn filter_summary(&self) -> String {
+        let mut parts = vec![crate::app::sort_label(self.sort)];
+        if self.status_filter != "All" { parts.push(crate::app::filter_label(&self.status_filter)); }
+        if let Some(p) = self.platform_filter { parts.push(p.label().to_string()); }
+        if self.genre != "All" { parts.push(crate::app::filter_label(&self.genre)); }
+        parts.join(" · ")
+    }
+
+    pub fn open_filters(&mut self) {
+        audio::play(Sound::Select);
+        self.push_overlay(Overlay::Filters, Z_FILTERS, 0);
+        self.push_filters();
+    }
+
+    fn push_filters(&mut self) {
+        let rows: Vec<crate::FilterRow> = self.filter_lines().into_iter().map(|l| {
+            let (label, value) = match l {
+                FilterLine::Sort => (tr!("Sort"), crate::app::sort_label(self.sort)),
+                FilterLine::Show => (tr!("Show"), if self.status_filter == "All" { tr!("All games") } else { crate::app::filter_label(&self.status_filter) }),
+                FilterLine::Console => (tr!("Console"), self.platform_filter.map_or(tr!("Every console"), |p| p.label().to_string())),
+                FilterLine::Genre => (tr!("Genre"), if self.genre == "All" { tr!("All genres") } else { crate::app::filter_label(&self.genre) }),
+                FilterLine::Covers => (tr!("Covers"), if self.cfg.lock().unwrap().library_compact { tr!("Small") } else { tr!("Large") }),
+            };
+            crate::FilterRow { label: label.into(), value: value.into() }
+        }).collect();
+        let ui = self.ui();
+        ui.set_filter_rows(model(rows));
+        ui.set_filter_count(self.ui().get_count_label());
+        ui.set_filter_summary(self.filter_summary().into());
+    }
+
+    /// ◂ ▸ (or ✕, forwards) on a line: the next choice, shown at once behind the panel.
+    fn filter_step(&mut self, line: usize, d: i32) {
+        let Some(l) = self.filter_lines().get(line).copied() else { return };
+        let step = |len: usize, cur: usize| (cur as i32 + d).rem_euclid(len.max(1) as i32) as usize;
+        match l {
+            FilterLine::Sort => { self.cycle_sort(d); return self.push_filters(); }
+            FilterLine::Covers => {
+                let compact = self.cfg.lock().unwrap().library_compact;
+                self.set_library_density(!compact);
+                return self.push_filters();
+            }
+            FilterLine::Show => {
+                const SHOW: [&str; 3] = ["All", "Installed", "Playable"];
+                let cur = SHOW.iter().position(|s| *s == self.status_filter).unwrap_or(0);
+                self.status_filter = SHOW[step(SHOW.len(), cur)].to_string();
+            }
+            FilterLine::Console => {
+                let all: Vec<Option<Platform>> = std::iter::once(None).chain(self.consoles.iter().copied().map(Some)).collect();
+                let cur = all.iter().position(|p| *p == self.platform_filter).unwrap_or(0);
+                self.platform_filter = all[step(all.len(), cur)];
+            }
+            FilterLine::Genre => {
+                let genres = self.filter_genres();
+                let cur = genres.iter().position(|g| *g == self.genre).unwrap_or(0);
+                self.genre = genres[step(genres.len(), cur)].clone();
+            }
+        }
+        audio::play(Sound::Move);
+        self.remember_library_view();
+        self.apply_filter();
+        self.set_grid_scroll(0.0, 0);
+        self.push_library();
+        self.push_filters();
+    }
+
+    pub fn act_filters(&mut self, a: Act) {
+        let n = self.filter_lines().len() as i32;
+        let i = self.idx.max(0);
+        match a {
+            Act::Up if i > 0 => self.move_focus(Z_FILTERS, i - 1),
+            Act::Down if i + 1 < n => self.move_focus(Z_FILTERS, i + 1),
+            Act::Left => self.filter_step(i as usize, -1),
+            Act::Right | Act::Confirm => self.filter_step(i as usize, 1),
+            Act::Back | Act::Options => self.back_soft(),
+            _ => {}
+        }
+    }
+
+    /// A line clicked: chosen, then (chosen already) its next choice; outside: closed.
+    pub fn click_filters(&mut self, idx: i32) {
+        if idx < 0 { return self.back_soft(); }
+        if self.idx == idx { self.filter_step(idx as usize, 1); } else { self.move_focus(Z_FILTERS, idx); }
+    }
+}
