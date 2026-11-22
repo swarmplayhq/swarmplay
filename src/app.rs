@@ -3065,6 +3065,7 @@ impl App {
             let (ov, zone, idx) = self.stack.pop().unwrap_or((Overlay::None, if self.view == 0 { Z_ROW } else { Z_GRID }, 0));
             self.overlay = ov;
             self.ui().set_overlay(ov as i32);
+            self.ui().set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
             self.set_focus(zone, idx);
             if ov == Overlay::None {
                 self.ui().set_hub_open(false);
@@ -3107,6 +3108,7 @@ impl App {
         let ui = self.ui();
         ui.set_overlay(ov as i32);
         ui.set_hub_open(self.hub.is_some() && (ov == Overlay::Hub || self.stack.iter().any(|s| s.0 == Overlay::Hub)));
+        ui.set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
         self.set_focus(zone, idx);
     }
 
@@ -3389,6 +3391,12 @@ impl App {
 
     pub fn launch(&mut self, l: usize) {
         let game = self.locals[l].l.clone();
+        // Being copied to another drive: its folder here goes once the copy is whole (src/games.rs).
+        if let Some(m) = self.games_view.moving.as_ref().filter(|m| m.from == game.path) {
+            let drive = m.drive.clone();
+            audio::play(Sound::Error);
+            return self.note_game_brief(&game.id, &tr!("It's moving to {}: wait for it, or cancel the move", drive), true);
+        }
         if let Some(s) = self.live.first() {
             let name = s.name.clone();
             self.note_game_brief(&game.id, &tr!("{name} is running: stop it first, or Resume it from Home", name), true);
@@ -3770,6 +3778,7 @@ impl App {
             let (ov, z, i) = self.stack.pop().unwrap_or((Overlay::None, Z_ROW, 0));
             self.overlay = ov;
             self.ui().set_overlay(ov as i32);
+            self.ui().set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
             self.set_focus(z, i);
         }
     }
