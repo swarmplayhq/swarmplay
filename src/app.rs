@@ -275,6 +275,10 @@ pub struct App {
     pub downloads: crate::downloads::Manager,
     pub installer: crate::installer::Manager,
     pub install_pending: Option<String>,
+    /// Settings → Storage's watch (src/storage.rs): when it last looked, and what the game
+    /// folders looked like then (None: not yet).
+    pub storage_watched: f64,
+    pub games_sig: Option<Vec<(std::path::PathBuf, i64)>>,
     pub install_states: HashMap<String, crate::installer::State>,
     /// Installs that couldn't start by themselves (why), until the player retries.
     pub install_failures: HashMap<String, String>,
@@ -673,6 +677,9 @@ pub fn watch_exit_signals() {
 
 pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor>, windowed: bool) {
     let cfg = Arc::new(Mutex::new(Config::load()));
+    // Folders on a drive mounted somewhere else since go along with it, before anything is looked
+    // for in them (src/storage.rs).
+    { let mut c = cfg.lock().unwrap(); if crate::storage::follow_drives(&mut c, &crate::storage::mounted_drives(), std::path::Path::exists) { c.save(); } }
     // Before anything is written for the window: every text from here on is in this language.
     crate::i18n::set_lang(crate::i18n::Lang::from_config(&cfg.lock().unwrap().language));
     audio::init();
@@ -701,6 +708,8 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         downloads: { let c = cfg.lock().unwrap(); crate::downloads::Manager::load(c.seed_after_download, c.download_vpn(), &crate::storage::download_bases(&c)) },
         installer: crate::installer::Manager::load(),
         install_pending: None,
+        storage_watched: 0.0,
+        games_sig: None,
         install_states: HashMap::new(),
         install_failures: HashMap::new(),
         chosen_dirs: None,
@@ -2085,6 +2094,7 @@ impl App {
     pub fn tick(&mut self) {
         self.settle_chosen_dirs();
         self.settle_pending_uninstall();
+        self.storage_watch();
         self.push_installs();
         self.auto_install();
         self.push_downloads();
@@ -3323,7 +3333,7 @@ impl App {
             }
             "settings" => self.open_settings(),
             // Straight to the row that adds it, not the top of Settings.
-            "add_folder" => self.open_setting(crate::settings::SId::Dirs),
+            "add_folder" => self.open_setting(crate::settings::SId::GameDirAdd),
             "library" => self.switch_view(1, true),
             "rate" => {
                 if let Some(l) = t.local {

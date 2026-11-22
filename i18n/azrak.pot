@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-22 05:16+0000\n"
+"POT-Creation-Date: 2026-11-22 05:33+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -366,7 +366,7 @@ msgstr ""
 msgid "{name} is running: stop it first, or Resume it from Home"
 msgstr ""
 
-#: src/app.rs src/boot.rs src/present.rs src/search_keys.rs
+#: src/app.rs src/boot.rs src/present.rs src/search_keys.rs src/storage.rs
 msgid "{n} game"
 msgid_plural "{n} games"
 msgstr[0] ""
@@ -1160,7 +1160,15 @@ msgid "exFAT folder entry checksum mismatch; the image is damaged"
 msgstr ""
 
 #: src/folder_pick.rs src/storage.rs
+msgid "Add a game folder"
+msgstr ""
+
+#: src/folder_pick.rs src/storage.rs
 msgid "Add a place"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Already in the list · {}"
 msgstr ""
 
 #: src/folder_pick.rs
@@ -1258,6 +1266,10 @@ msgid "Save downloads to"
 msgstr ""
 
 #: src/folder_pick.rs
+msgid "SwarmPlay finds the games in it and in the folders inside"
+msgstr ""
+
+#: src/folder_pick.rs
 msgid ""
 "SwarmPlay looks for the download's folder here and in the folders inside"
 msgstr ""
@@ -1268,9 +1280,7 @@ msgstr ""
 
 #. Already a place: a folder on it becomes where new games go instead.
 #: src/folder_pick.rs
-msgid ""
-"That drive is already in the list · use Install new games to for a folder on "
-"it"
+msgid "That drive is already in the list: press it to put new games there"
 msgstr ""
 
 #: src/folder_pick.rs
@@ -1292,6 +1302,12 @@ msgstr ""
 #: src/folder_pick.rs
 msgid "{free} free of {total}"
 msgstr ""
+
+#: src/folder_pick.rs
+msgid "{n} game found in it"
+msgid_plural "{n} games found in it"
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/folder_pick.rs
 msgid "{} drive"
@@ -3426,6 +3442,11 @@ msgid "Extra KytyPS5 arguments"
 msgstr ""
 
 #: src/settings.rs
+msgid ""
+"Folders of your own, KytyPS5 location and video options, the game catalog"
+msgstr ""
+
+#: src/settings.rs
 msgid "For example --vblank-frequency 60 --tessellation"
 msgstr ""
 
@@ -3440,10 +3461,6 @@ msgstr ""
 
 #: src/settings.rs
 msgid "From your VPN provider: a WireGuard .conf or OpenVPN .ovpn file"
-msgstr ""
-
-#: src/settings.rs
-msgid "Game folders"
 msgstr ""
 
 #: src/settings.rs
@@ -3488,10 +3505,6 @@ msgstr ""
 
 #: src/settings.rs
 msgid "KytyPS5 location"
-msgstr ""
-
-#: src/settings.rs
-msgid "KytyPS5 location and video options, the game catalog"
 msgstr ""
 
 #: src/settings.rs
@@ -3592,10 +3605,6 @@ msgstr ""
 
 #: src/settings.rs
 msgid "Remove this user"
-msgstr ""
-
-#: src/settings.rs
-msgid "Rescan game folders"
 msgstr ""
 
 #: src/settings.rs
@@ -3799,19 +3808,6 @@ msgstr ""
 #: src/settings.rs
 msgid "{n} game found"
 msgid_plural "{n} games found"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/settings.rs
-msgid "{n} installed game found"
-msgid_plural "{n} installed games found"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/settings.rs
-msgid "{n} installed game found · more than one folder? Put a ; between them"
-msgid_plural ""
-"{n} installed games found · more than one folder? Put a ; between them"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -4052,6 +4048,14 @@ msgid "Volume"
 msgstr ""
 
 #: src/storage.rs
+msgid "A folder of your own instead of the drive chosen in Storage"
+msgstr ""
+
+#: src/storage.rs
+msgid "A folder on any drive with games already installed in it"
+msgstr ""
+
+#: src/storage.rs
 msgid "Added · press it in the list to put new games there"
 msgstr ""
 
@@ -4070,10 +4074,6 @@ msgid "Counting…"
 msgstr ""
 
 #: src/storage.rs
-msgid "Downloaded games are set up here when you press Install"
-msgstr ""
-
-#: src/storage.rs
 msgid "Each download gets its own folder"
 msgstr ""
 
@@ -4085,8 +4085,17 @@ msgstr ""
 msgid "Free space: {}"
 msgstr ""
 
+#. A home folder mounted on its own (a container, a separate /home) is still this computer's.
 #: src/storage.rs
 msgid "Internal storage"
+msgstr ""
+
+#: src/storage.rs
+msgid "Its drive isn't connected · □ takes the folder off the list"
+msgstr ""
+
+#: src/storage.rs
+msgid "Look for games now"
 msgstr ""
 
 #: src/storage.rs
@@ -4103,6 +4112,10 @@ msgstr ""
 
 #: src/storage.rs
 msgid "New games go here · {}"
+msgstr ""
+
+#: src/storage.rs
+msgid "New games go here: put them on another drive in Storage first"
 msgstr ""
 
 #: src/storage.rs
@@ -4126,6 +4139,11 @@ msgid "Size: {}"
 msgstr ""
 
 #: src/storage.rs
+msgid ""
+"SwarmPlay also looks by itself when a folder changes or a drive is plugged in"
+msgstr ""
+
+#: src/storage.rs
 msgid "Taken off the list"
 msgstr ""
 
@@ -4134,7 +4152,17 @@ msgid "This one stays: it's where SwarmPlay started"
 msgstr ""
 
 #: src/storage.rs
+msgid "{n} game here · □ takes the folder off the list"
+msgid_plural "{n} games here · □ takes the folder off the list"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/storage.rs
 msgid "{} · its games and downloads are still there"
+msgstr ""
+
+#: src/storage.rs
+msgid "{} · its games are still there"
 msgstr ""
 
 #: src/theme.rs

@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SwarmPlay\n"
-"POT-Creation-Date: 2026-11-22 05:16+0000\n"
+"POT-Creation-Date: 2026-11-22 05:33+0000\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -349,7 +349,7 @@ msgstr "O shadPS4 só aceita relatórios de jogos extraídos de uma cópia sua, 
 msgid "{name} is running: stop it first, or Resume it from Home"
 msgstr "{name} está em execução: pare-o primeiro ou retome-o pelo Início"
 
-#: src/app.rs src/boot.rs src/present.rs src/search_keys.rs
+#: src/app.rs src/boot.rs src/present.rs src/search_keys.rs src/storage.rs
 msgid "{n} game"
 msgid_plural "{n} games"
 msgstr[0] "{n} jogo"
@@ -1130,8 +1130,16 @@ msgid "exFAT folder entry checksum mismatch; the image is damaged"
 msgstr "A soma de verificação de uma pasta exFAT não confere; a imagem está danificada"
 
 #: src/folder_pick.rs src/storage.rs
+msgid "Add a game folder"
+msgstr "Adicionar uma pasta de jogos"
+
+#: src/folder_pick.rs src/storage.rs
 msgid "Add a place"
 msgstr "Adicionar um local"
+
+#: src/folder_pick.rs
+msgid "Already in the list · {}"
+msgstr "Já está na lista · {}"
 
 #: src/folder_pick.rs
 msgid "Can't write here · choose a folder of yours"
@@ -1223,6 +1231,10 @@ msgid "Save downloads to"
 msgstr "Salvar downloads em"
 
 #: src/folder_pick.rs
+msgid "SwarmPlay finds the games in it and in the folders inside"
+msgstr "O SwarmPlay encontra os jogos nela e nas pastas dentro dela"
+
+#: src/folder_pick.rs
 msgid "SwarmPlay looks for the download's folder here and in the folders inside"
 msgstr "O SwarmPlay procura a pasta do download aqui e nas pastas dentro dela"
 
@@ -1232,8 +1244,8 @@ msgstr "Jogos e downloads do SwarmPlay"
 
 #. Already a place: a folder on it becomes where new games go instead.
 #: src/folder_pick.rs
-msgid "That drive is already in the list · use Install new games to for a folder on it"
-msgstr "Essa unidade já está na lista · use Instalar jogos novos em para uma pasta nela"
+msgid "That drive is already in the list: press it to put new games there"
+msgstr "Essa unidade já está na lista: pressione-a para colocar os novos jogos nela."
 
 #: src/folder_pick.rs
 msgid "The files are here"
@@ -1254,6 +1266,12 @@ msgstr "falhou"
 #: src/folder_pick.rs
 msgid "{free} free of {total}"
 msgstr "{free} livres de {total}"
+
+#: src/folder_pick.rs
+msgid "{n} game found in it"
+msgid_plural "{n} games found in it"
+msgstr[0] "{n} jogo encontrado nela"
+msgstr[1] "{n} jogos encontrados nela"
 
 #: src/folder_pick.rs
 msgid "{} drive"
@@ -3318,6 +3336,10 @@ msgid "Extra KytyPS5 arguments"
 msgstr "Argumentos extras do KytyPS5"
 
 #: src/settings.rs
+msgid "Folders of your own, KytyPS5 location and video options, the game catalog"
+msgstr "Pastas suas, local do KytyPS5, opções de vídeo e o catálogo de jogos"
+
+#: src/settings.rs
 msgid "For example --vblank-frequency 60 --tessellation"
 msgstr "Por exemplo --vblank-frequency 60 --tessellation"
 
@@ -3333,11 +3355,6 @@ msgstr "Encontrado"
 #: src/settings.rs
 msgid "From your VPN provider: a WireGuard .conf or OpenVPN .ovpn file"
 msgstr "Do seu provedor de VPN: um arquivo .conf do WireGuard ou .ovpn do OpenVPN"
-
-# Settings, theme, sound, notifications, storage, updates (fork: settings).
-#: src/settings.rs
-msgid "Game folders"
-msgstr "Pastas de jogos"
 
 #: src/settings.rs
 msgid "Game folders scanned"
@@ -3382,10 +3399,6 @@ msgstr "Continuar compartilhando downloads concluídos"
 #: src/settings.rs
 msgid "KytyPS5 location"
 msgstr "Local do KytyPS5"
-
-#: src/settings.rs
-msgid "KytyPS5 location and video options, the game catalog"
-msgstr "Local do KytyPS5, opções de vídeo e o catálogo de jogos"
 
 #: src/settings.rs
 msgid "Language, you, display and your game ratings"
@@ -3484,10 +3497,6 @@ msgstr "Recarregando…"
 #: src/settings.rs
 msgid "Remove this user"
 msgstr "Remover este usuário"
-
-#: src/settings.rs
-msgid "Rescan game folders"
-msgstr "Procurar jogos nas pastas de novo"
 
 #: src/settings.rs
 msgid "Resolution (PS5 games)"
@@ -3686,18 +3695,6 @@ msgid "{n} game found"
 msgid_plural "{n} games found"
 msgstr[0] "{n} jogo encontrado"
 msgstr[1] "{n} jogos encontrados"
-
-#: src/settings.rs
-msgid "{n} installed game found"
-msgid_plural "{n} installed games found"
-msgstr[0] "{n} jogo instalado encontrado"
-msgstr[1] "{n} jogos instalados encontrados"
-
-#: src/settings.rs
-msgid "{n} installed game found · more than one folder? Put a ; between them"
-msgid_plural "{n} installed games found · more than one folder? Put a ; between them"
-msgstr[0] "{n} jogo instalado encontrado · mais de uma pasta? Separe com ;"
-msgstr[1] "{n} jogos instalados encontrados · mais de uma pasta? Separe com ;"
 
 #: src/settings.rs
 msgid "{n} release · {date}"
@@ -3927,6 +3924,14 @@ msgid "Volume"
 msgstr "Volume"
 
 #: src/storage.rs
+msgid "A folder of your own instead of the drive chosen in Storage"
+msgstr "Uma pasta sua em vez da unidade escolhida em Armazenamento"
+
+#: src/storage.rs
+msgid "A folder on any drive with games already installed in it"
+msgstr "Uma pasta em qualquer unidade com jogos já instalados"
+
+#: src/storage.rs
 msgid "Added · press it in the list to put new games there"
 msgstr "Adicionado · pressione-o na lista para colocar os jogos novos lá"
 
@@ -3943,10 +3948,6 @@ msgid "Counting…"
 msgstr "Contando…"
 
 #: src/storage.rs
-msgid "Downloaded games are set up here when you press Install"
-msgstr "Os jogos baixados são instalados aqui quando você pressiona Instalar"
-
-#: src/storage.rs
 msgid "Each download gets its own folder"
 msgstr "Cada download ganha uma pasta própria"
 
@@ -3958,9 +3959,18 @@ msgstr "Todo o resto nesta unidade: o sistema, apps, seus próprios arquivos"
 msgid "Free space: {}"
 msgstr "Espaço livre: {}"
 
+#. A home folder mounted on its own (a container, a separate /home) is still this computer's.
 #: src/storage.rs
 msgid "Internal storage"
 msgstr "Armazenamento interno"
+
+#: src/storage.rs
+msgid "Its drive isn't connected · □ takes the folder off the list"
+msgstr "A unidade dela não está conectada · □ tira a pasta da lista"
+
+#: src/storage.rs
+msgid "Look for games now"
+msgstr "Procurar jogos agora"
 
 #: src/storage.rs
 msgid "Media gallery"
@@ -3977,6 +3987,10 @@ msgstr "Os jogos novos vão para cá agora"
 #: src/storage.rs
 msgid "New games go here · {}"
 msgstr "Os jogos novos vão para cá · {}"
+
+#: src/storage.rs
+msgid "New games go here: put them on another drive in Storage first"
+msgstr "Os novos jogos vão para cá: escolha outra unidade em Armazenamento primeiro."
 
 #: src/storage.rs
 msgid "No screenshots yet · Share takes one in a game"
@@ -3999,6 +4013,10 @@ msgid "Size: {}"
 msgstr "Tamanho: {}"
 
 #: src/storage.rs
+msgid "SwarmPlay also looks by itself when a folder changes or a drive is plugged in"
+msgstr "O SwarmPlay também procura sozinho quando uma pasta muda ou uma unidade é conectada"
+
+#: src/storage.rs
 msgid "Taken off the list"
 msgstr "Removido da lista"
 
@@ -4007,8 +4025,18 @@ msgid "This one stays: it's where SwarmPlay started"
 msgstr "Este fica: é onde o SwarmPlay começou"
 
 #: src/storage.rs
+msgid "{n} game here · □ takes the folder off the list"
+msgid_plural "{n} games here · □ takes the folder off the list"
+msgstr[0] "{n} jogo aqui · □ tira a pasta da lista"
+msgstr[1] "{n} jogos aqui · □ tira a pasta da lista"
+
+#: src/storage.rs
 msgid "{} · its games and downloads are still there"
 msgstr "{} · os jogos e downloads continuam lá"
+
+#: src/storage.rs
+msgid "{} · its games are still there"
+msgstr "{} · os jogos continuam lá"
 
 #: src/theme.rs
 msgid "A PNG or JPEG file, like ~/Pictures/wallpaper.png"
@@ -5217,3 +5245,29 @@ msgstr "NOVO"
 #: ui/widgets.slint:269
 msgid "● PLAYING"
 msgstr "● JOGANDO"
+
+#~ msgid "That drive is already in the list · use Install new games to for a folder on it"
+#~ msgstr "Essa unidade já está na lista · use Instalar jogos novos em para uma pasta nela"
+
+# Settings, theme, sound, notifications, storage, updates (fork: settings).
+#~ msgid "Game folders"
+#~ msgstr "Pastas de jogos"
+
+#~ msgid "KytyPS5 location and video options, the game catalog"
+#~ msgstr "Local do KytyPS5, opções de vídeo e o catálogo de jogos"
+
+#~ msgid "Rescan game folders"
+#~ msgstr "Procurar jogos nas pastas de novo"
+
+#~ msgid "{n} installed game found"
+#~ msgid_plural "{n} installed games found"
+#~ msgstr[0] "{n} jogo instalado encontrado"
+#~ msgstr[1] "{n} jogos instalados encontrados"
+
+#~ msgid "{n} installed game found · more than one folder? Put a ; between them"
+#~ msgid_plural "{n} installed games found · more than one folder? Put a ; between them"
+#~ msgstr[0] "{n} jogo instalado encontrado · mais de uma pasta? Separe com ;"
+#~ msgstr[1] "{n} jogos instalados encontrados · mais de uma pasta? Separe com ;"
+
+#~ msgid "Downloaded games are set up here when you press Install"
+#~ msgstr "Os jogos baixados são instalados aqui quando você pressiona Instalar"
