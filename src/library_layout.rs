@@ -1,5 +1,6 @@
 //! Shared, testable Library geometry. UI dimensions and virtualized scrolling use one source.
-pub const TOP: f32 = 324.0;
+/// Where the grid starts: under the tabs, Browse's search and the line saying what's chosen.
+pub const TOP: f32 = 248.0;
 
 pub struct Grid {
     pub cols: usize,

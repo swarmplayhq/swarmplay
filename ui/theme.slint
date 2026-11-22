@@ -143,6 +143,7 @@ export global Zone {
     out property <int> games: 35;
     out property <int> library: 36;
     out property <int> discover: 37;
+    out property <int> filters: 38;
 }
 
 // dot: KytyPS5 compatibility level (0 none, 1 in-game, 2 menus, 3 boots, 4 doesn't boot, 5 untested)
@@ -333,6 +334,9 @@ export struct LibTile { image: image, loaded: bool, label: string, sub: string, 
 export struct DiscoverTile { image: image, loaded: bool, label: string, badge: string, kind: int }
 export struct DiscoverRow { title: string, tiles: [DiscoverTile] }
 export struct DiscoverHero { image: image, loaded: bool, kicker: string, title: string, sub: string }
+
+// A line of Browse's Sort and filter panel (src/store.rs).
+export struct FilterRow { label: string, value: string }
 
 export struct PickRow { label: string, sub: string, icon: string, kind: int, has-bar: bool, bar: float, warn: bool }
 

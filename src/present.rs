@@ -923,6 +923,7 @@ impl App {
         let ui = self.ui();
         ui.set_grid_h((rows as f32 * self.row_h + 60.0) * self.scale);
         let releases = tr!("{n} release" | "{n} releases" % self.games.len());
+        ui.set_filter_summary(self.filter_summary().into());
         ui.set_count_label(if self.filtered.len() == self.library_total {
             format!("{} · {releases}", tr!("{n} game" | "{n} games" % self.filtered.len()))
         } else { format!("{} · {releases}", tr!("{0} of {n} game" | "{0} of {n} games" % self.library_total, self.filtered.len())) }.into());
@@ -941,7 +942,7 @@ impl App {
         ui.set_search_note(self.search_note.clone().into());
         if self.zone == Z_GRID && self.idx as usize >= self.filtered.len() {
             let i = self.filtered.len().saturating_sub(1) as i32;
-            self.set_focus(if self.filtered.is_empty() { Z_CHIPS } else { Z_GRID }, i.max(0));
+            self.set_focus(if self.filtered.is_empty() { Z_SEARCH } else { Z_GRID }, i.max(0));
         }
         self.grid_window = (usize::MAX, 0);
         self.push_grid_window();
