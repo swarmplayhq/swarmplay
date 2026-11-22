@@ -4,6 +4,7 @@
 //! installer.rs and pcgame.rs can do; where names can't tell (an archive's contents, whether a
 //! file without an extension is a program), it assumes the release can be installed.
 
+use tr::tr;
 use crate::platform::Platform;
 
 /// Why a release can't be installed, if it can't. `files` are its paths (`/`-separated, inside
@@ -16,7 +17,7 @@ pub fn unsupported(platform: Platform, files: &[(String, u64)]) -> Option<String
     }).collect();
     match platform {
         Platform::Ps5 if names.iter().any(|(_, name, _)| name.ends_with(".pkg")) && !names.iter().any(|(_, name, _)| name == "eboot.bin") =>
-            Some("it's a PS5 PKG package; PS5 games install from extracted folders, archives and exFAT or PFS (.ffpfsc) images".into()),
+            Some(tr!("it's a PS5 PKG package; PS5 games install from extracted folders, archives and exFAT or PFS (.ffpfsc) images")),
         Platform::Pc => pc(&names),
         _ => None,
     }
@@ -48,18 +49,33 @@ fn pc(names: &[(String, String, usize)]) -> Option<String> {
     }
     let has = |test: &dyn Fn(&str) -> bool| names.iter().any(|(_, name, _)| test(name));
     Some(if let Some(kind) = names.iter().find_map(|(_, name, _)| package(name)) {
-        format!("it's {kind}, which SwarmPlay doesn't install")
+        tr!("it's {kind}, which SwarmPlay doesn't install", kind = package_label(kind))
     } else if has(&|n| [".iso", ".mdf", ".mds", ".cue", ".nrg", ".ccd", ".img"].iter().any(|ext| n.ends_with(ext))) {
-        "it's a disc image, which SwarmPlay doesn't mount".into()
+        tr!("it's a disc image, which SwarmPlay doesn't mount")
     } else if has(&|n| n.ends_with(".jar")) {
-        "it's a Java .jar with nothing that starts it".into()
+        tr!("it's a Java .jar with nothing that starts it")
     } else if has(&|n| n.ends_with(".love")) {
-        "it's a LÖVE game file without the LÖVE runtime".into()
+        tr!("it's a LÖVE game file without the LÖVE runtime")
     } else if has(&|n| n.ends_with(".exe")) {
-        "it holds only a Windows installer".into()
+        tr!("it holds only a Windows installer")
     } else {
-        "nothing in it starts a game".into()
+        tr!("nothing in it starts a game")
     })
+}
+
+/// A package format's name, as the reason says it (package() gives the English one: it is called
+/// for every file of every catalog entry, and only the one shown needs translating).
+fn package_label(kind: &str) -> String {
+    match kind {
+        "a Debian package (.deb)" => tr!("a Debian package (.deb)"),
+        "an RPM package" => tr!("an RPM package"),
+        "a Flatpak bundle" => tr!("a Flatpak bundle"),
+        "a Snap package" => tr!("a Snap package"),
+        "an Arch Linux package" => tr!("an Arch Linux package"),
+        "a CrossOver bottle (.cxarchive)" => tr!("a CrossOver bottle (.cxarchive)"),
+        "a PlayOnLinux package (.polApp)" => tr!("a PlayOnLinux package (.polApp)"),
+        other => other.to_string(),
+    }
 }
 
 /// A system package format, by name.

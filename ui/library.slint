@@ -60,7 +60,7 @@ export component LibrarySortPicker inherits Rectangle {
         TouchArea { }
         body := VerticalLayout {
             padding: (12px * S.k); spacing: (4px * S.k);
-            Text { text: "Sort by"; font-size: (16px * root.type-scale); font-weight: 500; color: Theme.hint; height: (32px * S.k); vertical-alignment: center; x: (14px * S.k); }
+            Text { text: @tr("Sort by"); font-size: (16px * root.type-scale); font-weight: 500; color: Theme.hint; height: (32px * S.k); vertical-alignment: center; x: (14px * S.k); }
             for label[i] in root.options: Rectangle {
                 height: max((50px * S.k), (34px * root.type-scale));
                 border-radius: (10px * S.k);

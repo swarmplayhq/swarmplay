@@ -1,5 +1,6 @@
 //! KytyPS5 updates inside the app: background checks, installs, status and settings actions.
 
+use tr::tr;
 use crate::app::*;
 use crate::kyty::{self, Release};
 use std::time::Duration;
@@ -104,12 +105,12 @@ impl App {
                         }
                         // Like the launcher's: only a check you asked for shows an error.
                         if manual {
-                            app.kyty.error = format!("Update check failed: {e}");
+                            app.kyty.error = tr!("Update check failed: {e}", e);
                         }
                         if app.kyty.force_install {
                             app.kyty.force_install = false;
-                            let note = if app.cfg.lock().unwrap().emulator_ok() { "KytyPS5 emulator found" } else { "Could not download KytyPS5 · retry from Settings" };
-                            app.boot_kyty_done(note);
+                            let note = if app.cfg.lock().unwrap().emulator_ok() { tr!("KytyPS5 emulator found") } else { tr!("Could not download KytyPS5 · retry from Settings") };
+                            app.boot_kyty_done(&note);
                         }
                     }
                 }
@@ -127,7 +128,7 @@ impl App {
         if self.kyty.force_install {
             self.kyty.force_install = false;
             if managed && emulator_ok && !self.kyty_update_available() && !self.kyty.commit.is_empty() {
-                self.boot_kyty_done(&format!("KytyPS5 {} · up to date", kyty::pretty(&rel.tag)));
+                self.boot_kyty_done(&tr!("KytyPS5 {} · up to date", kyty::pretty(&rel.tag)));
             } else {
                 self.kyty_install(rel, true); // first run: games can't start without it
             }
@@ -147,9 +148,9 @@ impl App {
             }
         } else if manual {
             if self.kyty_update_available() {
-                self.note_setting(crate::settings::SId::KytyUpdate, &format!("Official build {} is out · switch to get it, and updates from then on", kyty::pretty(&rel.tag)), 0);
+                self.note_setting(crate::settings::SId::KytyUpdate, &tr!("Official build {} is out · switch to get it, and updates from then on", kyty::pretty(&rel.tag)), 0);
             } else {
-                self.note_setting(crate::settings::SId::KytyUpdate, &format!("Up to date with the latest official build, {}", kyty::pretty(&rel.tag)), 1);
+                self.note_setting(crate::settings::SId::KytyUpdate, &tr!("Up to date with the latest official build, {}", kyty::pretty(&rel.tag)), 1);
             }
         }
     }
@@ -162,14 +163,14 @@ impl App {
         }
         if !self.live.is_empty() {
             self.kyty.pending = Some(manual || self.kyty.pending == Some(true));
-            self.note_setting(crate::settings::SId::KytyUpdate, "Installs when you finish playing", 0);
-            self.boot_kyty_done("KytyPS5 update will install after your game");
+            self.note_setting(crate::settings::SId::KytyUpdate, &tr!("Installs when you finish playing"), 0);
+            self.boot_kyty_done(&tr!("KytyPS5 update will install after your game"));
             return;
         }
         self.kyty.busy = true;
         self.kyty.pending = None;
         self.kyty.error.clear();
-        self.kyty.progress = "Starting download…".into();
+        self.kyty.progress = tr!("Starting download…");
         self.kyty_refresh_settings();
         let old_emu = self.cfg.lock().unwrap().emulator_path();
         let was_managed = kyty::is_managed(&old_emu);
@@ -200,7 +201,7 @@ impl App {
                 app.set_status("", false);
                 match res {
                     Ok(()) => {
-                        app.notify(crate::toast::Cat::Updates, crate::toast::DONE, "check", "KytyPS5 updated", &crate::kyty::pretty(&rel.tag),
+                        app.notify(crate::toast::Cat::Updates, crate::toast::DONE, "check", &tr!("KytyPS5 updated"), &crate::kyty::pretty(&rel.tag),
                             crate::toast::Action::Settings("UPDATES".into()), "kyty-update", false);
                         {
                             let mut c = app.cfg.lock().unwrap();
@@ -209,9 +210,9 @@ impl App {
                         }
                         // The row shows the new build; switching from your own build says what came along.
                         if app.boot.active {
-                            app.boot_kyty_done(&format!("KytyPS5 {} ready", kyty::pretty(&rel.tag)));
+                            app.boot_kyty_done(&tr!("KytyPS5 {} ready", kyty::pretty(&rel.tag)));
                         } else if !was_managed {
-                            app.note_setting(crate::settings::SId::KytyUpdate, if imported > 0 { "Switched to official builds · your saves were copied over" } else { "Switched to official builds" }, 1);
+                            app.note_setting(crate::settings::SId::KytyUpdate, &if imported > 0 { tr!("Switched to official builds · your saves were copied over") } else { tr!("Switched to official builds") }, 1);
                         }
                     }
                     Err(e) => {
@@ -219,9 +220,9 @@ impl App {
                         if crate::util::is_network_error(&e) {
                             app.net_down = true;
                         }
-                        app.kyty.error = format!("Update failed: {e}");
-                        let note = if app.cfg.lock().unwrap().emulator_ok() { "KytyPS5 emulator found" } else { "Could not download KytyPS5 · retry from Settings" };
-                        app.boot_kyty_done(note);
+                        app.kyty.error = tr!("Update failed: {e}", e);
+                        let note = if app.cfg.lock().unwrap().emulator_ok() { tr!("KytyPS5 emulator found") } else { tr!("Could not download KytyPS5 · retry from Settings") };
+                        app.boot_kyty_done(&note);
                     }
                 }
                 app.kyty_refresh_version();
@@ -248,10 +249,10 @@ impl App {
             Ok(tag) => {
                 // The failed update it went back from is over.
                 self.kyty.error.clear();
-                self.note_setting(crate::settings::SId::KytyUpdate, &format!("Rolled back to {}", kyty::pretty(&tag)), 1);
+                self.note_setting(crate::settings::SId::KytyUpdate, &tr!("Rolled back to {}", kyty::pretty(&tag)), 1);
                 self.kyty_refresh_version();
             }
-            Err(e) => self.note_setting(crate::settings::SId::KytyRollback, &format!("Couldn't roll back: {e}"), 2),
+            Err(e) => self.note_setting(crate::settings::SId::KytyRollback, &tr!("Couldn't roll back: {e}", e), 2),
         }
     }
 
@@ -272,7 +273,7 @@ impl App {
                                 app.kyty_install(rel, true);
                             }
                             Err(e) => {
-                                app.kyty.error = format!("Couldn't reach GitHub: {e}");
+                                app.kyty.error = tr!("Couldn't reach GitHub: {e}", e);
                                 app.kyty_refresh_settings();
                             }
                         }

@@ -6,6 +6,7 @@
 use crate::app::*;
 use crate::audio::{self, Sound};
 use crate::os::system::{self, Disk, InstallEvent};
+use tr::tr;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum Phase {
@@ -66,7 +67,7 @@ impl App {
                     Ok(d) => app.osi.disks = d,
                     Err(e) => {
                         app.osi.disks.clear();
-                        app.osi.said = format!("Couldn't list the disks: {e}");
+                        app.osi.said = tr!("Couldn't list the disks: {e}", e);
                     }
                 }
                 app.osi.sel = first_choice(&app.osi.disks);
@@ -76,15 +77,15 @@ impl App {
     }
 
     /// The buttons under each phase (Pick: after the disks).
-    fn osi_buttons(&self) -> &'static [&'static str] {
+    fn osi_buttons(&self) -> Vec<String> {
         match self.osi.phase {
-            Phase::Intro => &["Install on this PC", "Try AzrakOS"],
-            Phase::Pick if self.osi_no_disk() => &["Try again", "Back"],
-            Phase::Pick => &["Back"],
-            Phase::Confirm => &["Erase and install", "Back"],
-            Phase::Installing => &[],
-            Phase::Done => &["Restart", "Later"],
-            Phase::Failed => &["Try again", "Back"],
+            Phase::Intro => vec![tr!("Install on this PC"), tr!("Try AzrakOS")],
+            Phase::Pick if self.osi_no_disk() => vec![tr!("Try again"), tr!("Back")],
+            Phase::Pick => vec![tr!("Back")],
+            Phase::Confirm => vec![tr!("Erase and install"), tr!("Back")],
+            Phase::Installing => vec![],
+            Phase::Done => vec![tr!("Restart"), tr!("Later")],
+            Phase::Failed => vec![tr!("Try again"), tr!("Back")],
         }
     }
 
@@ -162,9 +163,9 @@ impl App {
 
     pub fn osi_tell_installed(&mut self) {
         self.osi.tell_installed = false;
-        self.note_setting(crate::settings::SId::InstallOs, "Installed: restart without the USB stick to start it", 1);
+        self.note_setting(crate::settings::SId::InstallOs, &tr!("Installed: restart without the USB stick to start it"), 1);
         // Also on Home, which is where the player is after Later.
-        self.sticky_status = "AzrakOS is installed: restart without the USB stick".into();
+        self.sticky_status = tr!("AzrakOS is installed: restart without the USB stick");
         let (status, busy) = (self.status.clone(), self.status_busy);
         self.set_status(if busy { &status } else { "" }, busy);
     }
@@ -225,7 +226,7 @@ impl App {
             Phase::Done => {
                 if i == 0 {
                     if let Err(e) = system::restart() {
-                        self.osi.said = format!("Couldn't restart: {e}");
+                        self.osi.said = tr!("Couldn't restart: {e}", e);
                         self.osi_push();
                     }
                 } else {
@@ -245,14 +246,14 @@ impl App {
     fn osi_start(&mut self) {
         let Some(disk) = self.osi.disk.clone() else { return };
         if !self.live.is_empty() {
-            self.osi.said = "A game is running: close it first, then install".into();
+            self.osi.said = tr!("A game is running: close it first, then install");
             return self.osi_push();
         }
         audio::play(Sound::Start);
         crate::log!("installing AzrakOS on {}", disk.path);
         self.osi.phase = Phase::Installing;
         self.osi.progress = 0.0;
-        self.osi.step = "Getting ready".into();
+        self.osi.step = tr!("Getting ready");
         self.osi.end = None;
         self.osi_push();
         std::thread::spawn(move || {
@@ -291,48 +292,48 @@ impl App {
         // A small line under the note: how long it takes, or the installer's own words.
         let mut small = String::new();
         let (title, text, note): (String, String, String) = match s.phase {
-            Phase::Intro => ("Welcome to AzrakOS".into(),
-                "You're running it from the USB stick, and nothing on this PC has changed. Try it as long as you like, or install it so the PC starts straight into it.".into(),
+            Phase::Intro => (tr!("Welcome to AzrakOS"),
+                tr!("You're running it from the USB stick, and nothing on this PC has changed. Try it as long as you like, or install it so the PC starts straight into it."),
                 String::new()),
-            Phase::Pick if self.osi_no_disk() => ("No disk to install on".into(),
-                "AzrakOS needs a disk of 40 GB or more (not the USB stick). Connect one, then try again.".into(),
+            Phase::Pick if self.osi_no_disk() => (tr!("No disk to install on"),
+                tr!("AzrakOS needs a disk of 40 GB or more (not the USB stick). Connect one, then try again."),
                 String::new()),
-            Phase::Pick => ("Where should AzrakOS go?".into(),
-                if s.loading { "Looking at this PC's disks…".into() } else { "Everything on the disk you choose is erased.".into() },
+            Phase::Pick => (tr!("Where should AzrakOS go?"),
+                if s.loading { tr!("Looking at this PC's disks…") } else { tr!("Everything on the disk you choose is erased.") },
                 String::new()),
             Phase::Confirm => {
-                let d = disk.cloned().unwrap_or_else(|| Disk { path: String::new(), bytes: 0, model: "Disk".into(), windows: false, usb: false });
+                let d = disk.cloned().unwrap_or_else(|| Disk { path: String::new(), bytes: 0, model: tr!("Disk"), windows: false, usb: false });
                 sub = format!("{} · {}", d.model, d.size());
                 text_warn = d.windows;
-                ("Erase this disk?".into(),
-                 if d.windows { "Windows and everything on this disk will be deleted.".into() }
-                 else { "AzrakOS replaces everything on this disk.".into() },
-                 "This can't be undone.".into())
+                (tr!("Erase this disk?"),
+                 if d.windows { tr!("Windows and everything on this disk will be deleted.") }
+                 else { tr!("AzrakOS replaces everything on this disk.") },
+                 tr!("This can't be undone."))
             }
             Phase::Installing => {
-                small = "This takes a few minutes.".into();
-                ("Installing AzrakOS".into(), s.step.clone(), "Keep the PC on".into())
+                small = tr!("This takes a few minutes.");
+                (tr!("Installing AzrakOS"), s.step.clone(), tr!("Keep the PC on"))
             }
             Phase::Done => {
                 let nvidia_later = match &s.end {
                     Some(InstallEvent::Done { mok: m, nvidia_later, .. }) => { mok = *m; *nvidia_later }
                     _ => false,
                 };
-                ("AzrakOS is installed".into(),
-                 "Remove the USB stick, then restart: the PC starts straight into AzrakOS.".into(),
+                (tr!("AzrakOS is installed"),
+                 tr!("Remove the USB stick, then restart: the PC starts straight into AzrakOS."),
                  // With the key screen, its panel says what the driver needs instead.
-                 if nvidia_later && !mok { "This PC has an NVIDIA graphics card: its driver downloads by itself the first time the PC is online, then asks for a restart.".into() }
+                 if nvidia_later && !mok { tr!("This PC has an NVIDIA graphics card: its driver downloads by itself the first time the PC is online, then asks for a restart.") }
                  else { String::new() })
             }
             // Plain words first; the installer's message is for whoever helps. Nothing promises the
             // disk is untouched: it may have been erased already.
             Phase::Failed => {
                 if let Some(InstallEvent::Failed(e)) = &s.end {
-                    small = format!("Details: {e}");
+                    small = tr!("Details: {e}", e);
                 }
-                ("Installation didn't finish".into(),
-                 "Something went wrong while copying AzrakOS to the disk.".into(),
-                 "Try again, or keep trying AzrakOS from the USB stick.".into())
+                (tr!("Installation didn't finish"),
+                 tr!("Something went wrong while copying AzrakOS to the disk."),
+                 tr!("Try again, or keep trying AzrakOS from the USB stick."))
             }
         };
         ui.set_osi_phase(s.phase as i32);
@@ -352,12 +353,12 @@ impl App {
         let rows: Vec<crate::OsiDisk> = s.disks.iter().map(|d| crate::OsiDisk {
             label: d.model.clone().into(),
             // A USB disk here is never the stick itself (the installer leaves it out).
-            detail: [Some(d.size()), d.usb.then(|| "External drive · USB".to_string()), d.windows.then(|| "Windows is on it".to_string())]
+            detail: [Some(d.size()), d.usb.then(|| tr!("External drive · USB")), d.windows.then(|| tr!("Windows is on it"))]
                 .into_iter().flatten().collect::<Vec<_>>().join(" · ").into(),
             warn: d.windows,
         }).collect();
         ui.set_osi_disks(std::rc::Rc::new(slint::VecModel::from(rows)).into());
-        let buttons: Vec<slint::SharedString> = self.osi_buttons().iter().map(|b| (*b).into()).collect();
+        let buttons: Vec<slint::SharedString> = self.osi_buttons().into_iter().map(Into::into).collect();
         ui.set_osi_buttons(std::rc::Rc::new(slint::VecModel::from(buttons)).into());
         ui.set_osi_button_base(if s.phase == Phase::Pick { s.disks.len() as i32 } else { 0 });
     }

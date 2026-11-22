@@ -9,6 +9,7 @@
 //! running it needs no FUSE. shadPS4 keeps saves and settings in ~/.local/share/shadPS4, which
 //! every version shares.
 
+use tr::tr;
 use crate::util::{atomic_write, http_json, now_secs};
 use serde::{Deserialize, Serialize};
 use std::io::Read;
@@ -93,27 +94,27 @@ pub fn latest_release() -> Result<Release, String> {
 /// Pull the one file whose name ends with `suffix` out of a zip (stored or deflated).
 pub(crate) fn unzip_one(zip: &Path, suffix: &str, dest: &Path) -> Result<(), String> {
     let bytes = std::fs::read(zip).map_err(|e| e.to_string())?;
-    let u16_at = |o: usize| bytes.get(o..o + 2).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).ok_or("damaged zip");
-    let u32_at = |o: usize| bytes.get(o..o + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize).ok_or("damaged zip");
+    let u16_at = |o: usize| bytes.get(o..o + 2).map(|b| u16::from_le_bytes([b[0], b[1]]) as usize).ok_or_else(|| tr!("damaged zip"));
+    let u32_at = |o: usize| bytes.get(o..o + 4).map(|b| u32::from_le_bytes(b.try_into().unwrap()) as usize).ok_or_else(|| tr!("damaged zip"));
     let eocd = (0..bytes.len().saturating_sub(21)).rev().take(70_000)
-        .find(|&i| bytes[i..i + 4] == [0x50, 0x4b, 0x05, 0x06]).ok_or("not a zip file")?;
+        .find(|&i| bytes[i..i + 4] == [0x50, 0x4b, 0x05, 0x06]).ok_or_else(|| tr!("not a zip file"))?;
     let (count, mut at) = (u16_at(eocd + 10)?, u32_at(eocd + 16)?);
     for _ in 0..count {
         if u32_at(at)? != 0x0201_4b50 {
-            return Err("damaged zip".into());
+            return Err(tr!("damaged zip"));
         }
         let (method, crc, packed, size) = (u16_at(at + 10)?, u32_at(at + 16)?, u32_at(at + 20)?, u32_at(at + 24)?);
         let (name_len, extra, comment, local) = (u16_at(at + 28)?, u16_at(at + 30)?, u16_at(at + 32)?, u32_at(at + 42)?);
-        let name = String::from_utf8_lossy(bytes.get(at + 46..at + 46 + name_len).ok_or("damaged zip")?).into_owned();
+        let name = String::from_utf8_lossy(bytes.get(at + 46..at + 46 + name_len).ok_or_else(|| tr!("damaged zip"))?).into_owned();
         at += 46 + name_len + extra + comment;
         if !name.ends_with(suffix) {
             continue;
         }
         if u32_at(local)? != 0x0403_4b50 {
-            return Err("damaged zip".into());
+            return Err(tr!("damaged zip"));
         }
         let start = local + 30 + u16_at(local + 26)? + u16_at(local + 28)?;
-        let raw = bytes.get(start..start + packed).ok_or("damaged zip")?;
+        let raw = bytes.get(start..start + packed).ok_or_else(|| tr!("damaged zip"))?;
         let data = match method {
             0 => raw.to_vec(),
             8 => {
@@ -121,16 +122,16 @@ pub(crate) fn unzip_one(zip: &Path, suffix: &str, dest: &Path) -> Result<(), Str
                 flate2::read::DeflateDecoder::new(raw).read_to_end(&mut out).map_err(|e| e.to_string())?;
                 out
             }
-            _ => return Err("unsupported zip compression".into()),
+            _ => return Err(tr!("unsupported zip compression")),
         };
         let mut check = flate2::Crc::new();
         check.update(&data);
         if data.len() != size || check.sum() as usize != crc {
-            return Err("download is corrupted (zip checksum mismatch)".into());
+            return Err(tr!("download is corrupted (zip checksum mismatch)"));
         }
         return std::fs::write(dest, &data).map_err(|e| e.to_string());
     }
-    Err(format!("no {suffix} in the download"))
+    Err(tr!("no {suffix} in the download", suffix))
 }
 
 /// Whether a binary runs here (prints its CLI banner).
@@ -169,14 +170,14 @@ pub fn install(rel: &Release, progress: &dyn Fn(String, f32)) -> Result<(), Stri
         let pct = if total > 0 { done * 100 / total } else { 0 };
         if pct != last.get() {
             last.set(pct);
-            progress(format!("Downloading shadPS4 {} · {pct}%", pretty(&rel.tag)), pct as f32 / 100.0 * 0.85);
+            progress(tr!("Downloading shadPS4 {} · {}%", pretty(&rel.tag), pct), pct as f32 / 100.0 * 0.85);
         }
     })
     .inspect_err(|_| {
         let _ = std::fs::remove_file(&zip);
     })?;
 
-    progress("Installing shadPS4…".into(), 0.9);
+    progress(tr!("Installing shadPS4…"), 0.9);
     let staging = versions.join(format!("{}.tmp", rel.tag));
     let _ = std::fs::remove_dir_all(&staging);
     std::fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
@@ -195,7 +196,7 @@ pub fn install(rel: &Release, progress: &dyn Fn(String, f32)) -> Result<(), Stri
     let _ = std::fs::remove_file(&appimage);
     let emu = staging.join("squashfs-root").join("AppRun");
     if !unpacked || !runs(&emu) {
-        return Err(fail("the downloaded shadPS4 does not run on this system".into()));
+        return Err(fail(tr!("the downloaded shadPS4 does not run on this system")));
     }
     let final_dir = versions.join(&rel.tag);
     let _ = std::fs::remove_dir_all(&final_dir);
@@ -222,7 +223,7 @@ pub fn install(rel: &Release, progress: &dyn Fn(String, f32)) -> Result<(), Stri
 pub fn rollback() -> Result<String, String> {
     let mut st = load_state();
     if st.previous.is_empty() || !root().join("versions").join(&st.previous).is_dir() {
-        return Err("no previous version to roll back to".into());
+        return Err(tr!("no previous version to roll back to"));
     }
     switch_current(&st.previous)?;
     st.skip = st.installed.clone();

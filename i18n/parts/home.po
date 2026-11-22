@@ -1,0 +1,803 @@
+msgid "Newest uploads"
+msgstr "Envios mais recentes"
+
+msgid "Name (A–Z)"
+msgstr "Nome (A–Z)"
+
+msgid "Release date"
+msgstr "Data de lançamento"
+
+msgid "Top rated"
+msgstr "Mais bem avaliados"
+
+msgid "Size (largest)"
+msgstr "Tamanho (maior)"
+
+msgid "Size (smallest)"
+msgstr "Tamanho (menor)"
+
+msgid "Compatibility"
+msgstr "Compatibilidade"
+
+msgid "Most seeders"
+msgstr "Mais seeders"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Installed"
+msgstr "Instalado"
+
+msgid "Playable"
+msgstr "Jogável"
+
+msgid "All genres"
+msgstr "Todos os gêneros"
+
+msgid "Action"
+msgstr "Ação"
+
+msgid "Adventure"
+msgstr "Aventura"
+
+msgid "RPG"
+msgstr "RPG"
+
+msgid "Shooter"
+msgstr "Tiro"
+
+msgid "Horror"
+msgstr "Terror"
+
+msgid "Survival"
+msgstr "Sobrevivência"
+
+msgid "Racing"
+msgstr "Corrida"
+
+msgid "Sports"
+msgstr "Esportes"
+
+msgid "Fighting"
+msgstr "Luta"
+
+msgid "Platformer"
+msgstr "Plataforma"
+
+msgid "Puzzle"
+msgstr "Quebra-cabeça"
+
+msgid "Simulation"
+msgstr "Simulação"
+
+msgid "Strategy"
+msgstr "Estratégia"
+
+msgid "Stealth"
+msgstr "Furtividade"
+
+msgid "Family"
+msgstr "Família"
+
+msgid "VR"
+msgstr "VR"
+
+msgid "Other"
+msgstr "Outros"
+
+msgid "{} games only"
+msgstr "Só jogos de {}"
+
+msgid "Showing results for “{}”"
+msgstr "Mostrando resultados para “{}”"
+
+msgid "Checking for new releases…"
+msgstr "Procurando novos lançamentos…"
+
+msgid "{n} new release"
+msgid_plural "{n} new releases"
+msgstr[0] "{n} novo lançamento"
+msgstr[1] "{n} novos lançamentos"
+
+msgid "No new releases"
+msgstr "Nenhum lançamento novo"
+
+msgid "{n} game"
+msgid_plural "{n} games"
+msgstr[0] "{n} jogo"
+msgstr[1] "{n} jogos"
+
+msgid "{n} release"
+msgid_plural "{n} releases"
+msgstr[0] "{n} lançamento"
+msgstr[1] "{n} lançamentos"
+
+msgid "Couldn't refresh it: {e}"
+msgstr "Não foi possível atualizar: {e}"
+
+msgid "Catalog reload failed · keeping the offline snapshot"
+msgstr "Falha ao recarregar o catálogo · mantendo a cópia offline"
+
+msgid "Can't rate this game: its folder has no title ID"
+msgstr "Não é possível avaliar este jogo: a pasta dele não tem ID do título"
+
+msgid "In game: reaches gameplay"
+msgstr "No jogo: chega à jogabilidade"
+
+msgid "Main menu, but not gameplay"
+msgstr "Menu principal, mas não a jogabilidade"
+
+msgid "Intro logos, then stops"
+msgstr "Logos de abertura, depois para"
+
+msgid "Doesn't start"
+msgstr "Não inicia"
+
+msgid "Not now"
+msgstr "Agora não"
+
+msgid "How far did {name} get?"
+msgstr "Até onde {name} chegou?"
+
+msgid "Rated: {} on Linux · it goes to {emulator} when you share your ratings in Settings"
+msgstr "Avaliado: {} no Linux · vai para o {emulator} quando você compartilhar suas avaliações em Configurações"
+
+msgid "Nothing new to share: rate a game from its Options menu after playing it"
+msgstr "Nada novo para compartilhar: avalie um jogo pelo menu Opções depois de jogá-lo"
+
+msgid "Opened {n} report in your browser: check it, drag in its log from the folder that opened (named after the game), and submit."
+msgid_plural "Opened {n} reports in your browser: check each one, drag in its log from the folder that opened (named after the game), and submit."
+msgstr[0] "{n} relatório foi aberto no navegador: confira, arraste o log da pasta que abriu (com o nome do jogo) e envie."
+msgstr[1] "{n} relatórios foram abertos no navegador: confira cada um, arraste o log da pasta que abriu (com o nome do jogo) e envie."
+
+msgid "{n} more next time."
+msgid_plural "{n} more next time."
+msgstr[0] "Mais {n} na próxima vez."
+msgstr[1] "Mais {n} na próxima vez."
+
+msgid "shadPS4 only accepts reports for games dumped from a copy you own, unmodified."
+msgstr "O shadPS4 só aceita relatórios de jogos extraídos de uma cópia sua, sem modificações."
+
+msgid "{} closed"
+msgstr "{} foi fechado"
+
+msgid "It exited with code {code} · open its log"
+msgstr "Saiu com o código {code} · abra o log"
+
+msgid "Stopped unexpectedly · the game exited with code {code}"
+msgstr "Parou inesperadamente · o jogo saiu com o código {code}"
+
+msgid "Stopped unexpectedly · {emulator} exited with code {code}"
+msgstr "Parou inesperadamente · o {emulator} saiu com o código {code}"
+
+msgid "Closed right after starting · it may need something this PC doesn't have (Wine, a library)"
+msgstr "Fechou logo ao iniciar · pode precisar de algo que este PC não tem (Wine, uma biblioteca)"
+
+msgid "Closed right after starting · {emulator} may not support it yet"
+msgstr "Fechou logo ao iniciar · o {emulator} talvez ainda não o suporte"
+
+msgid "log in Options"
+msgstr "log em Opções"
+
+msgid "Resume"
+msgstr "Retomar"
+
+msgid "Stop"
+msgstr "Parar"
+
+msgid "Play"
+msgstr "Jogar"
+
+msgid "Options"
+msgstr "Opções"
+
+msgid "View Game"
+msgstr "Ver jogo"
+
+msgid "PKG release"
+msgstr "Lançamento em PKG"
+
+msgid "Installing…"
+msgstr "Instalando…"
+
+msgid "Install"
+msgstr "Instalar"
+
+msgid "View download"
+msgstr "Ver download"
+
+msgid "Download anyway"
+msgstr "Fazer download mesmo assim"
+
+msgid "Download"
+msgstr "Fazer download"
+
+msgid "Trailer"
+msgstr "Trailer"
+
+msgid "Steam page"
+msgstr "Página na Steam"
+
+msgid "This game has another release that isn't a PKG: switch to it with the release selector."
+msgstr "Este jogo tem outro lançamento que não é PKG: troque para ele no seletor de lançamentos."
+
+msgid "Look for a release of this game that is a folder, an archive or an exFAT image."
+msgstr "Procure um lançamento deste jogo que seja uma pasta, um arquivo compactado ou uma imagem exFAT."
+
+msgid "A PKG package: PS5 games install from extracted releases only."
+msgstr "Um pacote PKG: jogos de PS5 só são instalados a partir de lançamentos extraídos."
+
+msgid "No log yet: play the game once to make one"
+msgstr "Ainda não há log: jogue uma vez para gerar um"
+
+msgid "Play now starts {path}"
+msgstr "Jogar agora inicia {path}"
+
+msgid "Couldn't change it: {e}"
+msgstr "Não foi possível alterar: {e}"
+
+msgid "{name} is running: stop it first, or Resume it from Home"
+msgstr "{name} está em execução: pare-o primeiro ou retome-o pelo Início"
+
+msgid "Couldn't start it: {e}"
+msgstr "Não foi possível iniciar: {e}"
+
+msgid "Closing it…"
+msgstr "Fechando…"
+
+msgid "Closing it and saving {}'s caches…"
+msgstr "Fechando e salvando os caches do {}…"
+
+msgid "Couldn't switch to it"
+msgstr "Não foi possível alternar para ele"
+
+msgid "Couldn't switch to it: its window wasn't found (Resume needs xdotool)"
+msgstr "Não foi possível alternar para ele: a janela não foi encontrada (Retomar precisa do xdotool)"
+
+msgid "Can't play the trailer: {e}"
+msgstr "Não é possível reproduzir o trailer: {e}"
+
+msgid "PlayStation Store page"
+msgstr "Página na PlayStation Store"
+
+msgid "Watch trailer"
+msgstr "Ver trailer"
+
+msgid "Game Hub"
+msgstr "Hub do jogo"
+
+msgid "Open game folder"
+msgstr "Abrir pasta do jogo"
+
+msgid "View game log"
+msgstr "Ver log do jogo"
+
+msgid "View emulator log"
+msgstr "Ver log do emulador"
+
+msgid "Start with {}"
+msgstr "Iniciar com {}"
+
+msgid "Rate how it runs"
+msgstr "Avaliar como ele roda"
+
+msgid "shadPS4 compatibility list"
+msgstr "Lista de compatibilidade do shadPS4"
+
+msgid "KytyPS5 compatibility list"
+msgstr "Lista de compatibilidade do KytyPS5"
+
+msgid "ProtonDB page"
+msgstr "Página no ProtonDB"
+
+msgid "Settings"
+msgstr "Configurações"
+
+msgid "Starting…"
+msgstr "Iniciando…"
+
+msgid "Starting with {}…"
+msgstr "Iniciando com o {}…"
+
+msgid "Still starting… a game's first launch can take a while"
+msgstr "Ainda iniciando… a primeira vez de um jogo pode demorar um pouco"
+
+msgid "All set"
+msgstr "Tudo pronto"
+
+msgid "Ready"
+msgstr "Pronto"
+
+msgid "Loading…"
+msgstr "Carregando…"
+
+msgid "All set · pick a game in the Library to play"
+msgstr "Tudo pronto · escolha um jogo na Biblioteca para jogar"
+
+msgid "All set · {n} installed game found"
+msgid_plural "All set · {n} installed games found"
+msgstr[0] "Tudo pronto · {n} jogo instalado encontrado"
+msgstr[1] "Tudo pronto · {n} jogos instalados encontrados"
+
+msgid "This only happens once. Skip anytime — downloads continue in the background."
+msgstr "Isso só acontece uma vez. Pule quando quiser — os downloads continuam em segundo plano."
+
+msgid "Game list"
+msgstr "Lista de jogos"
+
+msgid "Using the saved list"
+msgstr "Usando a lista salva"
+
+msgid "Your Home screen"
+msgstr "Sua tela inicial"
+
+msgid "Not tested yet"
+msgstr "Ainda não testado"
+
+msgid "Recent searches"
+msgstr "Pesquisas recentes"
+
+msgid "Best matches"
+msgstr "Melhores resultados"
+
+msgid "Space"
+msgstr "Espaço"
+
+msgid "Delete"
+msgstr "Apagar"
+
+msgid "Clear"
+msgstr "Limpar"
+
+msgid "Show results"
+msgstr "Ver resultados"
+
+msgid "No matches"
+msgstr "Nenhum resultado"
+
+msgid "Connected"
+msgstr "Conectado"
+
+msgid "Controller"
+msgstr "Controle"
+
+msgid "None connected"
+msgstr "Nenhum conectado"
+
+msgid "Pair one over Bluetooth or plug it in"
+msgstr "Pareie um por Bluetooth ou conecte por cabo"
+
+msgid "{n} connected"
+msgid_plural "{n} connected"
+msgstr[0] "{n} conectado"
+msgstr[1] "{n} conectados"
+
+msgid "{}% · charging"
+msgstr "{}% · carregando"
+
+msgid "{} TB free"
+msgstr "{} TB livres"
+
+msgid "{} GB free"
+msgstr "{} GB livres"
+
+msgid "Storage"
+msgstr "Armazenamento"
+
+msgid "For games in {dir}"
+msgstr "Para jogos em {dir}"
+
+msgid "Unknown"
+msgstr "Desconhecido"
+
+msgid "Can't read {dir}"
+msgstr "Não é possível ler {dir}"
+
+msgid "{n} paused"
+msgid_plural "{n} paused"
+msgstr[0] "{n} pausado"
+msgstr[1] "{n} pausados"
+
+msgid "Get games in the Library"
+msgstr "Pegue jogos na Biblioteca"
+
+msgid "Downloads"
+msgstr "Downloads"
+
+msgid "Nothing downloading"
+msgstr "Nenhum download em andamento"
+
+msgid "{n} downloading"
+msgid_plural "{n} downloading"
+msgstr[0] "{n} em download"
+msgstr[1] "{n} em download"
+
+msgid "{}% of all of them"
+msgstr "{}% de todos"
+
+msgid "New in the catalog"
+msgstr "Novidades no catálogo"
+
+msgid "Nothing this fortnight"
+msgstr "Nada nas últimas duas semanas"
+
+msgid "Browse the whole Library"
+msgstr "Explore a Biblioteca inteira"
+
+msgid "{n} new game"
+msgid_plural "{n} new games"
+msgstr[0] "{n} jogo novo"
+msgstr[1] "{n} jogos novos"
+
+msgid "{n} installed"
+msgid_plural "{n} installed"
+msgstr[0] "{n} instalado"
+msgstr[1] "{n} instalados"
+
+msgid "{} played in all"
+msgstr "{} jogados no total"
+
+msgid "None played yet"
+msgstr "Nenhum jogado ainda"
+
+msgid "Your games"
+msgstr "Seus jogos"
+
+msgid "Updates"
+msgstr "Atualizações"
+
+msgid "Restart to update"
+msgstr "Reinicie para atualizar"
+
+msgid "SwarmPlay {v} is ready"
+msgstr "O SwarmPlay {v} está pronto"
+
+msgid "Out now · press to get it"
+msgstr "Já disponível · pressione para obter"
+
+msgid "Update ready"
+msgstr "Atualização pronta"
+
+msgid "Up to date"
+msgstr "Atualizado"
+
+msgid "Trailers need libmpv (install mpv)"
+msgstr "Os trailers precisam do libmpv (instale o mpv)"
+
+msgid "Could not start the video player"
+msgstr "Não foi possível iniciar o player de vídeo"
+
+msgid "This libmpv can't draw video for the launcher"
+msgstr "Este libmpv não consegue exibir vídeo no SwarmPlay"
+
+msgid "The trailer couldn't be played"
+msgstr "Não foi possível reproduzir o trailer"
+
+msgid "{n} player"
+msgid_plural "{n} players"
+msgstr[0] "{n} jogador"
+msgstr[1] "{n} jogadores"
+
+msgid "Untested on {}"
+msgstr "Não testado no {}"
+
+msgid "YOUR RESULT"
+msgstr "SEU RESULTADO"
+
+msgid "ON LINUX"
+msgstr "NO LINUX"
+
+msgid "ON WINDOWS"
+msgstr "NO WINDOWS"
+
+msgid "LAST TESTED"
+msgstr "ÚLTIMO TESTE"
+
+msgid "TESTED ON"
+msgstr "TESTADO EM"
+
+msgid "PUBLISHER"
+msgstr "PUBLICADORA"
+
+msgid "RELEASE"
+msgstr "LANÇAMENTO"
+
+msgid "SIZE"
+msgstr "TAMANHO"
+
+msgid "MODE"
+msgstr "MODO"
+
+msgid "TITLE ID"
+msgstr "ID DO TÍTULO"
+
+msgid "REGION"
+msgstr "REGIÃO"
+
+msgid "UPDATE"
+msgstr "ATUALIZAÇÃO"
+
+msgid "SHARING IT (SEEDERS)"
+msgstr "COMPARTILHANDO (SEEDERS)"
+
+msgid "GETTING IT (LEECHERS)"
+msgstr "BAIXANDO (LEECHERS)"
+
+msgid "COUNTED"
+msgstr "CONTADO EM"
+
+msgid "RELEASE VERSION"
+msgstr "VERSÃO DO LANÇAMENTO"
+
+msgid "DEVELOPER"
+msgstr "DESENVOLVEDORA"
+
+msgid "FORMAT"
+msgstr "FORMATO"
+
+msgid "CONSOLE FIRMWARE NOTE"
+msgstr "NOTA DE FIRMWARE DO CONSOLE"
+
+msgid "INTERFACE LANGUAGES"
+msgstr "IDIOMAS DA INTERFACE"
+
+msgid "AUDIO LANGUAGES"
+msgstr "IDIOMAS DO ÁUDIO"
+
+msgid "SOURCE"
+msgstr "FONTE"
+
+msgid "PLAY TIME"
+msgstr "TEMPO DE JOGO"
+
+msgid "LAST PLAYED"
+msgstr "JOGADO PELA ÚLTIMA VEZ"
+
+msgid "INSTALLED VERSION"
+msgstr "VERSÃO INSTALADA"
+
+msgid "LOCATION"
+msgstr "LOCAL"
+
+msgid "AVAILABILITY"
+msgstr "DISPONIBILIDADE"
+
+msgid "VERSION"
+msgstr "VERSÃO"
+
+msgid "PLAYERS"
+msgstr "JOGADORES"
+
+msgid "DOWNLOAD SIZE"
+msgstr "TAMANHO DO DOWNLOAD"
+
+msgid "METACRITIC"
+msgstr "METACRITIC"
+
+msgid "STEAM"
+msgstr "STEAM"
+
+msgid "STARTS WITH"
+msgstr "INICIA COM"
+
+msgid "Playing"
+msgstr "Jogando"
+
+msgid "Game Library"
+msgstr "Biblioteca de jogos"
+
+msgid "Welcome"
+msgstr "Boas-vindas"
+
+msgid "Your SwarmPlay at a glance"
+msgstr "Seu SwarmPlay num relance"
+
+msgid "Playing now"
+msgstr "Jogando agora"
+
+msgid "Last played {}"
+msgstr "Jogado pela última vez {}"
+
+msgid "Not played yet"
+msgstr "Ainda não jogado"
+
+msgid "PLAYING"
+msgstr "JOGANDO"
+
+msgid "PLAYED {}"
+msgstr "JOGADO POR {}"
+
+msgid "NEW · ADDED {added}"
+msgstr "NOVO · ADICIONADO EM {added}"
+
+msgid "ADDED {added}"
+msgstr "ADICIONADO EM {added}"
+
+msgid "Installed on this PC"
+msgstr "Instalado neste PC"
+
+msgid "None yet"
+msgstr "Nenhum ainda"
+
+msgid "{n} screenshot"
+msgid_plural "{n} screenshots"
+msgstr[0] "{n} captura de tela"
+msgstr[1] "{n} capturas de tela"
+
+msgid "{n} screenshot · trailer"
+msgid_plural "{n} screenshots · trailer"
+msgstr[0] "{n} captura de tela · trailer"
+msgstr[1] "{n} capturas de tela · trailer"
+
+msgid "{} · files and paths"
+msgstr "{} · arquivos e caminhos"
+
+msgid "Files and paths"
+msgstr "Arquivos e caminhos"
+
+msgid "Versions"
+msgstr "Versões"
+
+msgid "Trailers & screenshots"
+msgstr "Trailers e capturas de tela"
+
+msgid "Details"
+msgstr "Detalhes"
+
+msgid "{n} rating"
+msgid_plural "{n} ratings"
+msgstr[0] "{n} avaliação"
+msgstr[1] "{n} avaliações"
+
+msgid "No games yet"
+msgstr "Nenhum jogo ainda"
+
+msgid "Pick a game in the Library, then Download and Install."
+msgstr "Escolha um jogo na Biblioteca e depois faça o download e instale."
+
+msgid "Browse games"
+msgstr "Explorar jogos"
+
+msgid "Add game folder"
+msgstr "Adicionar pasta de jogos"
+
+msgid "GET STARTED"
+msgstr "COMECE AQUI"
+
+msgid "{n} game in the Library"
+msgid_plural "{n} games in the Library"
+msgstr[0] "{n} jogo na Biblioteca"
+msgstr[1] "{n} jogos na Biblioteca"
+
+msgid "COLLECTION"
+msgstr "COLEÇÃO"
+
+msgid "Browse every PS5 game in the catalog. Search, filter by genre and sort by date, name, rating or size."
+msgstr "Explore todos os jogos de PS5 do catálogo. Pesquise, filtre por gênero e ordene por data, nome, avaliação ou tamanho."
+
+msgid "Open Library"
+msgstr "Abrir Biblioteca"
+
+msgid "Installed locally. A Windows game, run with Proton or Wine."
+msgstr "Instalado localmente. Um jogo de Windows, executado com o Proton ou o Wine."
+
+msgid "Installed locally. Runs on Linux by itself, no emulator needed."
+msgstr "Instalado localmente. Roda no Linux sozinho, sem precisar de emulador."
+
+msgid "Installed locally. Launches with the {} emulator."
+msgstr "Instalado localmente. Inicia com o emulador {}."
+
+msgid "List updated {updated}"
+msgstr "Lista atualizada em {updated}"
+
+msgid "{0} of {n} game"
+msgid_plural "{0} of {n} games"
+msgstr[0] "{0} de {n} jogo"
+msgstr[1] "{0} de {n} jogos"
+
+msgid "Loading catalog…"
+msgstr "Carregando o catálogo…"
+
+msgid "Catalog is empty"
+msgstr "O catálogo está vazio"
+
+msgid "No games with these filters"
+msgstr "Nenhum jogo com estes filtros"
+
+msgid "No games to show yet"
+msgstr "Ainda não há jogos para mostrar"
+
+msgid "No matches with these filters. Choose All to see them"
+msgstr "Nenhum resultado com estes filtros. Escolha Todos para vê-los"
+
+msgid "No games match “{}”"
+msgstr "Nenhum jogo corresponde a “{}”"
+
+msgid "Size unknown"
+msgstr "Tamanho desconhecido"
+
+msgid "New"
+msgstr "Novo"
+
+msgid "{n} report"
+msgid_plural "{n} reports"
+msgstr[0] "{n} relatório"
+msgstr[1] "{n} relatórios"
+
+msgid "Date unknown"
+msgstr "Data desconhecida"
+
+msgid "{observed} · not live"
+msgstr "{observed} · não é ao vivo"
+
+msgid "Never played"
+msgstr "Nunca jogado"
+
+msgid "older version"
+msgstr "versão mais antiga"
+
+msgid "newest version"
+msgstr "versão mais nova"
+
+msgid "Release {position} of {count}"
+msgstr "Lançamento {position} de {count}"
+
+msgid "Has a Linux version"
+msgstr "Tem versão para Linux"
+
+msgid "Windows only on Steam"
+msgstr "Só Windows na Steam"
+
+msgid "Your result on this PC: {}"
+msgstr "Seu resultado neste PC: {}"
+
+msgid "Others on Linux: {}"
+msgstr "Outras pessoas no Linux: {}"
+
+msgid "On Linux: {}"
+msgstr "No Linux: {}"
+
+msgid "On Linux: not tested yet"
+msgstr "No Linux: ainda não testado"
+
+msgid "On Windows: {}"
+msgstr "No Windows: {}"
+
+msgid "On {0}: {1}"
+msgstr "No {0}: {1}"
+
+msgid "From the {} community list"
+msgstr "Da lista da comunidade do {}"
+
+msgid "From the {0} community list, last tested {1}"
+msgstr "Da lista da comunidade do {0}, último teste em {1}"
+
+msgid "Nobody has reported how far it gets on {} yet"
+msgstr "Ninguém relatou ainda até onde ele chega no {}"
+
+msgid "{0} of {1}"
+msgstr "{0} de {1}"
+
+msgid "This game's manifest is missing; install it again"
+msgstr "O manifesto deste jogo está faltando; instale-o novamente"
+
+msgid "{} is missing from the game's folder"
+msgstr "{} não está na pasta do jogo"
+
+msgid "This is a Windows game: install umu-launcher (runs it with Proton) or Wine to play it"
+msgstr "Este é um jogo de Windows: instale o umu-launcher (que o executa com o Proton) ou o Wine para jogá-lo"
+
+msgid "{} is already running. Stop it first."
+msgstr "{} já está em execução. Pare-o primeiro."
+
+msgid "shadPS4 isn't installed yet"
+msgstr "O shadPS4 ainda não está instalado"
+
+msgid "No emulator set: choose KytyPS5 in Settings"
+msgstr "Nenhum emulador definido: escolha o KytyPS5 em Configurações"
+
+msgid "Emulator not found or not executable:\n{}"
+msgstr "Emulador não encontrado ou não executável:\n{}"
+
+msgid "Unknown game"
+msgstr "Jogo desconhecido"

@@ -17,6 +17,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::task::{AbortHandle, Id, JoinError, JoinSet};
+use tr::tr;
 
 const MAX_JOBS: usize = 32;
 const MAX_METADATA: u64 = 16 * 1024 * 1024;
@@ -244,7 +245,7 @@ impl Manager {
 
     /// The files of a download the player left out (paths inside its folder).
     pub fn left_out(&self, key: &str) -> Result<std::collections::BTreeSet<String>> {
-        let selected = self.jobs.lock().unwrap().iter().find(|job| job.key == key).map(|job| job.selected.clone()).context("Transfer not found")?;
+        let selected = self.jobs.lock().unwrap().iter().find(|job| job.key == key).map(|job| job.selected.clone()).with_context(|| tr!("Transfer not found"))?;
         let Some(selected) = selected.as_deref() else { return Ok(Default::default()) };
         let (_, files, _) = inspect_metadata(&read_torrent(&self.store, key)?, key, None)?;
         let chosen = chosen(Some(selected));
@@ -255,10 +256,10 @@ impl Manager {
     /// whether it goes through a VPN while the list arrives.
     pub fn prepare(&self, topic: i64, name: &str, magnet: &str, base: PathBuf, platform: crate::platform::Platform) -> Result<String> {
         let (key, magnet) = normalize_magnet(magnet)?;
-        ensure!(base.is_absolute(), "Choose an absolute download folder (or a ~/ path)");
+        ensure!(base.is_absolute(), tr!("Choose an absolute download folder (or a ~/ path)"));
         let mut jobs = self.jobs.lock().unwrap();
         if jobs.iter().any(|job| job.key == key) { return Ok(key); }
-        ensure!(jobs.len() < MAX_JOBS, "Remove an old transfer first (maximum {MAX_JOBS})");
+        ensure!(jobs.len() < MAX_JOBS, tr!("Remove an old transfer first (maximum {max})", max = MAX_JOBS));
         let job = Job {
             folder: base.join(format!("torrent-{key}")), key: key.clone(), topic,
             name: name.chars().filter(|c| !c.is_control()).take(200).collect(), magnet,
@@ -266,7 +267,7 @@ impl Manager {
             speed: 0.0, eta: String::new(), peers: 0, seeding: false, upload_speed: 0.0, verifying: false, checked: 0, check_total: 0, starting: false, piece: 0, waiting_vpn: false, shared_by_hand: false, problem: Problem::Other,
             platform: Some(platform), entries: vec![], selected: None, install_to: None, added: crate::util::now_secs() as u64,
         };
-        self.tx.try_send(Command::Prepare(job.clone())).context("Download worker is busy or unavailable")?;
+        self.tx.try_send(Command::Prepare(job.clone())).with_context(|| tr!("Download worker is busy or unavailable"))?;
         jobs.push(job);
         Ok(key)
     }
@@ -274,19 +275,19 @@ impl Manager {
     /// Start a download whose file list has arrived, with the player's choices: where it goes
     /// (`base`), which files (`selected`, indices into the torrent) and where it installs after.
     pub fn begin(&self, key: &str, base: PathBuf, selected: Vec<usize>, install_to: Option<PathBuf>) -> Result<()> {
-        ensure!(base.is_absolute(), "Choose an absolute download folder (or a ~/ path)");
-        ensure!(install_to.as_ref().is_none_or(|path| path.is_absolute()), "Choose an absolute install folder (or a ~/ path)");
+        ensure!(base.is_absolute(), tr!("Choose an absolute download folder (or a ~/ path)"));
+        ensure!(install_to.as_ref().is_none_or(|path| path.is_absolute()), tr!("Choose an absolute install folder (or a ~/ path)"));
         let mut jobs = self.jobs.lock().unwrap();
-        let job = jobs.iter_mut().find(|job| job.key == key).context("Transfer not found")?;
-        ensure!(job.state == State::Ready && !job.starting, "This download has already started");
-        ensure!(!selected.is_empty(), "Choose at least one file");
-        ensure!(selected.iter().all(|&i| job.entries.get(i).is_some_and(|entry| !entry.blocked)), "That file can't be downloaded");
+        let job = jobs.iter_mut().find(|job| job.key == key).with_context(|| tr!("Transfer not found"))?;
+        ensure!(job.state == State::Ready && !job.starting, tr!("This download has already started"));
+        ensure!(!selected.is_empty(), tr!("Choose at least one file"));
+        ensure!(selected.iter().all(|&i| job.entries.get(i).is_some_and(|entry| !entry.blocked)), tr!("That file can't be downloaded"));
         let mut selected = selected;
         selected.sort_unstable();
         selected.dedup();
         // Starting from now (nothing can forget it meanwhile), and why it couldn't start last
         // time no longer applies.
-        self.tx.try_send(Command::Begin { key: key.into(), base, selected, install_to }).context("Download worker is busy or unavailable")?;
+        self.tx.try_send(Command::Begin { key: key.into(), base, selected, install_to }).with_context(|| tr!("Download worker is busy or unavailable"))?;
         job.starting = true;
         job.error.clear();
         Ok(())
@@ -306,13 +307,13 @@ impl Manager {
     pub fn discard(&self, key: &str) -> Result<()> {
         let mut jobs = self.jobs.lock().unwrap();
         let Some(index) = jobs.iter().position(|job| job.key == key) else { return Ok(()) };
-        ensure!(unstarted(&jobs[index]), "It has started; cancel or remove it instead");
+        ensure!(unstarted(&jobs[index]), tr!("It has started; cancel or remove it instead"));
         let job = jobs.remove(index);
         self.unreadable.lock().unwrap().remove(key);
         if let Err(error) = self.tx.try_send(Command::Discard(job)) {
             let Command::Discard(job) = error.into_inner() else { unreachable!() };
             jobs.insert(index, job);
-            bail!("Download worker is busy or unavailable");
+            bail!(tr!("Download worker is busy or unavailable"));
         }
         Ok(())
     }
@@ -320,8 +321,8 @@ impl Manager {
     /// Whether its download folder may be deleted (refused here, so the player hears it; the
     /// worker checks again before deleting). Outside the lock, which the worker uses every second.
     pub fn check_delete(&self, key: &str) -> Result<()> {
-        let job = self.job(key).context("Transfer not found")?;
-        ensure!(job.state.active() || own_folder(&job) || !job.folder.exists(), "{} isn't this download's own folder, so it's left alone", job.folder.display());
+        let job = self.job(key).with_context(|| tr!("Transfer not found"))?;
+        ensure!(job.state.active() || own_folder(&job) || !job.folder.exists(), tr!("{} isn't this download's own folder, so it's left alone", job.folder.display()));
         Ok(())
     }
 
@@ -329,7 +330,7 @@ impl Manager {
         if action == "delete" { self.check_delete(key)?; }
         if matches!(action, "delete" | "remove") { self.unreadable.lock().unwrap().remove(key); }
         let mut jobs = self.jobs.lock().unwrap();
-        let job = jobs.iter_mut().find(|job| job.key == key).context("Transfer not found")?;
+        let job = jobs.iter_mut().find(|job| job.key == key).with_context(|| tr!("Transfer not found"))?;
         let command = match action {
             "start" if job.state == State::Ready => Command::Start(key.into()),
             "resume" if job.state == State::Paused => Command::Start(key.into()),
@@ -338,12 +339,12 @@ impl Manager {
             "cancel" if !matches!(job.state, State::Complete | State::Cancelled) => Command::Cancel(key.into()),
             "remove" if !job.state.active() => Command::Remove(key.into()),
             "delete" if !job.state.active() => Command::Delete(key.into()),
-            "remove" | "delete" => bail!("It's downloading; cancel it first"),
+            "remove" | "delete" => bail!(tr!("It's downloading; cancel it first")),
             "stop_seed" if job.state == State::Complete && (job.seeding || job.verifying) => Command::StopSeed(key.into()),
             "share" if job.state == State::Complete && !job.seeding && !job.verifying => Command::Seed(key.into()),
             _ => return Ok(()),
         };
-        self.tx.try_send(command).context("Download worker is busy or unavailable")?;
+        self.tx.try_send(command).with_context(|| tr!("Download worker is busy or unavailable"))?;
         // A refused delete writes why: an older note mustn't read as that.
         if action == "delete" { job.error.clear(); }
         Ok(())
@@ -351,12 +352,12 @@ impl Manager {
 
     /// Changes future completion behavior; enabling never starts a restored/stopped torrent.
     pub fn set_seed_after_download(&self, enabled: bool) -> Result<()> {
-        self.tx.try_send(Command::SetSeedAfterDownload(enabled)).context("Download worker is busy or unavailable")
+        self.tx.try_send(Command::SetSeedAfterDownload(enabled)).with_context(|| tr!("Download worker is busy or unavailable"))
     }
 
     /// Download only through a VPN (`Some(preferred interface)`), or through any connection.
     pub fn set_vpn(&self, vpn: Option<String>) -> Result<()> {
-        self.tx.try_send(Command::SetVpn(vpn)).context("Download worker is busy or unavailable")
+        self.tx.try_send(Command::SetVpn(vpn)).with_context(|| tr!("Download worker is busy or unavailable"))
     }
 
     pub fn shutdown(&mut self) {
@@ -397,7 +398,7 @@ fn load_manifest(store: &Path) -> Vec<Job> {
 /// Reject ambiguous hashes, huge file-selection ranges and unsupported sources.
 /// Normalize base32 BTIH too; never pass unknown URL parameters to the engine.
 pub(crate) fn normalize_magnet(input: &str) -> Result<(String, String)> {
-    ensure!(input.len() <= 32 * 1024 && input.starts_with("magnet:?"), "Invalid magnet link");
+    ensure!(input.len() <= 32 * 1024 && input.starts_with("magnet:?"), tr!("Invalid magnet link"));
     let source = url::Url::parse(input).context("Invalid magnet URL")?;
     let mut hash = None;
     let mut trackers = Vec::new();
@@ -451,7 +452,7 @@ fn secure_write(path: &Path, bytes: &[u8]) -> Result<()> {
 fn owned_folder(job: &Job) -> Result<PathBuf> {
     ensure!(job.folder.file_name().is_some_and(|name| name == format!("torrent-{}", job.key).as_str()), "Invalid owned transfer folder");
     let base = job.folder.parent().context("Invalid destination")?;
-    std::fs::create_dir_all(base).context("Cannot create download folder")?;
+    std::fs::create_dir_all(base).with_context(|| tr!("Cannot create download folder"))?;
     let base = base.canonicalize()?;
     let folder = base.join(job.folder.file_name().context("Invalid destination")?);
     match std::fs::symlink_metadata(&folder) {
@@ -474,13 +475,13 @@ fn owned_folder(job: &Job) -> Result<PathBuf> {
 fn check_owned(folder: &Path, key: &str) -> Result<()> {
     let metadata = std::fs::symlink_metadata(folder)?;
     ensure!(metadata.is_dir() && !metadata.file_type().is_symlink(), "Transfer folder is not a regular directory");
-    ensure!(metadata.uid() == unsafe { libc::geteuid() }, "Transfer folder belongs to another user");
+    ensure!(metadata.uid() == unsafe { libc::geteuid() }, tr!("Transfer folder belongs to another user"));
     let marker = std::fs::symlink_metadata(folder.join(MARKER)).context("Missing ownership marker")?;
     ensure!(marker.is_file() && !marker.file_type().is_symlink() && marker.nlink() == 1
         && marker.uid() == unsafe { libc::geteuid() } && marker.len() == key.len() as u64,
         "Unsafe ownership marker");
     ensure!(std::fs::read_to_string(folder.join(MARKER)).ok().as_deref() == Some(key),
-        "Refusing to overwrite an existing folder not owned by this transfer");
+        tr!("Refusing to overwrite an existing folder not owned by this transfer"));
     Ok(())
 }
 
@@ -573,7 +574,7 @@ fn inspect_metadata(bytes: &[u8], key: &str, folder: Option<&Path>) -> Result<(u
     for path in &paths {
         ensure!(!path.ancestors().skip(1).any(|parent| paths.contains(parent)), "Conflicting torrent file paths");
     }
-    ensure!(total > 0, "Torrent is empty");
+    ensure!(total > 0, tr!("Torrent is empty"));
     Ok((total, files, padding))
 }
 
@@ -600,8 +601,28 @@ fn shown(error: &anyhow::Error) -> String {
 /// The files that can be chosen (all but programs a console game never needs, and padding).
 fn allowed(entries: &[Entry]) -> Vec<usize> { (0..entries.len()).filter(|&i| !entries[i].blocked).collect() }
 
-/// How a refused delete's note starts (Delete the game and its download waits for it).
+/// How a refused delete's note starts (Delete the game and its download waits for it). Kept in
+/// English in the saved downloads: `error_text` says it in the player's language.
 pub const NOT_DELETED: &str = "Not deleted: ";
+
+/// A download's error as the player reads it. The ones the launcher looks for again (they're
+/// saved with the download and matched later) are kept in English and said here in the player's
+/// language; the others were written in it already.
+pub fn error_text(error: &str) -> String {
+    if error == VPN_WAIT { return tr!("Waiting for your VPN: downloads only run through it (Settings → Downloads)"); }
+    if error == FILES_CHANGED { return tr!("The downloaded files were moved, changed or deleted, so this download can't seed. Remove it, or download it again."); }
+    if error == NOTHING_ALLOWED { return tr!("Nothing in this release can be downloaded: it only holds programs a console game never needs."); }
+    if error == MISSING_LIST { return tr!("Its file list is missing. Retry looks it up again."); }
+    if error == BAD_LIST { return tr!("Its file list couldn't be read. Retry looks it up again."); }
+    if let Some(rest) = error.strip_prefix(NOT_DELETED) { return tr!("Not deleted: {}", rest); }
+    if let Some(why) = error.strip_prefix(UNREADABLE).and_then(|r| r.strip_prefix(" (")).and_then(|r| r.strip_suffix(").")) {
+        return tr!("Its file list couldn't be read ({}).", why);
+    }
+    error.to_string()
+}
+
+const MISSING_LIST: &str = "Its file list is missing. Retry looks it up again.";
+const BAD_LIST: &str = "Its file list couldn't be read. Retry looks it up again.";
 
 const UNREADABLE: &str = "Its file list couldn't be read";
 
@@ -655,7 +676,7 @@ fn restore_entries(store: &Path, job: &mut Job, read: Result<(Vec<Entry>, u64)>)
             job.problem = Problem::Release;
             return false;
         }
-        _ if !torrent.exists() => "Its file list is missing. Retry looks it up again.".to_string(),
+        _ if !torrent.exists() => MISSING_LIST.to_string(),
         Err(error) if error.downcast_ref::<std::io::Error>().is_some() => {
             job.error = format!("{UNREADABLE} ({error}).");
             job.problem = Problem::Other;
@@ -663,7 +684,7 @@ fn restore_entries(store: &Path, job: &mut Job, read: Result<(Vec<Entry>, u64)>)
         }
         _ => {
             let _ = std::fs::remove_file(&torrent);
-            "Its file list couldn't be read. Retry looks it up again.".into()
+            BAD_LIST.into()
         }
     };
     job.state = State::Failed;
@@ -759,7 +780,7 @@ fn available_space(folder: &Path) -> Result<u64> {
     use std::os::unix::ffi::OsStrExt;
     let path = std::ffi::CString::new(folder.as_os_str().as_bytes())?;
     let mut stat = std::mem::MaybeUninit::<libc::statvfs>::uninit();
-    ensure!(unsafe { libc::statvfs(path.as_ptr(), stat.as_mut_ptr()) } == 0, "Cannot check destination free space");
+    ensure!(unsafe { libc::statvfs(path.as_ptr(), stat.as_mut_ptr()) } == 0, tr!("Cannot check destination free space"));
     let stat = unsafe { stat.assume_init() };
     Ok((stat.f_bavail as u64).saturating_mul(stat.f_frsize as u64))
 }
@@ -959,7 +980,7 @@ impl Worker {
                         list_only: true, output_folder: Some(folder.to_string_lossy().into_owned()),
                         initial_peers: Some(initial_peers), ..Default::default()
                     }),
-                )).await.map_err(|_| LookupError(Problem::NoAnswer, anyhow::anyhow!("Metadata lookup timed out; no reachable peers. Retry later.")))??;
+                )).await.map_err(|_| LookupError(Problem::NoAnswer, anyhow::anyhow!(tr!("Metadata lookup timed out; no reachable peers. Retry later."))))??;
                 let AddTorrentResponse::ListOnly(response) = response else { bail!("Unexpected metadata response"); };
                 Ok(Resolved { key: key.clone(), bytes: response.torrent_bytes.to_vec(), peers: response.seen_peers })
         });
@@ -976,7 +997,7 @@ impl Worker {
         if !self.job(&key).is_some_and(|job| job.state == State::Resolving) { return; }
         let resolved = match result {
             Ok((_, result)) => result,
-            Err(_) => Err(anyhow::anyhow!("Metadata lookup task stopped unexpectedly; retry")),
+            Err(_) => Err(anyhow::anyhow!(tr!("Metadata lookup task stopped unexpectedly; retry"))),
         };
         if let Err(error) = resolved.and_then(|resolved| self.resolved(resolved)) {
             let problem = error.downcast_ref::<LookupError>().map_or(Problem::Other, |error| error.0);
@@ -991,7 +1012,7 @@ impl Worker {
             let (total, files, padding) = inspect_metadata(&resolved.bytes, &job.key, None)?;
             // Nothing is downloaded yet: a release the launcher couldn't install stops here.
             if let Some(why) = job.platform.and_then(|platform| crate::package::unsupported(platform, &files.iter().zip(&padding).filter(|(_, pad)| !**pad).map(|(file, _)| file.clone()).collect::<Vec<_>>())) {
-                let why = anyhow::anyhow!("SwarmPlay can't install this release: {why}. Nothing was downloaded; choose another release of this game.");
+                let why = anyhow::anyhow!(tr!("SwarmPlay can't install this release: {why}. Nothing was downloaded; choose another release of this game.", why));
                 return Err(LookupError(Problem::Unsupported, why).into());
             }
             let entries = entries_of(job.platform, files, padding);
@@ -1040,7 +1061,7 @@ impl Worker {
             let selected = wanted.as_deref();
             let chosen = chosen(selected);
             let total = if selected.is_some() { files.iter().enumerate().filter(|(i, _)| chosen(*i)).map(|(_, f)| f.1).sum() } else { total };
-            ensure!(available_space(&folder)? >= required_space(&bytes, &folder, selected)?, "Not enough free space in the download folder");
+            ensure!(available_space(&folder)? >= required_space(&bytes, &folder, selected)?, tr!("Not enough free space in the download folder"));
             let session = self.session().await?;
             let magnet = librqbit::Magnet::parse(&job.magnet)?;
             let peers = self.peers.get(key).cloned().unwrap_or_else(|| self.policy.initial_peers.clone());
@@ -1221,7 +1242,7 @@ impl Worker {
         // Without its saved torrent, starting would look it up again and forget the choice.
         let started = match self.job(key).map(|job| owned_folder(&job)) {
             Some(Err(error)) => Err(error),
-            _ if !self.store.join(format!("{key}.torrent")).is_file() => Err(anyhow::anyhow!("Its file list is gone. Remove it from Downloads, then press Download again.")),
+            _ if !self.store.join(format!("{key}.torrent")).is_file() => Err(anyhow::anyhow!(tr!("Its file list is gone. Remove it from Downloads, then press Download again."))),
             _ => self.start(key).await,
         };
         if let Err(error) = started {
@@ -1264,7 +1285,7 @@ impl Worker {
         let Some(job) = self.job(key).filter(|job| !job.state.active()) else { return Ok(()); };
         // Checked before anything stops: a refused delete leaves it sharing as it was.
         let present = std::fs::symlink_metadata(&job.folder).is_ok();
-        ensure!(!present || own_folder(&job), "Refusing to delete {}: it isn't this download's own folder", job.folder.display());
+        ensure!(!present || own_folder(&job), tr!("Refusing to delete {}: it isn't this download's own folder", job.folder.display()));
         // Hidden first (a seed keeps its open files meanwhile), so a rename that fails leaves it
         // sharing as it was; then stopped, and deleted in the background so other transfers never
         // wait for it. remove_dir_all removes links, never what they point to.

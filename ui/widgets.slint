@@ -128,7 +128,7 @@ export component BackButton inherits Rectangle {
             border-radius: (18px * S.k); background: ta.has-hover ? #ffffff24 : #ffffff12;
             Image { source: Icons.chevl; colorize: Theme.text; width: (22px * S.k); height: (22px * S.k); x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2; }
         }
-        Text { text: "Back"; font-size: (18px * S.k); font-weight: 500; color: Theme.text; vertical-alignment: center; }
+        Text { text: @tr("Back"); font-size: (18px * S.k); font-weight: 500; color: Theme.text; vertical-alignment: center; }
         Text {
             text: root.pad ? "○" : "Esc"; font-size: (15px * S.k); color: root.pad ? #ff8f9c : Theme.text3;
             vertical-alignment: center; opacity: root.pad || ta.has-hover ? 1 : 0;
@@ -266,7 +266,7 @@ export component Badge inherits Rectangle {
     border-radius: (6px * S.k);
     background: text == "Installed" ? Theme.ok : text == "Playing" ? Theme.ok : text == "New" ? Theme.accent : #000000b8;
     label := Text {
-        text: root.text == "Playing" ? "● PLAYING" : root.text == "Installed" ? "INSTALLED" : root.text == "New" ? "NEW" : root.text;
+        text: root.text == "Playing" ? @tr("● PLAYING") : root.text == "Installed" ? @tr("INSTALLED") : root.text == "New" ? @tr("NEW") : root.text;
         font-size: size;
         font-weight: 700;
         letter-spacing: (1px * S.k);

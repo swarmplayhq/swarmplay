@@ -15,6 +15,7 @@
 //! Every call runs a short command (gdbus, xdotool, xprop); callers keep them off the UI thread.
 
 use std::path::Path;
+use tr::tr;
 use std::process::{Command, Stdio};
 use std::sync::OnceLock;
 
@@ -36,14 +37,14 @@ pub enum Desktop {
 }
 
 impl Desktop {
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Self::Gnome => "GNOME",
-            Self::Kde => "KDE Plasma",
-            Self::Gamescope => "Gamescope",
-            Self::SteamGameMode => "Steam Game Mode",
-            Self::X11 => "X11",
-            Self::Other => "this desktop",
+            Self::Gnome => "GNOME".into(),
+            Self::Kde => "KDE Plasma".into(),
+            Self::Gamescope => "Gamescope".into(),
+            Self::SteamGameMode => tr!("Steam Game Mode"),
+            Self::X11 => "X11".into(),
+            Self::Other => tr!("this desktop"),
         }
     }
 }
@@ -158,7 +159,7 @@ fn dirs_home() -> Option<std::path::PathBuf> {
 
 /// Put the GNOME extension in place and turn it on (GNOME loads it at the next login on Wayland).
 pub fn install_gnome_helper() -> Result<(), String> {
-    let dir = dirs_home().ok_or("no home folder")?.join(".local/share/gnome-shell/extensions").join(GNOME_UUID);
+    let dir = dirs_home().ok_or_else(|| tr!("no home folder"))?.join(".local/share/gnome-shell/extensions").join(GNOME_UUID);
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     std::fs::write(dir.join("extension.js"), GNOME_EXTENSION_JS).map_err(|e| e.to_string())?;
     std::fs::write(dir.join("metadata.json"), GNOME_METADATA).map_err(|e| e.to_string())?;
@@ -168,7 +169,7 @@ pub fn install_gnome_helper() -> Result<(), String> {
         if !list.contains(GNOME_UUID) {
             let inner = list.trim().trim_start_matches("@as").trim().trim_start_matches('[').trim_end_matches(']').trim().to_string();
             let new = if inner.is_empty() { format!("['{GNOME_UUID}']") } else { format!("[{inner}, '{GNOME_UUID}']") };
-            run("gsettings", &["set", "org.gnome.shell", "enabled-extensions", &new]).ok_or("couldn't turn it on")?;
+            run("gsettings", &["set", "org.gnome.shell", "enabled-extensions", &new]).ok_or_else(|| tr!("couldn't turn it on"))?;
         }
     }
     Ok(())
@@ -280,7 +281,7 @@ pub fn screenshot(path: &Path) -> Result<(), String> {
         Desktop::X11 | Desktop::Gamescope => run("import", &["-window", "root", &p]).is_some(),
         _ => false,
     };
-    if ok && path.is_file() { Ok(()) } else { Err(format!("screenshots aren't available on {}", desktop().label())) }
+    if ok && path.is_file() { Ok(()) } else { Err(tr!("screenshots aren't available on {}", desktop().label())) }
 }
 
 #[cfg(test)]

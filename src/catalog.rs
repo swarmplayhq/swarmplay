@@ -456,7 +456,8 @@ fn save(src: &Source, file: CatalogFile) -> Result<CatalogFile, String> {
 /// RuTracker. The PS5 catalog must import; a PS4 catalog is optional until it has been collected.
 /// Also says whether the published catalog couldn't be reached (to try again once the network is).
 pub fn sync(progress: &dyn Fn(String)) -> Result<(CatalogFile, bool), String> {
-    progress("Checking for new releases".into());
+    progress(tr::tr!("Checking for new releases"));
+    // The ones below stay English: words::status turns them into the player's words.
     // Offline or not published yet: the local catalogs still load.
     let offline = match fetch_remote(progress) {
         Ok(changed) => { crate::log!("Published catalog: {changed} updated"); false }

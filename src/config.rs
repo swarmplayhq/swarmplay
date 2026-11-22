@@ -122,6 +122,21 @@ pub const RESOLUTIONS: [(u32, u32); 5] = [(1280, 720), (1600, 900), (1920, 1080)
 pub const PRESENT_MODES: [(&str, &str); 3] =
     [("Mailbox", "Mailbox (low latency)"), ("Fifo", "Fifo (V-Sync)"), ("Immediate", "Immediate (uncapped)")];
 
+/// A present mode (the config's key, PRESENT_MODES' first column) as Settings shows it; an
+/// unknown one, as it is.
+pub fn present_label(key: &str) -> String {
+    present_text(key).unwrap_or_else(|| key.to_string())
+}
+
+fn present_text(key: &str) -> Option<String> {
+    Some(match key {
+        "Mailbox" => tr::tr!("Mailbox (low latency)"),
+        "Fifo" => tr::tr!("Fifo (V-Sync)"),
+        "Immediate" => tr::tr!("Immediate (uncapped)"),
+        _ => return None,
+    })
+}
+
 impl Config {
     pub fn path() -> PathBuf {
         config_dir().join("config.json")
@@ -187,6 +202,18 @@ fn is_executable(m: &std::fs::Metadata) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_present_mode_has_a_label() {
+        for (key, label) in PRESENT_MODES { assert_eq!(present_text(key).as_deref(), Some(label)); }
+        assert_eq!(present_label("Other"), "Other");
+    }
+
+    #[test]
+    fn an_older_config_reads_with_the_system_language() {
+        let old: Config = serde_json::from_str(r#"{"fullscreen": false}"#).unwrap();
+        assert_eq!(old.language, "", "no language saved: the system's");
+    }
 
     #[test]
     fn an_older_update_opt_out_turns_every_automatic_update_off() {

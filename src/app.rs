@@ -1,6 +1,7 @@
 //! Application state, navigation and event handling. All of it lives on the UI thread;
 //! background threads hand results back through `slint::invoke_from_event_loop`.
 
+use tr::tr;
 use crate::audio::{self, Sound};
 use crate::catalog::{self, CatalogFile, Game};
 use crate::config::Config;
@@ -129,6 +130,53 @@ pub const GENRES: [(&str, &str); 16] = [
 pub const SORTS: [&str; 8] = ["Newest uploads", "Name (A–Z)", "Release date", "Top rated", "Size (largest)", "Size (smallest)", "Compatibility", "Most seeders"];
 /// Status filters the Library remembers.
 const STATUS_FILTERS: [&str; 3] = ["All", "Installed", "Playable"];
+
+/// A sort's name in the interface's language (`SORTS` keeps the English, which is what's saved).
+pub fn sort_label(i: usize) -> String {
+    match i {
+        0 => tr!("Newest uploads"),
+        1 => tr!("Name (A–Z)"),
+        2 => tr!("Release date"),
+        3 => tr!("Top rated"),
+        4 => tr!("Size (largest)"),
+        5 => tr!("Size (smallest)"),
+        6 => tr!("Compatibility"),
+        7 => tr!("Most seeders"),
+        _ => SORTS.get(i).map(|s| s.to_string()).unwrap_or_default(),
+    }
+}
+
+/// A Library filter chip's name (a status, a console, a genre) in the interface's language. The
+/// filters themselves are kept by their English names (`GENRES`, `STATUS_FILTERS`, the config).
+pub fn filter_label(key: &str) -> String {
+    match key {
+        "All" => tr!("All"),
+        "Installed" => tr!("Installed"),
+        "Playable" => tr!("Playable"),
+        "All genres" => tr!("All genres"),
+        "Action" => tr!("Action"),
+        "Adventure" => tr!("Adventure"),
+        "RPG" => tr!("RPG"),
+        "Shooter" => tr!("Shooter"),
+        "Horror" => tr!("Horror"),
+        "Survival" => tr!("Survival"),
+        "Racing" => tr!("Racing"),
+        "Sports" => tr!("Sports"),
+        "Fighting" => tr!("Fighting"),
+        "Platformer" => tr!("Platformer"),
+        "Puzzle" => tr!("Puzzle"),
+        "Simulation" => tr!("Simulation"),
+        "Strategy" => tr!("Strategy"),
+        "Stealth" => tr!("Stealth"),
+        "Family" => tr!("Family"),
+        "VR" => tr!("VR"),
+        "Other" => tr!("Other"),
+        key => match key.strip_suffix(" games only") {
+            Some(console) => tr!("{} games only", console),
+            None => key.to_string(),
+        },
+    }
+}
 
 /// A catalog game plus derived data.
 pub struct GameV {
@@ -1109,7 +1157,8 @@ impl App {
         let publisher = info.map(|i| i.publisher.as_str()).unwrap_or_default();
         let search = crate::search::Doc::new(name, &g.name,
             &format!("{} {} {} {} {}", g.title_ids.join(" "), g.title_id, publisher, g.region, g.version),
-            &format!("{genre_text} {}", buckets.join(" ")));
+            // The genre filters by their names in the interface's language too ("corrida").
+            &format!("{genre_text} {} {}", buckets.join(" "), buckets.iter().map(|b| filter_label(b)).collect::<Vec<_>>().join(" ")));
         (buckets, search)
     }
 
@@ -1319,7 +1368,7 @@ impl App {
             list.sort_by_key(|i| std::cmp::Reverse(matched.get(i).copied().unwrap_or(0)));
         }
         self.search_note = match list.first() {
-            Some(&top) if hits.near => format!("Showing results for “{}”", query.corrected(&self.games[top].search)),
+            Some(&top) if hits.near => tr!("Showing results for “{}”", query.corrected(&self.games[top].search)),
             _ => String::new(),
         };
         self.filtered = list;
@@ -1467,7 +1516,7 @@ impl App {
         }
         self.syncing = true;
         let known: HashSet<i64> = self.games.iter().map(|g| g.g.id).collect();
-        self.set_status("Checking for new releases…", true);
+        self.set_status(&tr!("Checking for new releases…"), true);
         std::thread::spawn(move || {
             let res = catalog::sync(&|p| post(move |app| app.set_status(&p, true)));
             post(move |app| {
@@ -1489,8 +1538,11 @@ impl App {
                         app.keep_grid_focus(&anchor);
                         // Asked for in Settings: the answer shows on that row.
                         if !first && by_hand {
-                            let what = if new > 0 { format!("{new} new release{}", if new == 1 { "" } else { "s" }) } else { "No new releases".to_string() };
-                            app.note_setting(crate::settings::SId::Refresh, &format!("{what} · {} games · {} releases", app.library_total, app.games.len()), 1);
+                            let what = if new > 0 { tr!("{n} new release" | "{n} new releases" % new) } else { tr!("No new releases") };
+                            let (games, releases) = (app.library_total, app.games.len());
+                            let games = tr!("{n} game" | "{n} games" % games);
+                            let releases = tr!("{n} release" | "{n} releases" % releases);
+                            app.note_setting(crate::settings::SId::Refresh, &format!("{what} · {games} · {releases}"), 1);
                         }
                         app.set_status("", false);
                         app.boot_catalog_done();
@@ -1500,13 +1552,13 @@ impl App {
                         app.set_status("", false);
                         // At start the welcome screen says so; asked for, the Settings row.
                         if by_hand {
-                            app.note_setting(crate::settings::SId::Refresh, &format!("Couldn't refresh it: {e}"), 2);
+                            app.note_setting(crate::settings::SId::Refresh, &tr!("Couldn't refresh it: {e}", e), 2);
                         }
                         if app.boot.active {
                             // Offline: don't hold the welcome screen for the catalog or artwork.
                             app.boot.waiting_art = false;
                             app.boot.cat_failed = true;
-                            app.boot.text_main = "Catalog reload failed · keeping the offline snapshot".into();
+                            app.boot.text_main = tr!("Catalog reload failed · keeping the offline snapshot");
                             app.boot_catalog_done();
                         }
                         app.start_enrich();
@@ -1632,6 +1684,7 @@ impl App {
             images::warm(rest, 10, &|done, total| {
                 throttle(&|d, t| post(move |app| {
                     if !app.boot.active && !app.syncing && !app.enriching && !app.kyty.busy && !app.upd.busy {
+                        // Raw progress: words::status says it in the interface's language.
                         app.set_status(&format!("Downloading game art {d}/{t}"), true);
                     }
                 }), done, total, &last)
@@ -1728,24 +1781,24 @@ impl App {
     pub fn open_rating(&mut self, l: usize, after_play: bool) {
         if self.locals[l].l.title_id.is_empty() {
             let id = self.locals[l].l.id.clone();
-            return self.note_game_brief(&id, "Can't rate this game: its folder has no title ID", true);
+            return self.note_game_brief(&id, &tr!("Can't rate this game: its folder has no title ID"), true);
         }
         let mk = |id: &'static str, label: &str, icon: &'static str| ActionDef { id, label: label.into(), icon, primary: false, danger: false, round: false };
         let mut items = vec![
-            mk("rate_ingame", "In game: reaches gameplay", "play"),
-            mk("rate_menu", "Main menu, but not gameplay", "grid"),
-            mk("rate_logo", "Intro logos, then stops", "film"),
-            mk("rate_noboot", "Doesn't start", "stop"),
+            mk("rate_ingame", &tr!("In game: reaches gameplay"), "play"),
+            mk("rate_menu", &tr!("Main menu, but not gameplay"), "grid"),
+            mk("rate_logo", &tr!("Intro logos, then stops"), "film"),
+            mk("rate_noboot", &tr!("Doesn't start"), "stop"),
         ];
         if after_play {
-            items.push(mk("rate_skip", "Not now", ""));
+            items.push(mk("rate_skip", &tr!("Not now"), ""));
         }
         let name = self.locals[l].name.clone();
         self.menu_target = Some(Target { game: self.locals[l].cat, local: Some(l) });
         self.menu_actions = items;
         audio::play(Sound::Select);
         self.push_overlay(Overlay::Menu, Z_MENU, 0);
-        self.push_menu(&format!("How far did {name} get?"));
+        self.push_menu(&tr!("How far did {name} get?", name));
     }
 
     /// Save a rating (`None`: skipped) with the KytyPS5 build it was played on.
@@ -1781,7 +1834,7 @@ impl App {
                 if let Some(l) = app.locals.iter().position(|g| g.l.title_id == tid) {
                     let id = app.locals[l].l.id.clone();
                     let emulator = crate::platform::Platform::of_title_id(&tid).unwrap_or_default().emulator();
-                    app.note_game_brief(&id, &format!("Rated: {} on Linux · it goes to {emulator} when you share your ratings in Settings", status.label()), false);
+                    app.note_game_brief(&id, &tr!("Rated: {} on Linux · it goes to {emulator} when you share your ratings in Settings", status.label(), emulator), false);
                 }
             });
         });
@@ -1811,7 +1864,7 @@ impl App {
         let batch: Vec<(String, crate::results::MyResult)> = self.my_results.unshared().into_iter()
             .take(crate::results::BATCH).map(|(k, v)| (k.clone(), v.clone())).collect();
         if batch.is_empty() {
-            return self.note_setting(crate::settings::SId::Share, "Nothing new to share: rate a game from its Options menu after playing it", 0);
+            return self.note_setting(crate::settings::SId::Share, &tr!("Nothing new to share: rate a game from its Options menu after playing it"), 0);
         }
         let now = util::now_secs();
         // The logs to attach, gathered in one folder named after each game, opened next to the forms.
@@ -1847,11 +1900,17 @@ impl App {
         }
         let n = batch.len();
         let left = self.my_results.unshared().len();
-        let mut more = if left > 0 { format!(" {left} more next time.") } else { String::new() };
-        if batch.iter().any(|(tid, _)| crate::platform::Platform::of_title_id(tid) == Some(crate::platform::Platform::Ps4)) {
-            more.push_str(" shadPS4 only accepts reports for games dumped from a copy you own, unmodified.");
+        let mut note = tr!("Opened {n} report in your browser: check it, drag in its log from the folder that opened (named after the game), and submit."
+            | "Opened {n} reports in your browser: check each one, drag in its log from the folder that opened (named after the game), and submit." % n);
+        if left > 0 {
+            note.push(' ');
+            note.push_str(&tr!("{n} more next time." | "{n} more next time." % left));
         }
-        self.note_setting(crate::settings::SId::Share, &format!("Opened {n} report{} in your browser: check each one, drag in its log from the folder that opened (named after the game), and submit.{more}", if n == 1 { "" } else { "s" }), 1);
+        if batch.iter().any(|(tid, _)| crate::platform::Platform::of_title_id(tid) == Some(crate::platform::Platform::Ps4)) {
+            note.push(' ');
+            note.push_str(&tr!("shadPS4 only accepts reports for games dumped from a copy you own, unmodified."));
+        }
+        self.note_setting(crate::settings::SId::Share, &note, 1);
     }
 
     fn compat_fetch(&mut self) {
@@ -1917,15 +1976,16 @@ impl App {
                     Some(code) => {
                         crate::log!("{} crashed (exit {code}), log: {}", e.name, e.log.display());
                         let log = e.log.to_string_lossy().into_owned();
-                        self.notify(crate::toast::Cat::Games, crate::toast::FAILED, "alert", &format!("{} closed", e.name), &format!("It exited with code {code} · open its log"),
+                        self.notify(crate::toast::Cat::Games, crate::toast::FAILED, "alert", &tr!("{} closed", e.name), &tr!("It exited with code {code} · open its log", code),
                             if log.is_empty() { crate::toast::Action::None } else { crate::toast::Action::File(log) }, &format!("crash:{}", e.game_id), true);
                         audio::play(Sound::Error);
-                        format!("Stopped unexpectedly · {} exited with code {code}", if pc { "the game" } else { emulator })
+                        if pc { tr!("Stopped unexpectedly · the game exited with code {code}", code) }
+                        else { tr!("Stopped unexpectedly · {emulator} exited with code {code}", emulator, code) }
                     }
-                    None if pc => "Closed right after starting · it may need something this PC doesn't have (Wine, a library)".into(),
-                    None => format!("Closed right after starting · {emulator} may not support it yet"),
+                    None if pc => tr!("Closed right after starting · it may need something this PC doesn't have (Wine, a library)"),
+                    None => tr!("Closed right after starting · {emulator} may not support it yet", emulator),
                 };
-                let more = if saved.is_some() && !pc { " · log in Options" } else { "" };
+                let more = if saved.is_some() && !pc { format!(" · {}", tr!("log in Options")) } else { String::new() };
                 self.note_game(&e.game_id, &format!("{what}{more}"), true);
             } else {
                 // Closed normally: "Closing…" goes (Home shows when it was last played).
@@ -1976,7 +2036,7 @@ impl App {
         }
         let tm = util::local_time();
         let (h, m) = (tm.tm_hour, tm.tm_min);
-        let clock = format!("{}:{:02} {}", if h % 12 == 0 { 12 } else { h % 12 }, m, if h < 12 { "AM" } else { "PM" });
+        let clock = crate::i18n::clock(h as u32, m as u32);
         let ui = self.ui();
         ui.set_settings_dot(self.updates_need_you());
         if clock != self.clock {
@@ -3057,51 +3117,52 @@ impl App {
         let info = self.target_info(t);
         if let Some(l) = t.local {
             if self.session_for_local(l).is_some() {
-                a.push(mk("resume", "Resume", "play", true));
-                a.push(ActionDef { danger: true, ..mk("stop", "Stop", "stop", false) });
+                a.push(mk("resume", &tr!("Resume"), "play", true));
+                a.push(ActionDef { danger: true, ..mk("stop", &tr!("Stop"), "stop", false) });
             } else {
-                a.push(mk("play", "Play", "play", true));
+                a.push(mk("play", &tr!("Play"), "play", true));
             }
         }
         // An installed game's Hub is the cards at the bottom of Home (Down): its other button is
         // a round "···" for the Options menu, as on a console.
         if !in_hub && t.local.is_some() {
-            a.push(ActionDef { round: true, ..mk("options", "Options", "more", false) });
+            a.push(ActionDef { round: true, ..mk("options", &tr!("Options"), "more", false) });
         } else if !in_hub && t.game.is_some() {
-            a.push(mk("hub", "View Game", "info", true));
+            a.push(mk("hub", &tr!("View Game"), "info", true));
         }
         let pkg = t.game.is_some_and(|g| self.games[g].g.is_pkg());
         if t.local.is_none() && pkg && self.download_for_target(t).is_none() {
-            a.push(mk("pkg_info", "PKG release", "info", false));
+            a.push(mk("pkg_info", &tr!("PKG release"), "info", false));
         } else if t.local.is_none() && t.game.is_some_and(|g| !self.games[g].g.magnet.is_empty()) {
             let job = self.download_for_target(t);
             let installing = job.as_ref().is_some_and(|job| self.installer.snapshot().iter().any(|record| record.key == job.key && record.state.active()));
             // A game that doesn't start (or can't on this PC) can still be downloaded, but it
             // isn't offered as the obvious next step.
             let discouraged = job.is_none() && self.outlook(t).is_some_and(|o| o.discourages_download());
-            let (id, label) = if installing { ("download", "Installing…") }
+            let (id, label) = if installing { ("download", tr!("Installing…")) }
                 // Finished and not installed, and not about to install by itself (never set to, or
                 // its install was cancelled or failed).
                 else if job.as_ref().is_some_and(|job| job.state == crate::downloads::State::Complete && {
                     let record = self.installer.snapshot().into_iter().find(|record| record.key == job.key);
                     record.map_or(job.install_to.is_none(), |record| record.state != crate::installer::State::Installed)
-                }) { ("install", "Install") }
-                else if job.is_some() { ("download", "View download") }
-                else if discouraged { ("download", "Download anyway") }
-                else { ("download", "Download") };
-            a.push(mk(id, label, "download", a.is_empty() && !discouraged));
+                }) { ("install", tr!("Install")) }
+                else if job.is_some() { ("download", tr!("View download")) }
+                else if discouraged { ("download", tr!("Download anyway")) }
+                else { ("download", tr!("Download")) };
+            a.push(mk(id, &label, "download", a.is_empty() && !discouraged));
         }
-        let discouraged = a.iter().any(|x| x.label == "Download anyway");
+        let anyway = tr!("Download anyway");
+        let discouraged = a.iter().any(|x| x.label == anyway);
         if crate::trailer::available() && info.as_ref().is_some_and(|i| !i.video.is_empty()) {
             // Ahead of "Download anyway", so the Hub doesn't open with the download selected.
             let at = if discouraged { a.iter().position(|x| x.id == "download").unwrap_or(a.len()) } else { a.len() };
-            a.insert(at, mk("trailer", "Trailer", "film", false));
+            a.insert(at, mk("trailer", &tr!("Trailer"), "film", false));
         }
         // Its store page: Steam for PC games, the PlayStation Store for console ones. (The forum
         // topic said nothing the Game Hub doesn't.)
         if in_hub && info.as_ref().is_some_and(|i| !i.store.is_empty()) {
-            let label = if self.target_platform(t) == crate::platform::Platform::Pc { "Steam page" } else { "PlayStation Store" };
-            a.push(ActionDef { round: true, ..mk("store", label, "bag", false) });
+            let label = if self.target_platform(t) == crate::platform::Platform::Pc { tr!("Steam page") } else { "PlayStation Store".to_string() };
+            a.push(ActionDef { round: true, ..mk("store", &label, "bag", false) });
         }
         if !a.iter().any(|x| x.primary) && !discouraged {
             if let Some(f) = a.first_mut() {
@@ -3144,9 +3205,9 @@ impl App {
             "download" => self.prepare_download(t),
             "pkg_info" => {
                 let others = t.game.map(|g| self.platform_releases(g).filter(|&i| !self.games[i].g.is_pkg()).count()).unwrap_or(0);
-                let tip = if others > 0 { "This game has another release that isn't a PKG: switch to it with the release selector." } else { "Look for a release of this game that is a folder, an archive or an exFAT image." };
+                let tip = if others > 0 { tr!("This game has another release that isn't a PKG: switch to it with the release selector.") } else { tr!("Look for a release of this game that is a folder, an archive or an exFAT image.") };
                 let key = self.game_key(t);
-                self.note_game_brief(&key, &format!("A PKG package: PS5 games install from extracted releases only. {tip}"), false);
+                self.note_game_brief(&key, &format!("{} {tip}", tr!("A PKG package: PS5 games install from extracted releases only.")), false);
             }
             "install" => {
                 if let Some(job) = self.download_for_target(t) { self.install_download(&job.key); }
@@ -3169,7 +3230,7 @@ impl App {
                         open_url(&p.to_string_lossy());
                     } else {
                         let id = lg.id.clone();
-                        self.note_game_brief(&id, "No log yet: play the game once to make one", true);
+                        self.note_game_brief(&id, &tr!("No log yet: play the game once to make one"), true);
                     }
                 }
             }
@@ -3211,9 +3272,9 @@ impl App {
                     Ok(m) => {
                         let path = crate::pcgame::short_path(&m.launch, &m.alternatives.last().cloned().unwrap_or_default());
                         self.rescan_library();
-                        self.note_game_brief(&game.id, &format!("Play now starts {path}"), false);
+                        self.note_game_brief(&game.id, &tr!("Play now starts {path}", path), false);
                     }
-                    Err(e) => self.note_game_brief(&game.id, &format!("Couldn't change it: {e}"), true),
+                    Err(e) => self.note_game_brief(&game.id, &tr!("Couldn't change it: {e}", e), true),
                 }
             }
             _ => {}
@@ -3224,7 +3285,7 @@ impl App {
         let game = self.locals[l].l.clone();
         if let Some(s) = self.live.first() {
             let name = s.name.clone();
-            self.note_game_brief(&game.id, &format!("{name} is running: stop it first, or Resume it from Home"), true);
+            self.note_game_brief(&game.id, &tr!("{name} is running: stop it first, or Resume it from Home", name), true);
             audio::play(Sound::Error);
             return;
         }
@@ -3250,7 +3311,7 @@ impl App {
             }
             Err(e) => {
                 audio::play(Sound::Error);
-                self.note_game(&game.id, &format!("Couldn't start it: {e}"), true);
+                self.note_game(&game.id, &tr!("Couldn't start it: {e}", e), true);
             }
         }
     }
@@ -3263,8 +3324,8 @@ impl App {
         if let Some(s) = s {
             audio::play(Sound::Back);
             let platform = self.local_platform(&s.game_id);
-            let what = if platform == crate::platform::Platform::Pc { "Closing it…".to_string() }
-                else { format!("Closing it and saving {}'s caches…", platform.emulator()) };
+            let what = if platform == crate::platform::Platform::Pc { tr!("Closing it…") }
+                else { tr!("Closing it and saving {}'s caches…", platform.emulator()) };
             self.note_game(&s.game_id, &what, false);
             self.sessions.stop(s.pid);
         }
@@ -3288,9 +3349,9 @@ impl App {
             return;
         }
         audio::play(Sound::Error);
-        self.running_note = ("Couldn't switch to it".into(), util::now_secs());
+        self.running_note = (tr!("Couldn't switch to it"), util::now_secs());
         if let Some(key) = key {
-            self.note_game_brief(key, "Couldn't switch to it: its window wasn't found (Resume needs xdotool)", true);
+            self.note_game_brief(key, &tr!("Couldn't switch to it: its window wasn't found (Resume needs xdotool)"), true);
         }
     }
 
@@ -3312,7 +3373,7 @@ impl App {
         });
         if let Err(e) = opened {
             let key = self.game_key(t);
-            return self.note_game_brief(&key, &format!("Can't play the trailer: {e}"), true);
+            return self.note_game_brief(&key, &tr!("Can't play the trailer: {e}", e), true);
         }
         audio::play(Sound::Select);
         self.trailer_key = self.game_key(t);
@@ -3351,7 +3412,7 @@ impl App {
             match ended {
                 Err(e) => {
                     let key = self.trailer_key.clone();
-                    self.note_game_brief(&key, &format!("Can't play the trailer: {e}"), true);
+                    self.note_game_brief(&key, &tr!("Can't play the trailer: {e}", e), true);
                 }
                 Ok(_) => self.trailer_over(),
             }
@@ -3502,35 +3563,35 @@ impl App {
         let mk = |id: &'static str, label: &str, icon: &'static str| ActionDef { id, label: label.into(), icon, primary: false, danger: false, round: false };
         for a in self.actions_for(t, true) {
             let label = match a.id {
-                "store" if self.target_platform(t) != crate::platform::Platform::Pc => "PlayStation Store page".to_string(),
-                "trailer" => "Watch trailer".to_string(),
+                "store" if self.target_platform(t) != crate::platform::Platform::Pc => tr!("PlayStation Store page"),
+                "trailer" => tr!("Watch trailer"),
                 _ => a.label.clone(),
             };
             items.push(ActionDef { label, ..a });
         }
         if self.overlay != Overlay::Hub {
-            items.insert(items.iter().position(|a| a.id == "trailer").unwrap_or(items.len()).min(if t.local.is_some() { 1 } else { 0 }), mk("hub", "Game Hub", "info"));
+            items.insert(items.iter().position(|a| a.id == "trailer").unwrap_or(items.len()).min(if t.local.is_some() { 1 } else { 0 }), mk("hub", &tr!("Game Hub"), "info"));
         }
         let pc = self.target_platform(t) == crate::platform::Platform::Pc;
         if let Some(l) = t.local {
-            items.push(mk("folder", "Open game folder", "folder"));
-            items.push(mk("log", if pc { "View game log" } else { "View emulator log" }, "log"));
+            items.push(mk("folder", &tr!("Open game folder"), "folder"));
+            items.push(mk("log", &if pc { tr!("View game log") } else { tr!("View emulator log") }, "log"));
             if pc {
                 // When the launcher picked the wrong thing to start: the next candidate.
                 if let Some(m) = self.locals[l].l.pc.as_ref().filter(|m| !m.alternatives.is_empty()) {
-                    items.push(mk("start_with", &format!("Start with {}", crate::pcgame::short_path(&m.alternatives[0], &m.launch)), "play"));
+                    items.push(mk("start_with", &tr!("Start with {}", crate::pcgame::short_path(&m.alternatives[0], &m.launch)), "play"));
                 }
             } else {
-                items.push(mk("rate", "Rate how it runs", "star"));
+                items.push(mk("rate", &tr!("Rate how it runs"), "star"));
             }
         }
         let compat = match self.target_platform(t) {
-            crate::platform::Platform::Ps4 => "shadPS4 compatibility list",
-            crate::platform::Platform::Ps5 => "KytyPS5 compatibility list",
-            crate::platform::Platform::Pc => "ProtonDB page",
+            crate::platform::Platform::Ps4 => tr!("shadPS4 compatibility list"),
+            crate::platform::Platform::Ps5 => tr!("KytyPS5 compatibility list"),
+            crate::platform::Platform::Pc => tr!("ProtonDB page"),
         };
-        items.push(mk("compat", compat, "web"));
-        items.push(mk("settings", "Settings", "gear"));
+        items.push(mk("compat", &compat, "web"));
+        items.push(mk("settings", &tr!("Settings"), "gear"));
         let title = t.local.map(|l| self.locals[l].name.clone()).or_else(|| t.game.map(|g| self.games[g].name.clone())).unwrap_or_default();
         self.menu_target = Some(t);
         self.menu_actions = items;
@@ -3561,7 +3622,7 @@ impl App {
     fn show_launch_splash(&mut self, l: usize) {
         self.push_launch(l);
         let platform = self.locals[l].l.platform;
-        self.ui().set_launch_sub(if platform == crate::platform::Platform::Pc { "Starting…".into() } else { format!("Starting with {}…", platform.emulator()).into() });
+        self.ui().set_launch_sub(if platform == crate::platform::Platform::Pc { tr!("Starting…").into() } else { tr!("Starting with {}…", platform.emulator()).into() });
         self.ui().set_launch_ps4(platform == crate::platform::Platform::Ps4);
         self.push_controller_status();
         self.push_overlay(Overlay::Launch, self.zone, self.idx);
@@ -3589,7 +3650,7 @@ impl App {
                 }
                 if !noted && el > Duration::from_secs(8) {
                     noted = true;
-                    post(|app| app.ui().set_launch_sub("Still starting… a game's first launch can take a while".into()));
+                    post(|app| app.ui().set_launch_sub(tr!("Still starting… a game's first launch can take a while").into()));
                 }
             }
         });

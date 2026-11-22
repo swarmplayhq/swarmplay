@@ -1,16 +1,17 @@
 //! Installation is explicit and separate from downloading. The worker never runs payload code.
 use crate::{app::*, downloads, installer, util};
 use anyhow::Context;
+use tr::tr;
 
 /// What a download can be installed from: archives on both consoles; PKG packages only for PS4,
 /// whose PKG extractor unpacks the game, its update and its DLC for shadPS4.
-fn install_note(platform: Option<crate::platform::Platform>) -> &'static str {
+fn install_note(platform: Option<crate::platform::Platform>) -> String {
     use crate::platform::Platform;
     match platform {
-        Some(Platform::Ps4) => "Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS4 PKG packages are unpacked for shadPS4, with their update and DLC. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files.",
-        Some(Platform::Ps5) => "Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS5 PKG packages can't be installed: choose a release of this game that isn't a PKG. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files.",
-        Some(Platform::Pc) => "Folders, RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive), GOG Linux installers (.sh) and AppImages. Installing unpacks the game and finds how to start it; nothing in it runs until you press Play. Unlike console games, which run inside an emulator, PC games run with your user's access to your files: only install releases you trust.",
-        None => "Folders, exFAT or decrypted PFS (.ffpfsc) images, RAR, ZIP, 7z or TAR archives, and PS4 PKG packages (not PS5 PKG). Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files.",
+        Some(Platform::Ps4) => tr!("Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS4 PKG packages are unpacked for shadPS4, with their update and DLC. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."),
+        Some(Platform::Ps5) => tr!("Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS5 PKG packages can't be installed: choose a release of this game that isn't a PKG. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."),
+        Some(Platform::Pc) => tr!("Folders, RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive), GOG Linux installers (.sh) and AppImages. Installing unpacks the game and finds how to start it; nothing in it runs until you press Play. Unlike console games, which run inside an emulator, PC games run with your user's access to your files: only install releases you trust."),
+        None => tr!("Folders, exFAT or decrypted PFS (.ffpfsc) images, RAR, ZIP, 7z or TAR archives, and PS4 PKG packages (not PS5 PKG). Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."),
     }
 }
 
@@ -54,7 +55,7 @@ impl App {
 
     /// Install a finished download into `destination` (a folder).
     pub fn start_install(&mut self, key: &str, destination: std::path::PathBuf) -> anyhow::Result<()> {
-        let job = self.downloads.job(key).filter(|job| job.state == downloads::State::Complete).context("The download isn't finished")?;
+        let job = self.downloads.job(key).filter(|job| job.state == downloads::State::Complete).with_context(|| tr!("The download isn't finished"))?;
         let ids = self.games.iter().find(|game| game.g.id == job.topic).map(|game| {
             std::iter::once(game.g.title_id.clone()).chain(game.g.title_ids.clone())
                 .filter(|id| crate::psn::valid_title_id(id)).collect()
@@ -85,7 +86,7 @@ impl App {
             self.install_failures.remove(key);
             crate::audio::play(crate::audio::Sound::Select);
             // Its row says "Waiting to install".
-            if let Some(game) = &game { self.note_game_brief(game, "Waiting to install: it starts once the game installing now is done", false); }
+            if let Some(game) = &game { self.note_game_brief(game, &tr!("Waiting to install: it starts once the game installing now is done"), false); }
             return self.push_downloads();
         }
         match self.start_install(key, to) {
@@ -93,7 +94,7 @@ impl App {
             // Its row says "Couldn't install" and why.
             Err(error) => {
                 crate::audio::play(crate::audio::Sound::Error);
-                if let Some(game) = &game { self.note_game_brief(game, &format!("Couldn't install: {error:#}"), true); }
+                if let Some(game) = &game { self.note_game_brief(game, &tr!("Couldn't install: {}", format!("{error:#}")), true); }
                 self.install_failures.insert(key.into(), format!("{error:#}"));
                 self.downloads.set_install_to(key, None);
             }
@@ -135,10 +136,10 @@ impl App {
             // Seen going (not just found that way at start): a notification says how it ended.
             if previous.is_some_and(|p| p.active()) {
                 match record.state {
-                    installer::State::Installed => self.notify(crate::toast::Cat::Installs, crate::toast::DONE, "play", "Ready to play", &record.name,
+                    installer::State::Installed => self.notify(crate::toast::Cat::Installs, crate::toast::DONE, "play", &tr!("Ready to play"), &record.name,
                         record.path.as_ref().map_or(crate::toast::Action::Downloads(record.key.clone()), |p| crate::toast::Action::Play(p.to_string_lossy().into_owned())),
                         &format!("dl:{}", record.key), true),
-                    installer::State::Failed => self.notify(crate::toast::Cat::Installs, crate::toast::FAILED, "alert", "Couldn't install", &record.name,
+                    installer::State::Failed => self.notify(crate::toast::Cat::Installs, crate::toast::FAILED, "alert", &tr!("Couldn't install"), &record.name,
                         crate::toast::Action::Downloads(record.key.clone()), &format!("dl:{}", record.key), true),
                     _ => {}
                 }

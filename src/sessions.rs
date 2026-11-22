@@ -1,6 +1,7 @@
 //! Game sessions: launch, detect, stop and switch between games and the launcher (Steam-style).
 //! Any kyty_emulator process is detected, including ones started outside the launcher.
 
+use tr::tr;
 use crate::config::Config;
 use crate::library::LocalGame;
 use crate::util::{atomic_write, cache_dir, config_dir, now_secs};
@@ -135,10 +136,10 @@ pub fn claim_screen() {
 /// a Windows game through umu-launcher (Proton) or Wine, in its own prefix.
 fn pc_command(game: &LocalGame) -> Result<Command, String> {
     use crate::pcgame::Kind;
-    let m = game.pc.as_ref().ok_or("This game's manifest is missing; install it again")?;
+    let m = game.pc.as_ref().ok_or_else(|| tr!("This game's manifest is missing; install it again"))?;
     let target = game.path.join(&m.launch);
     if !target.is_file() {
-        return Err(format!("{} is missing from the game's folder", m.launch));
+        return Err(tr!("{} is missing from the game's folder", m.launch));
     }
     let dir = target.parent().unwrap_or(&game.path).to_path_buf();
     let executable = || {
@@ -174,7 +175,7 @@ fn pc_command(game: &LocalGame) -> Result<Command, String> {
         }
         Kind::Windows => {
             let (runner, label) = crate::pcgame::windows_runner()
-                .ok_or("This is a Windows game: install umu-launcher (runs it with Proton) or Wine to play it")?;
+                .ok_or_else(|| tr!("This is a Windows game: install umu-launcher (runs it with Proton) or Wine to play it"))?;
             let prefix = crate::util::data_dir().join("prefixes").join(&game.id);
             let _ = std::fs::create_dir_all(&prefix);
             let mut c = Command::new(runner);
@@ -341,7 +342,7 @@ impl Sessions {
         let cfg = self.config.lock().unwrap().clone();
         let mut inner = self.inner.lock().unwrap();
         if let Some(s) = inner.live.first() {
-            return Err(format!("{} is already running. Stop it first.", s.name));
+            return Err(tr!("{} is already running. Stop it first.", s.name));
         }
         if game.platform == crate::platform::Platform::Pc {
             let mut command = pc_command(game)?;
@@ -356,12 +357,12 @@ impl Sessions {
         }
         let ps4 = game.platform == crate::platform::Platform::Ps4;
         if ps4 && !crate::shad::emulator().is_file() {
-            return Err("shadPS4 isn't installed yet".into());
+            return Err(tr!("shadPS4 isn't installed yet"));
         }
         if !ps4 && !cfg.emulator_ok() {
             let path = cfg.emulator_path();
-            if path.as_os_str().is_empty() { return Err("No emulator set: choose KytyPS5 in Settings".into()); }
-            return Err(format!("Emulator not found or not executable:\n{}", path.display()));
+            if path.as_os_str().is_empty() { return Err(tr!("No emulator set: choose KytyPS5 in Settings")); }
+            return Err(tr!("Emulator not found or not executable:\n{}", path.display()));
         }
         let emu = if ps4 { crate::shad::emulator() } else { cfg.emulator_path() };
         let mut args: Vec<String> = vec![
@@ -489,7 +490,7 @@ impl Sessions {
                 drop(lib);
                 let (game_id, title_id, name) = match g {
                     Some(g) => (g.id, g.title_id, g.name),
-                    None => (String::new(), String::new(), Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "Unknown game".into())),
+                    None => (String::new(), String::new(), Path::new(path).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| tr!("Unknown game"))),
                 };
                 crate::log!("detected running game: {name} (pid {pid})");
                 inner.live.push(Session { pid: *pid, game_id, title_id, name, path: path.clone(), since: *started, own: false, log: PathBuf::new(), stopping: false, group: false });

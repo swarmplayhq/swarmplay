@@ -158,9 +158,9 @@ export component DownloadsPage inherits Rectangle {
             }
         }
         Rectangle { height: (10px * S.k); }
-        Text { text: root.has-any ? root.empty-title : "No downloads"; font-size: (34px * S.k); font-weight: 600; color: Theme.text; horizontal-alignment: center; }
+        Text { text: root.has-any ? root.empty-title : @tr("No downloads"); font-size: (34px * S.k); font-weight: 600; color: Theme.text; horizontal-alignment: center; }
         Text {
-            text: root.has-any ? "Switch filters with " + (root.pad ? "L1 and R1." : "Q and E.") : "Pick a game in the Library and press Download. It installs by itself when it's done.";
+            text: root.has-any ? (root.pad ? @tr("Switch filters with L1 and R1.") : @tr("Switch filters with Q and E.")) : @tr("Pick a game in the Library and press Download. It installs by itself when it's done.");
             font-size: (20px * S.k); color: Theme.text2; wrap: word-wrap; horizontal-alignment: center;
         }
     }
@@ -227,7 +227,7 @@ export component DownloadsPage inherits Rectangle {
             // A fixed list (only the widths): one built from the download's data was rebuilt on
             // every update, which restarted the light sweeping across it.
             for stretch[i] in [6, 3, 1]: VerticalLayout {
-                property <string> label: i == 0 ? root.s.dl-label : i == 1 ? root.s.inst-label : "Play";
+                property <string> label: i == 0 ? root.s.dl-label : i == 1 ? root.s.inst-label : @tr("Play");
                 property <float> frac: i == 0 ? root.s.dl-frac : i == 1 ? root.s.inst-frac : root.s.ready ? 1.0 : 0.0;
                 horizontal-stretch: stretch; width: (780px * S.k - 16px * S.k) * stretch / 10;
                 spacing: (12px * S.k);
@@ -352,8 +352,8 @@ export component DownloadsPage inherits Rectangle {
             TouchArea { }
             box := VerticalLayout {
                 padding: (40px * S.k); spacing: (8px * S.k);
-                Text { text: "Delete " + root.delete-title + "?"; font-size: (32px * S.t); font-weight: 600; color: Theme.text; wrap: word-wrap; }
-                Text { text: "Deleted files can't be brought back. Downloading again is always possible."; font-size: (18px * S.t); color: Theme.text2; wrap: word-wrap; }
+                Text { text: @tr("Delete {}?", root.delete-title); font-size: (32px * S.t); font-weight: 600; color: Theme.text; wrap: word-wrap; }
+                Text { text: @tr("Deleted files can't be brought back. Downloading again is always possible."); font-size: (18px * S.t); color: Theme.text2; wrap: word-wrap; }
                 Rectangle { height: (16px * S.k); }
                 for c[i] in root.delete-choices: Rectangle {
                     height: choice.preferred-height;
@@ -376,14 +376,14 @@ export component DownloadsPage inherits Rectangle {
         x: (120px * S.k); y: root.height - (60px * S.k); width: root.width - (240px * S.k); height: (26px * S.k);
         spacing: (28px * S.k);
         Text {
-            text: root.note != "" ? root.note : "Cancel never deletes what you've downloaded";
+            text: root.note != "" ? root.note : @tr("Cancel never deletes what you've downloaded");
             font-size: (16px * S.k); color: root.note != "" ? Theme.warn : Theme.hint;
             vertical-alignment: center; overflow: elide; horizontal-stretch: 1;
         }
         Rectangle { horizontal-stretch: 1; }
-        if root.pad: HorizontalLayout { spacing: (10px * S.k); PadGlyph { glyph: "✕"; } Text { text: "Select"; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; } }
-        if root.pad: HorizontalLayout { spacing: (10px * S.k); PadGlyph { glyph: "○"; } Text { text: "Back"; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; } }
-        if !root.pad: Text { text: "Enter Select · Esc Back"; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
+        if root.pad: HorizontalLayout { spacing: (10px * S.k); PadGlyph { glyph: "✕"; } Text { text: @tr("Select"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; } }
+        if root.pad: HorizontalLayout { spacing: (10px * S.k); PadGlyph { glyph: "○"; } Text { text: @tr("Back"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; } }
+        if !root.pad: Text { text: @tr("Enter Select · Esc Back"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
     }
 }
 
@@ -417,16 +417,16 @@ export component DownloadConsent inherits Rectangle {
         border-width: 1px; border-color: #ffffff24;
         VerticalLayout {
             padding: (40px * S.k); spacing: (20px * S.k);
-            Text { text: root.install ? "Install game" : "Set up a download"; font-size: (38px * S.k); font-weight: 600; color: Theme.text; }
+            Text { text: root.install ? @tr("Install game") : @tr("Set up a download"); font-size: (38px * S.k); font-weight: 600; color: Theme.text; }
             Text { text: root.title; font-size: (24px * S.t); color: Theme.text2; wrap: word-wrap; max-height: (76px * S.t); overflow: elide; }
             Text {
-                text: root.install ? "Extract or copy this completed download into your game library. Installation runs in the background, checks free space and validates the game folder before publishing it. Existing games are never overwritten; original downloads are kept." : "Only download content you are authorized to obtain and share. " + (root.privacy != "" ? root.privacy : "Looking up this magnet contacts trackers, DHT and peers and reveals your IP address, even before its private flag is known.") + " Transfers upload pieces, capped at 128 KiB/s. After completion, seeding continues by default while the launcher is open; switch it off in Settings or stop an individual seed in Downloads.";
+                text: root.install ? @tr("Extract or copy this completed download into your game library. Installation runs in the background, checks free space and validates the game folder before publishing it. Existing games are never overwritten; original downloads are kept.") : @tr("Only download content you are authorized to obtain and share. {} Transfers upload pieces, capped at 128 KiB/s. After completion, seeding continues by default while the launcher is open; switch it off in Settings or stop an individual seed in Downloads.", root.privacy != "" ? root.privacy : @tr("Looking up this magnet contacts trackers, DHT and peers and reveals your IP address, even before its private flag is known."));
                 font-size: (19px * S.t); color: Theme.text2; wrap: word-wrap;
             }
             if !root.install && root.warning != "": Text {
                 text: root.warning; font-size: (19px * S.t); font-weight: 600; color: Theme.warn; wrap: word-wrap;
             }
-            Text { text: root.install ? "Game library destination · confirm where the game will be installed" : "Destination · an owned subfolder will be created here"; font-size: (18px * S.t); color: Theme.text3; }
+            Text { text: root.install ? @tr("Game library destination · confirm where the game will be installed") : @tr("Destination · an owned subfolder will be created here"); font-size: (18px * S.t); color: Theme.text3; }
             Rectangle {
                 height: (56px * S.t); background: #05091499; border-radius: (12px * S.k);
                 border-width: 1px; border-color: Theme.line;
@@ -438,12 +438,12 @@ export component DownloadConsent inherits Rectangle {
                     accepted => { root.edit-done(); }
                 }
             }
-            Text { text: root.install ? root.install-note : "First: retrieve metadata only. Then: review the file list and size and choose Start download. Installation is a separate explicit step."; font-size: (18px * S.t); color: #8dbaff; wrap: word-wrap; }
+            Text { text: root.install ? root.install-note : @tr("First: retrieve metadata only. Then: review the file list and size and choose Start download. Installation is a separate explicit step."); font-size: (18px * S.t); color: #8dbaff; wrap: word-wrap; }
             if root.error != "": Text { text: root.error; font-size: (17px * S.t); color: Theme.danger; wrap: word-wrap; }
             Rectangle { vertical-stretch: 1; }
             HorizontalLayout {
                 spacing: (18px * S.k);
-                TransferButton { label: root.install ? "Install" : "Look up metadata"; primary: true; focused: true; min-width: (250px * S.k); clicked => { root.confirm(); } }
+                TransferButton { label: root.install ? @tr("Install") : @tr("Look up metadata"); primary: true; focused: true; min-width: (250px * S.k); clicked => { root.confirm(); } }
                 BackButton { clicked => { root.close(); } }
                 Rectangle { horizontal-stretch: 1; }
             }
@@ -497,7 +497,7 @@ component Destination inherits VerticalLayout {
             width: label.preferred-width + (36px * S.k); border-radius: self.height / 2;
             background: root.focused ? #ffffff : ta.has-hover ? #ffffff24 : #ffffff0d;
             border-width: 1px; border-color: #ffffff24;
-            label := Text { text: root.editing ? "Done" : "Change"; font-size: (16px * S.t); font-weight: 500; color: root.focused ? #0a0d18 : Theme.text; }
+            label := Text { text: root.editing ? @tr("Done") : @tr("Change"); font-size: (16px * S.t); font-weight: 500; color: root.focused ? #0a0d18 : Theme.text; }
             ta := TouchArea { mouse-cursor: pointer; clicked => { if root.editing { root.done(); } else { root.change(); } } }
         }
     }
@@ -587,7 +587,7 @@ export component DownloadPanel inherits Rectangle {
         VerticalLayout {
             padding-left: (64px * S.k); padding-right: (64px * S.k); padding-top: (52px * S.k); padding-bottom: (36px * S.k);
             spacing: 0;
-            Text { text: "Download & install"; font-size: (34px * S.t); font-weight: 600; color: Theme.text; }
+            Text { text: @tr("Download & install"); font-size: (34px * S.t); font-weight: 600; color: Theme.text; }
             Text { text: root.title; font-size: (20px * S.t); color: Theme.text2; overflow: elide; }
             Rectangle { height: (14px * S.k); }
             HorizontalLayout {
@@ -615,11 +615,11 @@ export component DownloadPanel inherits Rectangle {
                     y: (parent.height - self.height) / 2; state: root.all-state;
                     TouchArea { mouse-cursor: pointer; clicked => { root.toggle(-1); } }
                 }
-                Text { text: "Files"; font-size: (22px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
+                Text { text: @tr("Files"); font-size: (22px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
                 if root.state == 1: HorizontalLayout {
                     spacing: (7px * S.k); padding-left: (6px * S.k);
                     if root.pad: PadGlyph { glyph: "△"; width: (22px * S.k); y: (9px * S.k); }
-                    Text { text: root.pad ? "Select all" : "/ Select all"; font-size: (15px * S.t); color: Theme.hint; vertical-alignment: center; }
+                    Text { text: root.pad ? @tr("Select all") : "/ " + @tr("Select all"); font-size: (15px * S.t); color: Theme.hint; vertical-alignment: center; }
                 }
                 Rectangle { horizontal-stretch: 1; }
                 Text { text: root.count; font-size: (18px * S.t); color: Theme.text2; vertical-alignment: center; }
@@ -665,7 +665,7 @@ export component DownloadPanel inherits Rectangle {
                             source: Icons.spinner; colorize: #8dbaff; width: (20px * S.k); height: (20px * S.k); y: (parent.height - self.height) / 2;
                             transform-rotation: animation-tick() / 2.5ms * 1deg;
                         }
-                        Text { text: "Getting the file list from other players…"; font-size: (17px * S.t); color: Theme.text2; vertical-alignment: center; }
+                        Text { text: @tr("Getting the file list from other players…"); font-size: (17px * S.t); color: Theme.text2; vertical-alignment: center; }
                     }
                     for w[i] in [340, 420, 260, 380, 300]: HorizontalLayout {
                         spacing: (16px * S.k); alignment: start; height: (26px * S.k);
@@ -684,19 +684,19 @@ export component DownloadPanel inherits Rectangle {
             Rectangle { height: 1px; background: #ffffff14; }
             Rectangle { height: (22px * S.k); }
             Destination {
-                label: "Download to"; path <=> root.dl-path; line: root.dl-line; frac: root.dl-frac; bad: root.dl-bad;
+                label: @tr("Download to"); path <=> root.dl-path; line: root.dl-line; frac: root.dl-frac; bad: root.dl-bad;
                 focused: root.focus-item == 1; editing: root.edit == 1;
                 change => { root.change(1); } edited(f) => { root.edited(f); if (!f) { root.left(1); } } done => { root.edit-done(); }
             }
             Rectangle { height: (20px * S.k); }
             Destination {
-                label: "Install to"; path <=> root.inst-path; line: root.inst-line; frac: root.inst-frac; bad: root.inst-bad;
+                label: @tr("Install to"); path <=> root.inst-path; line: root.inst-line; frac: root.inst-frac; bad: root.inst-bad;
                 focused: root.focus-item == 2; editing: root.edit == 2;
                 change => { root.change(2); } edited(f) => { root.edited(f); if (!f) { root.left(2); } } done => { root.edit-done(); }
             }
             Rectangle { height: (22px * S.k); }
             Text {
-                text: "Only download games you're allowed to. The download stays after installing, so other players can get it too.";
+                text: @tr("Only download games you're allowed to. The download stays after installing, so other players can get it too.");
                 font-size: (15px * S.t); color: Theme.text3; wrap: word-wrap;
             }
             Rectangle { height: (16px * S.k); }
@@ -716,7 +716,7 @@ export component DownloadPanel inherits Rectangle {
                     width: (170px * S.k); border-radius: self.height / 2;
                     background: root.focus-item == 4 ? #ffffff : cta.has-hover ? #ffffff24 : #ffffff1a;
                     border-width: 1px; border-color: #ffffff29;
-                    Text { text: "Cancel"; font-size: (21px * S.t); font-weight: 600; color: root.focus-item == 4 ? #0a0d18 : Theme.text; }
+                    Text { text: @tr("Cancel"); font-size: (21px * S.t); font-weight: 600; color: root.focus-item == 4 ? #0a0d18 : Theme.text; }
                     cta := TouchArea { mouse-cursor: pointer; clicked => { root.cancel(); } }
                 }
             }

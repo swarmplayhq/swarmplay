@@ -241,7 +241,7 @@ fn fold_accent(c: char) -> char {
 
 // ------------------------------------------------------------------ dates
 
-const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/// Month names as English sources write them (parsing only; dates are shown by i18n::date).
 const MONTHS_LONG: [&str; 12] = [
     "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
 ];
@@ -269,9 +269,10 @@ pub fn parse_long_date(s: &str) -> Option<(i32, u32, u32)> {
     Some((y, m, d))
 }
 
+/// A day as the interface writes it, in its language ("Oct 30, 2026", "30 de out. de 2026").
 pub fn fmt_date(ymd: Option<(i32, u32, u32)>) -> String {
     match ymd {
-        Some((y, m, d)) if (1..=12).contains(&m) => format!("{} {}, {}", MONTHS[m as usize - 1], d, y),
+        Some((y, m, d)) if (1..=12).contains(&m) => crate::i18n::date(y, m, d),
         _ => String::new(),
     }
 }
@@ -301,10 +302,10 @@ pub fn fmt_duration_words(secs: f64) -> String {
     let s = secs.max(0.0) as u64;
     let (h, m) = (s / 3600, s / 60 % 60);
     match (h, m) {
-        (0, 0) => format!("{s} sec"),
-        (0, m) => format!("{m} min"),
-        (h, 0) => format!("{h} hr"),
-        (h, m) => format!("{h} hr {m} min"),
+        (0, 0) => tr::tr!("{s} sec", s),
+        (0, m) => tr::tr!("{m} min", m),
+        (h, 0) => tr::tr!("{h} hr", h),
+        (h, m) => tr::tr!("{h} hr {m} min", h, m),
     }
 }
 
@@ -313,8 +314,7 @@ pub fn fmt_clock_at(t: f64) -> String {
     let tt = t as libc::time_t;
     let mut tm: libc::tm = unsafe { std::mem::zeroed() };
     unsafe { libc::localtime_r(&tt, &mut tm) };
-    let h = tm.tm_hour;
-    format!("{}:{:02} {}", if h % 12 == 0 { 12 } else { h % 12 }, tm.tm_min, if h < 12 { "AM" } else { "PM" })
+    crate::i18n::clock(tm.tm_hour.max(0) as u32, tm.tm_min.max(0) as u32)
 }
 
 pub fn fmt_clock(secs: f64) -> String {
@@ -345,9 +345,9 @@ pub fn fmt_last_played(ts: f64) -> String {
     let day = |t: f64| ((t + off) / 86400.0).floor() as i64;
     let diff = day(now_secs()) - day(ts);
     match diff {
-        0 => "Today".into(),
-        1 => "Yesterday".into(),
-        2..=6 => format!("{diff} days ago"),
+        0 => tr::tr!("Today"),
+        1 => tr::tr!("Yesterday"),
+        2..=6 => tr::tr!("{n} day ago" | "{n} days ago" % diff),
         _ => {
             let days = day(ts);
             fmt_date(Some(civil_from_days(days)))
@@ -377,6 +377,9 @@ mod tests {
         assert_eq!(civil_from_days(d), (2026, 9, 29));
         assert_eq!(parse_long_date("February 13, 2026"), Some((2026, 2, 13)));
         assert_eq!(parse_long_date("March 05, 2021"), Some((2021, 3, 5)));
+        assert_eq!(fmt_date(Some((2026, 10, 30))), "Oct 30, 2026");
+        assert_eq!(fmt_date(Some((2026, 13, 1))), "");
+        assert_eq!(fmt_duration_words(3900.0), "1 hr 5 min");
     }
     #[test]
     fn norm_works() {

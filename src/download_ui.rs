@@ -9,12 +9,20 @@ use crate::present::req_url;
 use crate::setup_ui::size_label;
 use crate::{ActionData, DlStat, DlTab};
 use slint::{Model, ModelRc, VecModel};
+use tr::tr;
 
 /// Tile width and gap on the shelf, and the extra gap before each group (design units).
 const TILE: f32 = 288.0;
 const GAP: f32 = 20.0;
 const GROUP_GAP: f32 = 40.0;
-const GROUPS: [&str; 3] = ["In progress", "Needs you", "Ready to play"];
+/// The shelf's groups' names, in order: in progress, needs you, ready to play.
+fn group_label(group: usize) -> String {
+    match group {
+        0 => tr!("In progress"),
+        1 => tr!("Needs you"),
+        _ => tr!("Ready to play"),
+    }
+}
 
 /// How one download looks on the page.
 struct Desc {
@@ -33,14 +41,14 @@ struct Desc {
     inst_label: String,
     bar: i32,
     /// (id, label, icon)
-    actions: Vec<(&'static str, &'static str, &'static str)>,
+    actions: Vec<(&'static str, String, &'static str)>,
     line: String,
     tile: f32,
     /// Downloading or verifying right now.
     working: bool,
 }
 
-fn mbps(v: f64) -> String { format!("{v:.1} MB/s") }
+fn mbps(v: f64) -> String { format!("{} MB/s", crate::i18n::num(v, 1)) }
 
 fn pct(f: f32) -> String { format!("{:.0}", (f * 100.0).clamp(0.0, 100.0).floor()) }
 
@@ -49,13 +57,16 @@ fn added_label(added: u64) -> String {
     if added == 0 { return String::new(); }
     let ago = (crate::util::now_secs() as i64 - added as i64).max(0);
     match ago {
-        0..60 => "Added just now".into(),
-        60..3600 => { let m = ago / 60; format!("Added {m} minute{} ago", if m == 1 { "" } else { "s" }) }
-        3600..86400 => { let h = ago / 3600; format!("Added {h} hour{} ago", if h == 1 { "" } else { "s" }) }
-        _ => match crate::util::fmt_last_played(added as f64) {
-            day if day == "Today" || day == "Yesterday" => format!("Added {}", day.to_lowercase()),
-            day => format!("Added {day}"),
-        },
+        0..60 => tr!("Added just now"),
+        60..3600 => { let m = ago / 60; tr!("Added {n} minute ago" | "Added {n} minutes ago" % m) }
+        3600..86400 => { let h = ago / 3600; tr!("Added {n} hour ago" | "Added {n} hours ago" % h) }
+        _ => {
+            // The day's words, in English or already in the player's language.
+            let day = crate::util::fmt_last_played(added as f64);
+            if day == "Today" || day == tr!("Today") { tr!("Added today") }
+            else if day == "Yesterday" || day == tr!("Yesterday") { tr!("Added yesterday") }
+            else { tr!("Added {day}", day) }
+        }
     }
 }
 
@@ -87,30 +98,30 @@ fn spark_path(speeds: &std::collections::VecDeque<f32>) -> String {
 
 fn describe(job: &Job, install: Option<&Record>, failure: Option<&String>, queued_behind: Option<&str>, sharing_on: bool) -> Desc {
     let mut d = Desc { group: 0, kind: 0, status: String::new(), big: String::new(), unit: String::new(), stats: vec![], spark: false,
-        note: String::new(), dl: job.progress(), inst: 0.0, ready: false, dl_label: "Downloading".into(),
-        inst_label: if job.install_to.is_some() { "Install".into() } else { "Install by hand".into() }, bar: 0, actions: vec![],
+        note: String::new(), dl: job.progress(), inst: 0.0, ready: false, dl_label: tr!("Downloading"),
+        inst_label: if job.install_to.is_some() { tr!("Install") } else { tr!("Install by hand") }, bar: 0, actions: vec![],
         line: String::new(), tile: job.progress(), working: matches!(job.state, State::Checking | State::Downloading) };
     let size = size_label(job.total);
     let progress = |d: &mut Desc, f: f32| { d.big = pct(f); d.unit = "%".into(); };
     match job.state {
         State::Resolving => {
-            d.status = "Getting the file list".into();
-            d.line = "Getting the file list".into();
+            d.status = tr!("Getting the file list");
+            d.line = tr!("Getting the file list");
             // Looked up again after it had started: cancelling keeps what it has.
-            d.actions = vec![(if crate::downloads::unstarted(job) { "discard" } else { "cancel" }, "Cancel", "close")];
+            d.actions = vec![(if crate::downloads::unstarted(job) { "discard" } else { "cancel" }, tr!("Cancel"), "close")];
         }
         State::Ready => {
             (d.group, d.kind) = (1, 1);
-            d.stats = vec![(size.clone(), format!("{} files", job.file_count))];
+            d.stats = vec![(size.clone(), tr!("{n} file" | "{n} files" % job.file_count))];
             if job.starting {
-                d.status = "Starting the download".into();
-                d.line = "Starting".into();
+                d.status = tr!("Starting the download");
+                d.line = tr!("Starting");
             } else {
-                d.status = "Waiting for you to choose its files".into();
-                d.line = "Choose its files".into();
+                d.status = tr!("Waiting for you to choose its files");
+                d.line = tr!("Choose its files");
                 // It couldn't start where (or with what) the player chose.
-                d.note = job.error.clone();
-                d.actions = vec![("choose", "Choose files", "check"), (if crate::downloads::unstarted(job) { "discard" } else { "remove" }, "Remove", "trash")];
+                d.note = crate::downloads::error_text(&job.error);
+                d.actions = vec![("choose", tr!("Choose files"), "check"), (if crate::downloads::unstarted(job) { "discard" } else { "remove" }, tr!("Remove"), "trash")];
             }
         }
         State::Checking | State::Downloading => {
@@ -118,72 +129,72 @@ fn describe(job: &Job, install: Option<&Record>, failure: Option<&String>, queue
             // reports the check; until then it looks as it did).
             // A new download has nothing on disk to verify: it looks like downloading.
             let verifying = job.state == State::Checking && job.check_total > 0 && job.done > 0;
-            d.status = if verifying { "Verifying what's already downloaded".into() } else { "Downloading".into() };
-            if verifying { d.dl_label = "Verifying".into(); (d.kind, d.bar) = (4, 4); }
+            d.status = if verifying { tr!("Verifying what's already downloaded") } else { tr!("Downloading") };
+            if verifying { d.dl_label = tr!("Verifying"); (d.kind, d.bar) = (4, 4); }
             // Never shown as done (a ✓) before the download goes on.
             let checked = if job.check_total > 0 { (job.checked as f32 / job.check_total as f32).min(0.99) } else { 0.0 };
             // Verifying, the number and the bars are the check's; then back to what's downloaded.
             progress(&mut d, if verifying { checked } else { job.progress() });
             if verifying { (d.dl, d.tile) = (checked, checked); }
             if job.state == State::Downloading {
-                d.stats.push((mbps(job.speed), "Download speed".into()));
+                d.stats.push((mbps(job.speed), tr!("Download speed")));
                 d.spark = true;
-                if !job.eta.is_empty() { d.stats.push((job.eta.clone(), "Time left".into())); }
+                if !job.eta.is_empty() { d.stats.push((job.eta.clone(), tr!("Time left"))); }
             }
-            d.stats.push((format!("{} of {}", size_label(job.done), size), "Downloaded".into()));
-            d.line = if verifying { format!("Verifying · {}%", pct(checked)) }
-                else if job.eta.is_empty() { format!("{}%", pct(job.progress())) } else { format!("{}% · {} left", pct(job.progress()), job.eta) };
-            d.actions = vec![("pause", "Pause", "pause"), ("cancel", "Cancel", "close")];
+            d.stats.push((tr!("{} of {}", size_label(job.done), size), tr!("Downloaded")));
+            d.line = if verifying { tr!("Verifying · {}%", pct(checked)) }
+                else if job.eta.is_empty() { format!("{}%", pct(job.progress())) } else { tr!("{}% · {} left", pct(job.progress()), job.eta) };
+            d.actions = vec![("pause", tr!("Pause"), "pause"), ("cancel", tr!("Cancel"), "close")];
         }
         State::Paused => {
             (d.group, d.kind, d.bar) = (1, 1, 1);
-            d.dl_label = "Paused".into();
+            d.dl_label = tr!("Paused");
             progress(&mut d, job.progress());
-            d.stats = vec![(format!("{} of {}", size_label(job.done), size), "Downloaded".into()),
-                (size_label(job.total.saturating_sub(job.done)), "Still to download".into())];
+            d.stats = vec![(tr!("{} of {}", size_label(job.done), size), tr!("Downloaded")),
+                (size_label(job.total.saturating_sub(job.done)), tr!("Still to download"))];
             if job.waiting_vpn {
-                d.status = "Paused until your VPN connects".into();
-                d.stats.push(("By itself".into(), "Resumes".into()));
-                d.line = "Waiting for your VPN".into();
+                d.status = tr!("Paused until your VPN connects");
+                d.stats.push((tr!("By itself"), tr!("Resumes")));
+                d.line = tr!("Waiting for your VPN");
                 // Still being looked up when the VPN went: nothing to keep, so Cancel forgets it.
                 let cancel = if job.total == 0 && job.done == 0 { "discard" } else { "cancel" };
-                d.actions = vec![("vpn", "VPN settings", "gear"), (cancel, "Cancel", "close")];
+                d.actions = vec![("vpn", tr!("VPN settings"), "gear"), (cancel, tr!("Cancel"), "close")];
             } else {
-                d.status = "Paused".into();
-                d.line = format!("Paused · {}%", pct(job.progress()));
-                d.actions = vec![("resume", "Resume", "play"), ("cancel", "Cancel", "close")];
+                d.status = tr!("Paused");
+                d.line = tr!("Paused · {}%", pct(job.progress()));
+                d.actions = vec![("resume", tr!("Resume"), "play"), ("cancel", tr!("Cancel"), "close")];
             }
         }
         State::Failed => {
             (d.group, d.kind, d.bar) = (1, 2, 2);
             progress(&mut d, job.progress());
-            d.status = "Stopped".into();
-            d.dl_label = "Stopped".into();
-            d.note = job.error.clone();
-            d.stats = vec![(format!("{} of {}", size_label(job.done), size), "Downloaded, and kept".into())];
-            d.line = "Stopped".into();
+            d.status = tr!("Stopped");
+            d.dl_label = tr!("Stopped");
+            d.note = crate::downloads::error_text(&job.error);
+            d.stats = vec![(tr!("{} of {}", size_label(job.done), size), tr!("Downloaded, and kept"))];
+            d.line = tr!("Stopped");
             // A release it can never download or install: nothing to retry, only to remove.
             let hopeless = job.done == 0 && matches!(job.problem, crate::downloads::Problem::Release | crate::downloads::Problem::Unsupported);
-            d.actions = if hopeless { vec![(if crate::downloads::unstarted(job) { "discard" } else { "remove" }, "Remove", "trash")] } else { vec![("retry", "Retry", "retry"), ("delete", "Delete…", "trash")] };
+            d.actions = if hopeless { vec![(if crate::downloads::unstarted(job) { "discard" } else { "remove" }, tr!("Remove"), "trash")] } else { vec![("retry", tr!("Retry"), "retry"), ("delete", tr!("Delete…"), "trash")] };
         }
         State::Cancelled => {
             (d.group, d.kind, d.bar) = (1, 1, 1);
             progress(&mut d, job.progress());
-            d.status = "Cancelled · what's downloaded is kept".into();
-            d.dl_label = "Cancelled".into();
-            d.line = "Cancelled".into();
-            d.actions = vec![("retry", "Download again", "retry"), ("delete", "Delete…", "trash")];
+            d.status = tr!("Cancelled · what's downloaded is kept");
+            d.dl_label = tr!("Cancelled");
+            d.line = tr!("Cancelled");
+            d.actions = vec![("retry", tr!("Download again"), "retry"), ("delete", tr!("Delete…"), "trash")];
         }
         State::Complete => {
             d.dl = 1.0;
-            d.dl_label = "Downloaded".into();
+            d.dl_label = tr!("Downloaded");
             let sharing = job.seeding || job.verifying;
             // Sharing goes on and off; Delete (which asks what to delete) sits beside it.
-            let share = if sharing { ("stop_seed", "Stop sharing", "unshare") } else { ("share", "Share again", "share") };
-            let remove = ("delete", "Delete…", "trash");
+            let share = if sharing { ("stop_seed", tr!("Stop sharing"), "unshare") } else { ("share", tr!("Share again"), "share") };
+            let remove = ("delete", tr!("Delete…"), "trash");
             // Why it isn't sharing (its files changed, say), or a delete that didn't happen; an
             // install problem says more below.
-            d.note = job.error.clone();
+            d.note = crate::downloads::error_text(&job.error);
             let failed = match install {
                 // The latest attempt's reason (one that couldn't even start is newer than the record).
                 Some(record) if record.state == Install::Failed => Some(failure.cloned().unwrap_or_else(|| record.error.clone())),
@@ -194,62 +205,62 @@ fn describe(job: &Job, install: Option<&Record>, failure: Option<&String>, queue
                 Some(state) if state.active() => {
                     let record = install.unwrap();
                     progress(&mut d, record.progress());
-                    d.status = "Installing".into();
+                    d.status = tr!("Installing");
                     d.inst = record.progress();
-                    d.inst_label = "Installing".into();
-                    d.stats = vec![(record.state.label().into(), "Now".into()),
-                        (format!("{} of {}", size_label(record.done), size_label(record.total.max(record.done))), "Unpacked".into())];
-                    d.line = format!("Installing · {}%", pct(record.progress()));
+                    d.inst_label = tr!("Installing");
+                    d.stats = vec![(record.state.label().into(), tr!("Now")),
+                        (tr!("{} of {}", size_label(record.done), size_label(record.total.max(record.done))), tr!("Unpacked"))];
+                    d.line = tr!("Installing · {}%", pct(record.progress()));
                     d.tile = record.progress();
-                    d.actions = vec![("cancel_install", "Cancel install", "close")];
+                    d.actions = vec![("cancel_install", tr!("Cancel install"), "close")];
                 }
                 Some(Install::Installed) => {
                     (d.group, d.kind, d.bar) = (2, 3, 3);
-                    d.status = "Ready to play".into();
+                    d.status = tr!("Ready to play");
                     (d.inst, d.ready) = (1.0, true);
-                    d.inst_label = "Installed".into();
+                    d.inst_label = tr!("Installed");
                     // Before sharing again, its files are verified first.
                     d.stats = if job.verifying {
-                        vec![(size.clone(), "Size".into()), ("Verifying".into(), "Before sharing".into())]
+                        vec![(size.clone(), tr!("Size")), (tr!("Verifying"), tr!("Before sharing"))]
                     } else if job.seeding {
-                        vec![(format!("{} player{}", job.peers, if job.peers == 1 { "" } else { "s" }), "Connected to you".into()),
-                            (mbps(job.upload_speed), "Sharing speed".into()), (size, "Size".into())]
+                        vec![(tr!("{n} player" | "{n} players" % job.peers), tr!("Connected to you")),
+                            (mbps(job.upload_speed), tr!("Sharing speed")), (size, tr!("Size"))]
                     } else {
-                        vec![(size, "Size".into()), ("Not sharing".into(), if sharing_on { "Share it again any time" } else { "Sharing is off in Settings" }.into())]
+                        vec![(size, tr!("Size")), (tr!("Not sharing"), if sharing_on { tr!("Share it again any time") } else { tr!("Sharing is off in Settings") })]
                     };
-                    d.line = if job.verifying { "Ready · verifying".into() } else if job.seeding { "Ready · sharing".into() } else { "Ready to play".into() };
+                    d.line = if job.verifying { tr!("Ready · verifying") } else if job.seeding { tr!("Ready · sharing") } else { tr!("Ready to play") };
                     d.tile = 1.0;
-                    d.actions = vec![("play_install", "Play", "play"), share, remove];
+                    d.actions = vec![("play_install", tr!("Play"), "play"), share, remove];
                 }
                 _ if failed.is_some() => {
                     (d.group, d.kind, d.bar) = (1, 2, 2);
-                    d.status = "Couldn't install".into();
+                    d.status = tr!("Couldn't install");
                     d.note = failed.unwrap_or_default();
-                    d.inst_label = "Install failed".into();
-                    d.line = "Couldn't install".into();
-                    d.actions = vec![("install", "Retry install", "retry"), share, remove];
+                    d.inst_label = tr!("Install failed");
+                    d.line = tr!("Couldn't install");
+                    d.actions = vec![("install", tr!("Retry install"), "retry"), share, remove];
                 }
                 Some(_) => {
                     (d.group, d.kind) = (1, 1);
-                    d.status = "Install cancelled".into();
-                    d.line = "Install cancelled".into();
-                    d.actions = vec![("install", "Install", "disk"), share, remove];
+                    d.status = tr!("Install cancelled");
+                    d.line = tr!("Install cancelled");
+                    d.actions = vec![("install", tr!("Install"), "disk"), share, remove];
                 }
                 None if job.install_to.is_some() => {
-                    d.status = "Waiting to install".into();
-                    d.inst_label = "Install · next in line".into();
-                    d.stats = vec![(queued_behind.map_or("Next".into(), |name| format!("After {name}")), "Installs by itself".into()), (size, "Downloaded".into())];
-                    d.line = "Installs next".into();
+                    d.status = tr!("Waiting to install");
+                    d.inst_label = tr!("Install · next in line");
+                    d.stats = vec![(queued_behind.map_or(tr!("Next"), |name| tr!("After {name}", name)), tr!("Installs by itself")), (size, tr!("Downloaded"))];
+                    d.line = tr!("Installs next");
                     d.tile = 1.0;
                     d.actions = vec![share, remove];
                 }
                 None => {
                     (d.group, d.kind) = (1, 1);
-                    d.status = "Downloaded · not installed yet".into();
-                    d.stats = vec![(size, "Downloaded".into())];
-                    d.line = "Not installed".into();
+                    d.status = tr!("Downloaded · not installed yet");
+                    d.stats = vec![(size, tr!("Downloaded"))];
+                    d.line = tr!("Not installed");
                     d.tile = 1.0;
-                    d.actions = vec![("install", "Install", "disk"), share, remove];
+                    d.actions = vec![("install", tr!("Install"), "disk"), share, remove];
                 }
             }
         }
@@ -321,7 +332,7 @@ impl App {
         // row: that row keeps saying it.)
         self.played_from.remove(key);
         if touches && install.as_ref().is_some_and(|record| record.state.active()) {
-            return self.note_download(key, "It's installing: cancel the installation first");
+            return self.note_download(key, &tr!("It's installing: cancel the installation first"));
         }
         match action {
             "folder" => {
@@ -330,7 +341,7 @@ impl App {
             }
             "install" => self.install_download(key),
             "cancel_install" => {
-                if let Err(error) = self.installer.cancel(key) { self.note_download_quiet(key, format!("Couldn't cancel it: {error}")); }
+                if let Err(error) = self.installer.cancel(key) { self.note_download_quiet(key, tr!("Couldn't cancel it: {error}", error)); }
             }
             "play_install" => {
                 self.push_installs();
@@ -340,7 +351,7 @@ impl App {
                         let id = self.locals[local].l.id.clone();
                         self.played_from.insert(key.to_string(), id);
                         self.run_action("play", Target { game: self.locals[local].cat, local: Some(local) });
-                    } else { self.note_download(key, "Its folder is missing: check Game folders in Settings"); }
+                    } else { self.note_download(key, &tr!("Its folder is missing: check Game folders in Settings")); }
                 }
                 return;
             }
@@ -348,7 +359,7 @@ impl App {
             "vpn" => { self.open_setting(crate::settings::SId::Vpn); return; }
             "delete" => return self.open_delete(key),
             "discard" => {
-                if let Err(error) = self.downloads.discard(key) { self.note_download_quiet(key, format!("Couldn't do that: {error}")); }
+                if let Err(error) = self.downloads.discard(key) { self.note_download_quiet(key, tr!("Couldn't do that: {error}", error)); }
                 else { audio::play(Sound::Select); }
             }
             "choose" => {
@@ -358,7 +369,7 @@ impl App {
                 return;
             }
             _ => {
-                if let Err(error) = self.downloads.action(key, action) { self.note_download_quiet(key, format!("Couldn't do that: {error}")); }
+                if let Err(error) = self.downloads.action(key, action) { self.note_download_quiet(key, tr!("Couldn't do that: {error}", error)); }
                 else { audio::play(Sound::Select); }
             }
         }
@@ -386,11 +397,11 @@ impl App {
             changed |= old != Some(job.state);
             if old.is_some_and(|o| o.active()) && old != Some(job.state) {
                 match job.state {
-                    State::Complete if job.install_to.is_some() => self.notify(crate::toast::Cat::Downloads, crate::toast::INFO, "download", "Downloaded", &format!("{} · installing now", job.name),
+                    State::Complete if job.install_to.is_some() => self.notify(crate::toast::Cat::Downloads, crate::toast::INFO, "download", &tr!("Downloaded"), &tr!("{} · installing now", job.name),
                         crate::toast::Action::Downloads(job.key.clone()), &format!("dl:{}", job.key), false),
-                    State::Complete => self.notify(crate::toast::Cat::Downloads, crate::toast::INFO, "download", "Downloaded", &format!("{} · ready to install", job.name),
+                    State::Complete => self.notify(crate::toast::Cat::Downloads, crate::toast::INFO, "download", &tr!("Downloaded"), &tr!("{} · ready to install", job.name),
                         crate::toast::Action::Downloads(job.key.clone()), &format!("dl:{}", job.key), false),
-                    State::Failed => self.notify(crate::toast::Cat::Downloads, crate::toast::FAILED, "alert", "Download stopped", &job.name,
+                    State::Failed => self.notify(crate::toast::Cat::Downloads, crate::toast::FAILED, "alert", &tr!("Download stopped"), &job.name,
                         crate::toast::Action::Downloads(job.key.clone()), &format!("dl:{}", job.key), true),
                     _ => {}
                 }
@@ -470,9 +481,9 @@ impl App {
             let first = n == 0 || rows[n - 1].1.group != d.group;
             let mut actions: Vec<ActionData> = d.actions.iter().enumerate().map(|(k, (id, label, icon))| ActionData {
                 // Delete is an icon beside the others until it's focused (it's never the main thing to do).
-                id: (*id).into(), label: (*label).into(), icon: (*icon).into(), primary: k == 0, danger: *id == "delete", round: *id == "delete" && k >= 2,
+                id: (*id).into(), label: label.as_str().into(), icon: (*icon).into(), primary: k == 0, danger: *id == "delete", round: *id == "delete" && k >= 2,
             }).collect();
-            actions.push(ActionData { id: "folder".into(), label: "Open folder".into(), icon: "folder".into(), primary: false, danger: false, round: true });
+            actions.push(ActionData { id: "folder".into(), label: tr!("Open folder").into(), icon: "folder".into(), primary: false, danger: false, round: true });
             // What a press there did, else what the game started from it says now.
             let pressed = self.dl_notes.get(&job.key).cloned()
                 .or_else(|| self.played_from.get(&job.key).and_then(|game| self.game_notes.get(game).cloned()));
@@ -494,12 +505,12 @@ impl App {
                 dl_frac: d.dl, inst_frac: d.inst, ready: d.ready, dl_label: d.dl_label.clone().into(), inst_label: d.inst_label.clone().into(), bar_kind: d.bar,
                 actions: ModelRc::new(VecModel::from(actions)),
                 line: d.line.clone().into(), tile_frac: d.tile, working: d.working,
-                group: d.group, group_first: first, group_label: GROUPS[d.group as usize].into(),
+                group: d.group, group_first: first, group_label: group_label(d.group as usize).into(),
             });
         }
         let glass = glass_key.and_then(|key| self.frost_of(&key));
-        let tabs: Vec<DlTab> = ["All", "In progress", "Needs you", "Ready to play"].iter().enumerate().map(|(k, label)| DlTab {
-            label: (*label).into(), count: counts[k].to_string().into(), warn: k == 2 && counts[2] > 0,
+        let tabs: Vec<DlTab> = [tr!("All"), group_label(0), group_label(1), group_label(2)].iter().enumerate().map(|(k, label)| DlTab {
+            label: label.into(), count: counts[k].to_string().into(), warn: k == 2 && counts[2] > 0,
         }).collect();
         let (down, up) = jobs.iter().fold((0.0, 0.0), |(d, u), job| (d + job.speed, u + job.upload_speed));
         let vpn = { let cfg = self.cfg.lock().unwrap(); cfg.download_vpn().map(|preferred| crate::vpn::active(&preferred)) };
@@ -529,7 +540,7 @@ impl App {
         ui.set_download_shelf_x(self.dl_shelf * scale);
         ui.set_download_down(mbps(down).into());
         ui.set_download_up(mbps(up).into());
-        let (vpn_text, vpn_kind) = match vpn { None => ("", 0), Some(Some(_)) => ("VPN on", 1), Some(None) => ("Waiting for your VPN", 2) };
+        let (vpn_text, vpn_kind) = match vpn { None => (String::new(), 0), Some(Some(_)) => (tr!("VPN on"), 1), Some(None) => (tr!("Waiting for your VPN"), 2) };
         ui.set_download_delete_open(self.dl_delete.is_some());
         ui.set_download_delete_title(self.dl_delete.as_ref().and_then(|(key, _)| jobs.iter().find(|job| &job.key == key)).map(|job| job.name.clone()).unwrap_or_default().into());
         let choices = self.delete_choices();
@@ -539,7 +550,7 @@ impl App {
         ui.set_download_glass(glass.unwrap_or_default());
         ui.set_download_has_any(!jobs.is_empty());
         ui.set_download_page_note(self.dl_page_note.as_str().into());
-        ui.set_download_empty_title(["Nothing downloading", "Nothing in progress", "Nothing needs you", "Nothing ready to play yet"][self.dl_filter].into());
+        ui.set_download_empty_title(match self.dl_filter { 0 => tr!("Nothing downloading"), 1 => tr!("Nothing in progress"), 2 => tr!("Nothing needs you"), _ => tr!("Nothing ready to play yet") }.into());
         ui.set_download_vpn(vpn_text.into());
         ui.set_download_vpn_kind(vpn_kind);
         ui.set_zone(Z_DOWNLOADS);
@@ -592,13 +603,16 @@ impl App {
         let sharing = job.as_ref().is_some_and(|job| job.seeding || job.verifying);
         ids.iter().map(|id| {
             let (label, detail, danger) = match *id {
-                "both" => ("Delete the game and its download".to_string(), format!("Frees {}. It leaves the Library and this list.", size_label(dl + game)), true),
-                "game" => ("Delete the installed game".into(), format!("Frees {}. The download stays{}, and Install puts the game back.",
-                    size_label(game), if sharing { " and keeps sharing" } else { "" }), true),
-                "download" => ("Delete the download".into(), if install.as_ref().is_some_and(|r| r.state == Install::Installed) {
-                    format!("Frees {}. The game stays installed; sharing it stops.", size_label(dl)) } else { format!("Frees {}.", size_label(dl)) }, true),
-                "forget" => ("Remove from Downloads only".into(), "Keeps every file. It just leaves this list.".into(), false),
-                _ => ("Cancel".into(), String::new(), false),
+                "both" => (tr!("Delete the game and its download"), tr!("Frees {}. It leaves the Library and this list.", size_label(dl + game)), true),
+                "game" => (tr!("Delete the installed game"), if sharing {
+                    tr!("Frees {}. The download stays and keeps sharing, and Install puts the game back.", size_label(game))
+                } else {
+                    tr!("Frees {}. The download stays, and Install puts the game back.", size_label(game))
+                }, true),
+                "download" => (tr!("Delete the download"), if install.as_ref().is_some_and(|r| r.state == Install::Installed) {
+                    tr!("Frees {}. The game stays installed; sharing it stops.", size_label(dl)) } else { tr!("Frees {}.", size_label(dl)) }, true),
+                "forget" => (tr!("Remove from Downloads only"), tr!("Keeps every file. It just leaves this list."), false),
+                _ => (tr!("Cancel"), String::new(), false),
             };
             crate::DlChoice { label: label.into(), detail: detail.into(), danger }
         }).collect()
@@ -612,12 +626,12 @@ impl App {
         // It may have started installing while the dialog was open.
         self.dl_notes.remove(&key);
         if choice != "cancel" && self.installer.snapshot().iter().any(|r| r.key == key && r.state.active()) {
-            return self.note_download(&key, "It's installing: cancel the installation before deleting it");
+            return self.note_download(&key, &tr!("It's installing: cancel the installation before deleting it"));
         }
         // Before anything goes: the download's folder must be its own to delete.
         if matches!(choice, "both" | "download") {
             if let Err(error) = self.downloads.check_delete(&key) {
-                return self.note_download(&key, &format!("Couldn't delete it: {error:#}"));
+                return self.note_download(&key, &tr!("Couldn't delete it: {}", format!("{error:#}")));
             }
         }
         if matches!(choice, "both" | "game") {
@@ -625,7 +639,7 @@ impl App {
             let path = self.installer.snapshot().into_iter().find(|r| r.key == key).and_then(|r| r.path);
             let running = path.as_ref().and_then(|p| self.locals.iter().position(|l| &l.l.path == p)).is_some_and(|l| self.session_for_local(l).is_some());
             if running {
-                return self.note_download(&key, "Quit the game first: it's running");
+                return self.note_download(&key, &tr!("Quit the game first: it's running"));
             }
         }
         if choice == "cancel" { audio::play(Sound::Back); return self.push_downloads(); }
@@ -640,7 +654,7 @@ impl App {
         };
         if let Err(error) = queued {
             self.downloads.set_install_to(&key, install_to);
-            return self.note_download(&key, &format!("Couldn't delete it: {error:#}"));
+            return self.note_download(&key, &tr!("Couldn't delete it: {}", format!("{error:#}")));
         }
         // Both: the game goes once the download is gone (the worker can still refuse it).
         if choice == "both" {
@@ -657,7 +671,7 @@ impl App {
                 }
                 Err(error) => {
                     self.downloads.set_install_to(&key, install_to);
-                    return self.note_download(&key, &format!("Couldn't delete the game: {error:#}"));
+                    return self.note_download(&key, &tr!("Couldn't delete the game: {}", format!("{error:#}")));
                 }
             }
         }
@@ -691,7 +705,7 @@ impl App {
                 };
                 if local.is_some_and(|l| self.session_for_local(l).is_some()) {
                     crate::log!("{name}: download deleted; the game is running, so it stays");
-                    return note(self, "Its download is deleted; the game was running, so it stays");
+                    return note(self, &tr!("Its download is deleted; the game was running, so it stays"));
                 }
                 match self.installer.uninstall(&key) {
                     Ok(_) => {
@@ -700,14 +714,14 @@ impl App {
                     }
                     Err(error) => {
                         crate::log!("{name}: download deleted, game not: {error:#}");
-                        note(self, &format!("Its download is deleted, but the game couldn't be: {error:#}"));
+                        note(self, &tr!("Its download is deleted, but the game couldn't be: {}", format!("{error:#}")));
                     }
                 }
             }
             Some(job) if job.error.starts_with(crate::downloads::NOT_DELETED) => {
                 self.pending_uninstall = None;
                 self.downloads.set_install_to(&key, install_to);
-                self.note_download(&key, &format!("Couldn't delete its download, so the game stays: {}", job.error));
+                self.note_download(&key, &tr!("Couldn't delete its download, so the game stays: {}", crate::downloads::error_text(&job.error)));
             }
             Some(_) => {}
         }
@@ -754,8 +768,8 @@ impl App {
         // out together, so pressing it opens what it says.
         let none = || -> Option<String> { None };
         let (kind, words, suffix, frac, key) = if let Some(job) = unseen.first() {
-            let what = if job.state == State::Failed { "Download stopped" } else { "Couldn't install" };
-            (3, if unseen.len() > 1 { format!("{} need you", unseen.len()) } else { what.to_string() }, String::new(), job.progress(), Some(job.key.clone()))
+            let what = if job.state == State::Failed { tr!("Download stopped") } else { tr!("Couldn't install") };
+            (3, if unseen.len() > 1 { tr!("{} need you", unseen.len()) } else { what }, String::new(), job.progress(), Some(job.key.clone()))
         } else if !active.is_empty() {
             // One that's verifying shows how far the check is.
             let verifying = active.len() == 1 && active[0].state == State::Checking && active[0].check_total > 0 && active[0].done > 0;
@@ -764,23 +778,23 @@ impl App {
             let frac = if total > 0 { (done as f32 / total as f32).min(if verifying { 0.99 } else { 1.0 }) } else { 0.0 };
             let one = (active.len() == 1).then(|| active[0].key.clone());
             let suffix = format!(" · {}%", pct(frac));
-            let (words, suffix) = if active.len() > 1 { (format!("{} downloads", active.len()), suffix) }
-                else if verifying { ("Verifying".to_string(), suffix) }
+            let (words, suffix) = if active.len() > 1 { (tr!("{n} download" | "{n} downloads" % active.len()), suffix) }
+                else if verifying { (tr!("Verifying"), suffix) }
                 // Just pressed Download: being looked up.
-                else if active[0].state == State::Resolving { ("Getting the file list".to_string(), String::new()) }
+                else if active[0].state == State::Resolving { (tr!("Getting the file list"), String::new()) }
                 else { (short_name(&active[0].name), suffix) };
             (if verifying { 4 } else { 1 }, words, suffix, frac, one)
         } else if let Some(record) = installs.iter().find(|r| r.state.active()) {
-            (2, "Installing".to_string(), format!(" · {}%", pct(record.progress())), record.progress(), Some(record.key.clone()))
+            (2, tr!("Installing"), format!(" · {}%", pct(record.progress())), record.progress(), Some(record.key.clone()))
         } else if let Some(job) = jobs.iter().find(|job| job.waiting_vpn && job.state != State::Complete) {
-            (3, "Waiting for your VPN".to_string(), String::new(), job.progress(), Some(job.key.clone()))
+            (3, tr!("Waiting for your VPN"), String::new(), job.progress(), Some(job.key.clone()))
         } else if let Some(key) = self.ring_done.last().cloned() {
             let all = self.ring_done.iter().all(|key| installed(key));
             let words = match (self.ring_done.len(), all) {
-                (1, true) => "Ready to play".to_string(),
-                (1, false) => "Downloaded".to_string(),
-                (n, true) => format!("{n} ready to play"),
-                (n, false) => format!("{n} ready"),
+                (1, true) => tr!("Ready to play"),
+                (1, false) => tr!("Downloaded"),
+                (n, true) => tr!("{n} ready to play", n),
+                (n, false) => tr!("{n} ready", n),
             };
             (5, words, String::new(), 1.0, Some(key))
         } else {

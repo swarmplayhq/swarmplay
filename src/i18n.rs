@@ -5,7 +5,7 @@
 //! `slint::select_bundled_translation`) and Rust's `tr!(…)` (the `tr` crate, reading the same file,
 //! embedded here). English needs no file: it is the text in the code.
 //!
-//! What no library does for us lives here too: dates, the clock, decimal commas, "5 minutes ago".
+//! What no library does for us lives here too: dates, the clock, decimal commas.
 
 use std::borrow::Cow;
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -176,31 +176,6 @@ fn date_in(lang: Lang, y: i32, month: &str, d: u32) -> String {
     }
 }
 
-/// How long ago, for lists of things that happened: "Just now", "5 minutes ago", "2 hours ago",
-/// "Yesterday", then the date.
-pub fn ago(secs: f64, then: Option<(i32, u32, u32)>) -> String {
-    let s = secs.max(0.0) as u64;
-    if s < 60 {
-        tr::tr!("Just now")
-    } else if s < 3600 {
-        let m = s / 60;
-        tr::tr!("{n} minute ago" | "{n} minutes ago" % m)
-    } else if s < 86_400 {
-        let h = s / 3600;
-        tr::tr!("{n} hour ago" | "{n} hours ago" % h)
-    } else if s < 2 * 86_400 {
-        tr::tr!("Yesterday")
-    } else {
-        match then {
-            Some((y, m, d)) => date(y, m, d),
-            None => {
-                let days = s / 86_400;
-                tr::tr!("{n} day ago" | "{n} days ago" % days)
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     //! These never switch the app's language (it's global, and other tests read English at the
@@ -236,13 +211,13 @@ mod tests {
     #[test]
     fn plurals_follow_each_language() {
         let pt = pt();
-        let ago = |n| pt.ntranslate(n, "{n} minute ago", "{n} minutes ago", None).into_owned();
+        let ago = |n| pt.ntranslate(n, "Added {n} minute ago", "Added {n} minutes ago", None).into_owned();
         // Portuguese: 0 and 1 are singular.
-        assert_eq!(ago(0), "há {n} minuto");
-        assert_eq!(ago(1), "há {n} minuto");
-        assert_eq!(ago(2), "há {n} minutos");
+        assert_eq!(ago(0), "Adicionado há {n} minuto");
+        assert_eq!(ago(1), "Adicionado há {n} minuto");
+        assert_eq!(ago(2), "Adicionado há {n} minutos");
         // And the {n} is filled as tr! does it.
-        assert_eq!(tr::runtime_format!(ago(2), n = 2), "há 2 minutos");
+        assert_eq!(tr::runtime_format!(ago(2), n = 2), "Adicionado há 2 minutos");
     }
 
     #[test]

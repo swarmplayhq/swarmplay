@@ -3,6 +3,18 @@
 
 use crate::util::{atomic_write, cache_dir, http_get};
 use std::collections::HashMap;
+use tr::tr;
+
+/// A translated label kept for the rest of the run, so labels stay `&'static str` wherever
+/// they're used. A handful of texts per language: each is kept once.
+fn shown(text: String) -> &'static str {
+    static KEPT: std::sync::Mutex<Vec<&'static str>> = std::sync::Mutex::new(Vec::new());
+    let mut kept = KEPT.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(s) = kept.iter().find(|s| **s == text) { return s; }
+    let s: &'static str = Box::leak(text.into_boxed_str());
+    kept.push(s);
+    s
+}
 
 const URL: &str = "https://kytyps5.github.io/data/compatibility.json";
 pub const LIST_PAGE: &str = "https://kytyps5.github.io/";
@@ -66,16 +78,26 @@ impl Status {
 
     /// Short label for badges and chips, in players' words ("Boots" means little to them).
     pub fn label(self) -> &'static str {
-        match self {
-            Status::InGame => "Playable",
-            Status::MainMenu => "Menus only",
-            Status::Logo => "Logos only",
-            Status::DoesntBoot => "Doesn't start",
-        }
+        shown(match self {
+            Status::InGame => tr!("Playable"),
+            Status::MainMenu => tr!("Menus only"),
+            Status::Logo => tr!("Logos only"),
+            Status::DoesntBoot => tr!("Doesn't start"),
+        })
     }
 
-    /// One-line explanation for the Game Hub.
+    /// One-line explanation for the Game Hub, in the player's language.
     pub fn meaning(self) -> &'static str {
+        shown(match self {
+            Status::InGame => tr!("Reaches gameplay"),
+            Status::MainMenu => tr!("Main menu, not gameplay"),
+            Status::Logo => tr!("Intro logos, then stops"),
+            Status::DoesntBoot => tr!("Doesn't start"),
+        })
+    }
+
+    /// The same in English, for the emulator teams' report forms.
+    fn meaning_en(self) -> &'static str {
         match self {
             Status::InGame => "Reaches gameplay",
             Status::MainMenu => "Main menu, not gameplay",
@@ -125,7 +147,7 @@ impl Entry {
         } else if self.platforms.iter().any(|p| p == "macOS") {
             "macOS"
         } else {
-            "another OS"
+            shown(tr!("another OS"))
         }
     }
 
@@ -143,11 +165,11 @@ impl Entry {
     /// Chip text: "Playable on Linux", or "Playable on Windows · untested on Linux".
     pub fn chip_text(&self) -> String {
         if self.mine {
-            format!("{} on Linux · your result", self.status.label())
+            tr!("{} on Linux · your result", self.status.label())
         } else if self.on_linux {
-            format!("{} on Linux", self.status.label())
+            tr!("{} on Linux", self.status.label())
         } else {
-            format!("{} on {} · untested on Linux", self.status.label(), self.source())
+            tr!("{} on {} · untested on Linux", self.status.label(), self.source())
         }
     }
 
@@ -211,15 +233,15 @@ impl Outlook {
     }
 
     pub fn headline(self) -> &'static str {
-        match self {
-            Outlook::PlaysHere => "Plays on this PC",
-            Outlook::Plays => "Playable",
-            Outlook::PlaysSlowly => "Playable, but may run slowly here",
-            Outlook::StopsEarly => "Starts, but may stop early",
-            Outlook::DoesntStart => "Doesn't start yet",
-            Outlook::CantRunHere => "Doesn't start on this PC",
-            Outlook::Untested => "Not tested yet",
-        }
+        shown(match self {
+            Outlook::PlaysHere => tr!("Plays on this PC"),
+            Outlook::Plays => tr!("Playable"),
+            Outlook::PlaysSlowly => tr!("Playable, but may run slowly here"),
+            Outlook::StopsEarly => tr!("Starts, but may stop early"),
+            Outlook::DoesntStart => tr!("Doesn't start yet"),
+            Outlook::CantRunHere => tr!("Doesn't start on this PC"),
+            Outlook::Untested => tr!("Not tested yet"),
+        })
     }
 
     /// 1 good (green), 2 warning (amber), 3 bad (red), 0 unknown (grey): the Fact colours.
@@ -394,7 +416,7 @@ pub fn report_url_for(name: &str, title_id: &str, emulator_version: &str, game_v
             Status::Logo => "Boots",
             Status::DoesntBoot => "Nothing",
         };
-        let details = format!("{} on Linux.", status.meaning());
+        let details = format!("{} on Linux.", status.meaning_en());
         let log = log_excerpt(log);
         let mut url = format!("{SHAD_REPORT_FORM}&title={}", q(&format!("{title_id} - {name}")));
         for (field, value) in [
@@ -412,7 +434,7 @@ pub fn report_url_for(name: &str, title_id: &str, emulator_version: &str, game_v
     let mut url = format!("{REPORT_FORM}&title={}", q(&format!("[GAME STATUS]: {name} (linux)")));
     let sys = system_info();
     let log = log_excerpt(log);
-    let details = format!("{} on Linux.", status.meaning());
+    let details = format!("{} on Linux.", status.meaning_en());
     for (field, value) in [
         ("game-title", name),
         ("game-id", title_id),

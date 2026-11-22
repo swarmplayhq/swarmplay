@@ -76,9 +76,9 @@ pub fn is_newer(candidate: &str, current: &str) -> bool {
 pub fn latest_release() -> Result<Release, String> {
     let repo = std::env::var("AZRAK_UPDATE_REPO").unwrap_or_else(|_| UPDATE_REPO.to_string());
     let v = http_json(&format!("https://api.github.com/repos/{repo}/releases/latest"))?;
-    let tag = v["tag_name"].as_str().ok_or("no releases found")?;
+    let tag = v["tag_name"].as_str().ok_or_else(|| tr::tr!("no releases found"))?;
     let assets = v["assets"].as_array().cloned().unwrap_or_default();
-    let asset = assets.iter().find(|a| a["name"] == ASSET).ok_or("this release has no Linux build yet")?;
+    let asset = assets.iter().find(|a| a["name"] == ASSET).ok_or_else(|| tr::tr!("this release has no Linux build yet"))?;
     let mut sha256 = asset["digest"].as_str().and_then(|d| d.strip_prefix("sha256:")).unwrap_or("").to_string();
     if sha256.is_empty() {
         // Older releases: a separate .sha256 file.
@@ -100,19 +100,19 @@ pub fn latest_release() -> Result<Release, String> {
 pub fn replaceable_exe() -> Result<PathBuf, String> {
     let exe = std::env::current_exe().and_then(|p| p.canonicalize()).map_err(|e| e.to_string())?;
     if exe.components().any(|c| c.as_os_str() == "target") && exe.parent().is_some_and(|p| p.ends_with("release") || p.ends_with("debug")) {
-        return Err("running from a source build (update with git pull + ./install.sh)".into());
+        return Err(tr::tr!("running from a source build (update with git pull + ./install.sh)"));
     }
-    let dir = exe.parent().ok_or("no install folder")?;
+    let dir = exe.parent().ok_or_else(|| tr::tr!("no install folder"))?;
     let c = std::ffi::CString::new(dir.as_os_str().as_encoded_bytes()).map_err(|e| e.to_string())?;
     if unsafe { libc::access(c.as_ptr(), libc::W_OK) } != 0 {
-        return Err(format!("{} is not writable (installed system-wide? re-run the install command with sudo)", dir.display()));
+        return Err(tr::tr!("{} is not writable (installed system-wide? re-run the install command with sudo)", dir.display()));
     }
     Ok(exe)
 }
 
 /// Download, verify, test and swap in the new binary. Returns the installed version.
 pub fn install(rel: &Release, exe: &Path, progress: &dyn Fn(String, f32)) -> Result<(), String> {
-    let dir = exe.parent().ok_or("no install folder")?;
+    let dir = exe.parent().ok_or_else(|| tr::tr!("no install folder"))?;
     // Work next to the binary so the final rename stays on one filesystem.
     let work = dir.join(".azrak-update");
     let _ = std::fs::remove_dir_all(&work);
@@ -126,26 +126,26 @@ pub fn install(rel: &Release, exe: &Path, progress: &dyn Fn(String, f32)) -> Res
         let pct = if total > 0 { done * 100 / total } else { 0 };
         if pct != last.get() {
             last.set(pct);
-            progress(format!("Downloading SwarmPlay {} · {pct}%", rel.version), pct as f32 / 100.0);
+            progress(tr::tr!("Downloading SwarmPlay {} · {}%", rel.version, pct), pct as f32 / 100.0);
         }
     });
     if let Err(e) = res {
         cleanup();
         return Err(e);
     }
-    progress(format!("Installing SwarmPlay {}…", rel.version), 1.0);
+    progress(tr::tr!("Installing SwarmPlay {}…", rel.version), 1.0);
     let ok = Command::new("tar").arg("-xzf").arg(&archive).arg("-C").arg(&work).status().is_ok_and(|s| s.success());
     let new_bin = work.join("swarmplay-linux-x86_64").join("swarmplay");
     if !ok || !new_bin.is_file() {
         cleanup();
-        return Err("could not unpack the update".into());
+        return Err(tr::tr!("could not unpack the update"));
     }
     // The new binary must run here and report the expected version.
     let out = Command::new(&new_bin).arg("--version").env_remove("AZRAK_PRETEND_VERSION").output();
     let reported = out.ok().map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()).unwrap_or_default();
     if !reported.ends_with(&rel.version) {
         cleanup();
-        return Err(format!("the new version does not run on this system ({})", if reported.is_empty() { "no output" } else { &reported }));
+        return Err(tr::tr!("the new version does not run on this system ({})", if reported.is_empty() { tr::tr!("no output") } else { reported }));
     }
     let _ = std::fs::set_permissions(&new_bin, std::fs::Permissions::from_mode(0o755));
     // Keep the old binary for a manual rollback, then swap atomically.
@@ -222,8 +222,8 @@ impl App {
                         if app.app_update_available() && app.upd.told != rel.version {
                             app.upd.told = rel.version.clone();
                             let auto = app.cfg.lock().unwrap().app_auto_update;
-                            let sub = if auto { "Downloading it now" } else { "Settings → Updates to get it" };
-                            app.notify(crate::toast::Cat::Updates, crate::toast::INFO, "download", &format!("SwarmPlay {} is out", rel.version), sub,
+                            let sub = if auto { tr::tr!("Downloading it now") } else { tr::tr!("Settings → Updates to get it") };
+                            app.notify(crate::toast::Cat::Updates, crate::toast::INFO, "download", &tr::tr!("SwarmPlay {} is out", rel.version), &sub,
                                 crate::toast::Action::Settings("UPDATES".into()), "app-update", false);
                         }
                         // Otherwise Settings says it: "Update to …" on the row and "1 ready"
@@ -237,7 +237,7 @@ impl App {
                         // A background check that fails (offline) stays in the log; Settings
                         // shows errors only for a check you asked for.
                         if manual {
-                            app.upd.error = format!("Update check failed: {e}");
+                            app.upd.error = tr::tr!("Update check failed: {e}", e);
                         }
                     }
                 }
@@ -254,7 +254,7 @@ impl App {
             Ok(p) => p,
             Err(e) => {
                 crate::log!("launcher update {} available, not installed: {e}", rel.version);
-                self.upd.error = format!("Can't update automatically: {e}");
+                self.upd.error = tr::tr!("Can't update automatically: {e}", e);
                 self.kyty_refresh_settings();
                 return;
             }
@@ -284,13 +284,13 @@ impl App {
                 match res {
                     Ok(()) => {
                         app.upd.installed = Some(rel.version.clone());
-                        app.notify(crate::toast::Cat::Updates, crate::toast::DONE, "check", &format!("SwarmPlay {} is ready", rel.version), "Restart SwarmPlay to finish",
+                        app.notify(crate::toast::Cat::Updates, crate::toast::DONE, "check", &tr::tr!("SwarmPlay {} is ready", rel.version), &tr::tr!("Restart SwarmPlay to finish"),
                             crate::toast::Action::Restart, "app-update", true);
                         crate::log!("launcher update {} installed", rel.version);
                     }
                     Err(e) => {
                         crate::log!("launcher update failed: {e}");
-                        app.upd.error = format!("Update failed: {e}");
+                        app.upd.error = tr::tr!("Update failed: {e}", e);
                     }
                 }
                 app.kyty_refresh_settings();
@@ -301,7 +301,7 @@ impl App {
     /// Start the new version in place of this one (keeps the same window position/flags).
     pub fn app_restart(&mut self) {
         if !self.live.is_empty() {
-            self.note_setting(crate::settings::SId::AppUpdate, "Finish your game first: the launcher can restart once no game is running", 2);
+            self.note_setting(crate::settings::SId::AppUpdate, &tr::tr!("Finish your game first: the launcher can restart once no game is running"), 2);
             return;
         }
         let Ok(exe) = std::env::current_exe() else { return };
@@ -326,10 +326,13 @@ impl App {
         self.downloads = crate::downloads::Manager::load(seed, vpn);
         self.installer = crate::installer::Manager::load();
         self.push_downloads();
-        self.note_setting(crate::settings::SId::AppUpdate, &format!("Couldn't restart: {err}"), 2);
+        self.note_setting(crate::settings::SId::AppUpdate, &tr::tr!("Couldn't restart: {err}", err), 2);
         // Moving to another display restarts too: said where that was pressed.
-        if self.setting_notes.get(&crate::settings::SId::Display).is_some_and(|(note, _, _)| note.starts_with("Moving to")) {
-            self.note_setting(crate::settings::SId::Display, &format!("Couldn't restart: {err}"), 2);
+        // (The note's words up to the display's name, in the language they were written in.)
+        let moving = tr::tr!("Moving to {label}: the launcher restarts there", label = '\u{1}');
+        let moving = moving.split('\u{1}').next().unwrap_or_default().to_string();
+        if self.setting_notes.get(&crate::settings::SId::Display).is_some_and(|(note, _, _)| note.starts_with(&moving)) {
+            self.note_setting(crate::settings::SId::Display, &tr::tr!("Couldn't restart: {err}", err), 2);
         }
     }
 }

@@ -1,5 +1,6 @@
 //! Turning app state into Slint models, and image requests for what is on screen.
 
+use tr::tr;
 use crate::app::*;
 use crate::images::{prio, Src};
 use crate::psn::{sized, Info};
@@ -40,7 +41,71 @@ fn chip(icon: &str, text: impl Into<SharedString>, gold: bool) -> ChipData {
 fn compat_chip(e: Option<&crate::compat::Entry>, platform: crate::platform::Platform) -> ChipData {
     match e {
         Some(e) => ChipData { icon: "".into(), text: e.chip_text().into(), gold: false, dot: e.status.level(), stars: 0.0 },
-        None => ChipData { icon: "".into(), text: format!("Untested on {}", platform.emulator()).into(), gold: false, dot: 5, stars: 0.0 },
+        None => ChipData { icon: "".into(), text: tr!("Untested on {}", platform.emulator()).into(), gold: false, dot: 5, stars: 0.0 },
+    }
+}
+
+/// A Game Hub fact's heading in the interface's language. The code keeps the English one (some
+/// are filtered by it); this is only what's shown.
+fn fact_label(key: &str) -> String {
+    match key {
+        "YOUR RESULT" => tr!("YOUR RESULT"),
+        "ON LINUX" => tr!("ON LINUX"),
+        "ON WINDOWS" => tr!("ON WINDOWS"),
+        "LAST TESTED" => tr!("LAST TESTED"),
+        "TESTED ON" => tr!("TESTED ON"),
+        "PUBLISHER" => tr!("PUBLISHER"),
+        "RELEASE" => tr!("RELEASE"),
+        "SIZE" => tr!("SIZE"),
+        "MODE" => tr!("MODE"),
+        "TITLE ID" => tr!("TITLE ID"),
+        "REGION" => tr!("REGION"),
+        "UPDATE" => tr!("UPDATE"),
+        "SHARING IT (SEEDERS)" => tr!("SHARING IT (SEEDERS)"),
+        "GETTING IT (LEECHERS)" => tr!("GETTING IT (LEECHERS)"),
+        "COUNTED" => tr!("COUNTED"),
+        "RELEASE VERSION" => tr!("RELEASE VERSION"),
+        "DEVELOPER" => tr!("DEVELOPER"),
+        "FORMAT" => tr!("FORMAT"),
+        "CONSOLE FIRMWARE NOTE" => tr!("CONSOLE FIRMWARE NOTE"),
+        "INTERFACE LANGUAGES" => tr!("INTERFACE LANGUAGES"),
+        "AUDIO LANGUAGES" => tr!("AUDIO LANGUAGES"),
+        "SOURCE" => tr!("SOURCE"),
+        "PLAY TIME" => tr!("PLAY TIME"),
+        "LAST PLAYED" => tr!("LAST PLAYED"),
+        "INSTALLED VERSION" => tr!("INSTALLED VERSION"),
+        "LOCATION" => tr!("LOCATION"),
+        "AVAILABILITY" => tr!("AVAILABILITY"),
+        "VERSION" => tr!("VERSION"),
+        "PLAYERS" => tr!("PLAYERS"),
+        "DOWNLOAD SIZE" => tr!("DOWNLOAD SIZE"),
+        "METACRITIC" => tr!("METACRITIC"),
+        "STEAM" => tr!("STEAM"),
+        "STARTS WITH" => tr!("STARTS WITH"),
+        key => key.to_string(),
+    }
+}
+
+/// "3 players" / "1 player".
+fn players(p: i64) -> String {
+    tr!("{n} player" | "{n} players" % p.max(0) as u64)
+}
+
+/// The catalog's "mode" in the interface's language. It's free text from the release pages; the
+/// common forms are translated ("Single player", "Multiplayer", "4x" players), the rest shows as
+/// written.
+fn mode_label(mode: &str) -> String {
+    let m = mode.trim();
+    match m {
+        "Single player" | "None (Single player)" => return tr!("Single player"),
+        "Multiplayer" => return tr!("Multiplayer"),
+        _ => {}
+    }
+    // "2x", "x4", "4x": that many players.
+    let digits = m.trim_start_matches('x').trim_end_matches('x');
+    match digits.parse::<i64>() {
+        Ok(n) if digits.len() < m.len() && n > 1 => players(n),
+        _ => m.to_string(),
     }
 }
 
@@ -253,7 +318,7 @@ impl App {
             let p = if i.abs_diff(self.sel) < 12 { prio::TILE } else { prio::PREFETCH };
             let img = self.get_img(&req, p);
             keys.push(req.map(|r| r.key).unwrap_or_default());
-            tiles.push(TileData { loaded: img.is_some(), image: img.unwrap_or_default(), special: *it == RowItem::All, welcome: *it == RowItem::Welcome, badge: self.tile_badge(*it).into() });
+            tiles.push(TileData { loaded: img.is_some(), image: img.unwrap_or_default(), special: *it == RowItem::All, welcome: *it == RowItem::Welcome, badge: self.tile_badge_label(*it).into() });
         }
         self.tile_keys = keys;
         self.tile_model.set_vec(tiles);
@@ -270,22 +335,30 @@ impl App {
         }
     }
 
+    /// The badge as shown (the tile's border still goes by the English one).
+    fn tile_badge_label(&self, it: RowItem) -> String {
+        match self.tile_badge(it) {
+            "Playing" => tr!("Playing"),
+            other => other.to_string(),
+        }
+    }
+
     pub fn push_row_text(&mut self) {
         let (name, sub) = match self.row.get(self.sel).copied() {
             None => (String::new(), String::new()),
-            Some(RowItem::All) => ("Game Library".into(), format!("{} games · {} releases", self.library_total, self.games.len())),
-            Some(RowItem::Welcome) => ("Welcome".into(), "Your SwarmPlay at a glance".into()),
+            Some(RowItem::All) => (tr!("Game Library"), format!("{} · {}", tr!("{n} game" | "{n} games" % self.library_total), tr!("{n} release" | "{n} releases" % self.games.len()))),
+            Some(RowItem::Welcome) => (tr!("Welcome"), tr!("Your SwarmPlay at a glance")),
             Some(RowItem::Local(l)) => {
                 let lv = &self.locals[l];
                 let sub = if let Some(s) = self.session_for_local(l) {
                     let _ = s;
-                    "Playing now".to_string()
+                    tr!("Playing now")
                 } else {
                     let pt = self.playtime(&lv.l);
                     if pt.last > 0.0 {
-                        format!("Last played {}", util::fmt_last_played(pt.last).to_lowercase())
+                        tr!("Last played {}", util::fmt_last_played(pt.last).to_lowercase())
                     } else {
-                        "Not played yet".into()
+                        tr!("Not played yet")
                     }
                 };
                 (lv.name.clone(), sub)
@@ -318,11 +391,11 @@ impl App {
     fn kicker_for(&self, t: Target, in_hub: bool) -> (String, String, bool) {
         if let Some(l) = t.local {
             if let Some(s) = self.session_for_local(l) {
-                return (util::fmt_clock(util::now_secs() - s.since), "● PLAYING".into(), true);
+                return (util::fmt_clock(util::now_secs() - s.since), format!("● {}", tr!("PLAYING")), true);
             }
             let pt = self.playtime(&self.locals[l].l);
             // In the Game Hub, playtime is in the facts below.
-            let text = if pt.total > 0.0 && !in_hub { format!("PLAYED {}", util::fmt_duration_words(pt.total).to_uppercase()) } else { String::new() };
+            let text = if pt.total > 0.0 && !in_hub { tr!("PLAYED {}", util::fmt_duration_words(pt.total).to_uppercase()) } else { String::new() };
             return (text, String::new(), false);
         }
         if let Some(g) = t.game {
@@ -332,7 +405,7 @@ impl App {
                 // Nothing to say: where it comes from is in the Game Hub's technical details.
                 return (String::new(), String::new(), false);
             }
-            return (if gv.is_new { format!("NEW · ADDED {added}") } else { format!("ADDED {added}") }, String::new(), false);
+            return (if gv.is_new { tr!("NEW · ADDED {added}", added) } else { tr!("ADDED {added}", added) }, String::new(), false);
         }
         (String::new(), String::new(), false)
     }
@@ -343,18 +416,19 @@ impl App {
         let info = self.target_info(t);
         let g = t.game.map(|g| &self.games[g]);
         let compat = self.target_compat(t).map(|e| compat_chip(Some(e), self.target_platform(t)).text.to_string())
-            .unwrap_or_else(|| "Not tested yet".into());
+            .unwrap_or_else(|| tr!("Not tested yet"));
         let releases = t.game.map(|i| self.groups.releases(i).len()).unwrap_or(0);
-        let versions = match releases { 0 => "Installed on this PC".to_string(), 1 => "1 release".to_string(), n => format!("{n} releases") };
+        let versions = match releases { 0 => tr!("Installed on this PC"), n => tr!("{n} release" | "{n} releases" % n) };
         let shots = info.as_ref().map(|i| i.shots.len()).unwrap_or(0);
         let trailer = info.as_ref().is_some_and(|i| !i.video.is_empty());
         let media = match (shots, trailer) {
-            (0, false) => "None yet".to_string(),
-            (0, true) => "Trailer".to_string(),
-            (n, t) => format!("{n} screenshots{}", if t { " · trailer" } else { "" }),
+            (0, false) => tr!("None yet"),
+            (0, true) => tr!("Trailer"),
+            (n, false) => tr!("{n} screenshot" | "{n} screenshots" % n),
+            (n, true) => tr!("{n} screenshot · trailer" | "{n} screenshots · trailer" % n),
         };
-        let details = g.and_then(|g| size_label(&g.g)).map(|s| format!("{s} · files and paths")).unwrap_or_else(|| "Files and paths".into());
-        [("Compatibility", compat), ("Versions", versions), ("Trailers & screenshots", media), ("Details", details)]
+        let details = g.and_then(|g| size_label(&g.g)).map(|s| tr!("{} · files and paths", s)).unwrap_or_else(|| tr!("Files and paths"));
+        [(tr!("Compatibility"), compat), (tr!("Versions"), versions), (tr!("Trailers & screenshots"), media), (tr!("Details"), details)]
             .into_iter().map(|(k, v)| Fact { key: k.into(), value: v.into(), kind: 0 }).collect()
     }
 
@@ -363,7 +437,7 @@ impl App {
         let g = t.game.map(|g| &self.games[g]);
         let mut c: Vec<ChipData> = self.target_compat(t).map(|e| compat_chip(Some(e), self.target_platform(t))).into_iter().collect();
         if let Some(r) = info.as_ref().and_then(|i| i.rating.as_ref()) {
-            c.push(ChipData { stars: r.score as f32, ..chip("", format!("{:.1} · {} ratings", r.score, thousands(r.total)), false) });
+            c.push(ChipData { stars: r.score as f32, ..chip("", format!("{} · {}", crate::i18n::num(r.score as f64, 1), tr!("{n} rating" | "{n} ratings" % r.total as u64).replace(&r.total.to_string(), &thousands(r.total))), false) });
         }
         let genres: Vec<String> = info.as_ref().filter(|i| !i.genres.is_empty()).map(|i| i.genres.clone()).or_else(|| g.map(|g| g.g.genres.clone())).unwrap_or_default();
         if !genres.is_empty() {
@@ -409,24 +483,24 @@ impl App {
                 // No installed games: getting one from the Library comes first; a folder of games
                 // already on this PC is the other way in.
                 let mk = |id, label: &str, icon, primary| ActionDef { id, label: label.into(), icon, primary, danger: false, round: false };
-                h.title = "No games yet".into();
-                h.desc = "Pick a game in the Library, then Download and Install.".into();
-                self.hero_actions = vec![mk("library", "Browse games", "grid", true), mk("add_folder", "Add game folder", "folder", false)];
+                h.title = tr!("No games yet").into();
+                h.desc = tr!("Pick a game in the Library, then Download and Install.").into();
+                self.hero_actions = vec![mk("library", &tr!("Browse games"), "grid", true), mk("add_folder", &tr!("Add game folder"), "folder", false)];
             }
             Some(RowItem::All) => {
                 let mk = |id, label: &str, icon, primary| ActionDef { id, label: label.into(), icon, primary, danger: false, round: false };
                 if self.locals.is_empty() {
-                    h.kicker = "GET STARTED".into();
-                    h.title = "No games yet".into();
-                    h.chips = model(vec![chip("grid", format!("{} games in the Library", self.groups.members.len()), false)]);
-                    h.desc = "Pick a game in the Library, then Download and Install.".into();
-                    self.hero_actions = vec![mk("library", "Browse games", "grid", true), mk("add_folder", "Add game folder", "folder", false)];
+                    h.kicker = tr!("GET STARTED").into();
+                    h.title = tr!("No games yet").into();
+                    h.chips = model(vec![chip("grid", tr!("{n} game in the Library" | "{n} games in the Library" % self.groups.members.len()), false)]);
+                    h.desc = tr!("Pick a game in the Library, then Download and Install.").into();
+                    self.hero_actions = vec![mk("library", &tr!("Browse games"), "grid", true), mk("add_folder", &tr!("Add game folder"), "folder", false)];
                 } else {
-                    h.kicker = "COLLECTION".into();
-                    h.title = "Game Library".into();
-                    h.chips = model(vec![chip("grid", format!("{} games", self.groups.members.len()), false)]);
-                    h.desc = "Browse every PS5 game in the catalog. Search, filter by genre and sort by date, name, rating or size.".into();
-                    self.hero_actions = vec![mk("library", "Open Library", "grid", true)];
+                    h.kicker = tr!("COLLECTION").into();
+                    h.title = tr!("Game Library").into();
+                    h.chips = model(vec![chip("grid", tr!("{n} game" | "{n} games" % self.groups.members.len()), false)]);
+                    h.desc = tr!("Browse every PS5 game in the catalog. Search, filter by genre and sort by date, name, rating or size.").into();
+                    self.hero_actions = vec![mk("library", &tr!("Open Library"), "grid", true)];
                 }
             }
             // Its widgets show in place of a hero (src/welcome.rs); nothing to press but them.
@@ -461,9 +535,9 @@ impl App {
                 // release's own technical text (versions, firmware, emulator notes) is in the Game Hub.
                 let desc = info.as_ref().map(|i| i.short.clone()).filter(|s| s.chars().count() > 30 && s.chars().any(|c| c.is_lowercase()))
                     .unwrap_or_else(|| match self.target_platform(t) {
-                        crate::platform::Platform::Pc if self.pc_windows(t) => "Installed locally. A Windows game, run with Proton or Wine.".to_string(),
-                        crate::platform::Platform::Pc => "Installed locally. Runs on Linux by itself, no emulator needed.".to_string(),
-                        platform => format!("Installed locally. Launches with the {} emulator.", platform.emulator()),
+                        crate::platform::Platform::Pc if self.pc_windows(t) => tr!("Installed locally. A Windows game, run with Proton or Wine."),
+                        crate::platform::Platform::Pc => tr!("Installed locally. Runs on Linux by itself, no emulator needed."),
+                        platform => tr!("Installed locally. Launches with the {} emulator.", platform.emulator()),
                     });
                 h.desc = truncate(&desc, 260).into();
                 let key = self.game_key(t);
@@ -756,15 +830,15 @@ impl App {
 
     pub fn push_library(&mut self) {
         let ui = self.ui();
-        ui.set_sort_label(SORTS[self.sort].into());
-        ui.set_sort_options(model(SORTS.iter().map(|label| SharedString::from(*label)).collect()));
+        ui.set_sort_label(crate::app::sort_label(self.sort).into());
+        ui.set_sort_options(model((0..SORTS.len()).map(|i| SharedString::from(crate::app::sort_label(i))).collect()));
         ui.set_sort_selected(self.sort as i32);
         // When the list (and its availability) was last counted: the newest count, else when the
         // launcher last loaded it. Each game's own date is in its Game Hub's technical details.
         let counted = self.games.iter().map(|game| game.g.peers_observed.as_str()).filter_map(util::parse_iso_date).max()
             .or_else(|| (self.catalog_updated > 0.0).then(|| util::civil_from_days((self.catalog_updated / 86400.0) as i64)));
         let updated = util::fmt_date(counted);
-        ui.set_peer_snapshot_label(if updated.is_empty() { SharedString::default() } else { format!("List updated {updated}").into() });
+        ui.set_peer_snapshot_label(if updated.is_empty() { SharedString::default() } else { tr!("List updated {updated}", updated).into() });
         self.push_genres();
         self.push_grid();
     }
@@ -816,14 +890,15 @@ impl App {
             if i == n { status_end = x; x = 0.0; }
             let count = if i < n { status_counts[i] } else if i == n { genre_total } else { *genre_counts.get(label.as_str()).unwrap_or(&0) };
             let c = count.to_string();
-            let w = 32.0 * self.scale + (label.chars().count() as f32 * 9.5 + 6.0 + c.len() as f32 * 8.6) * typography;
+            let shown = crate::app::filter_label(label);
+            let w = 32.0 * self.scale + (shown.chars().count() as f32 * 9.5 + 6.0 + c.len() as f32 * 8.6) * typography;
             if i >= n && ((self.zone == Z_CHIPS && i as i32 == self.idx) || ((self.zone != Z_CHIPS || self.idx < n as i32) && *label == self.genre)) {
                 focus_x = x;
             }
             let on = if let Some(p) = self.console_chip(i) { self.platform_filter == Some(p) }
                 else if i == 0 { self.status_filter == "All" && self.platform_filter.is_none() }
                 else if i < n { *label == self.status_filter } else { *label == self.genre || (i == n && self.genre == "All") };
-            let chip = GenreChip { index: i as i32, label: label.clone().into(), count: c.into(), on, x, w };
+            let chip = GenreChip { index: i as i32, label: shown.into(), count: c.into(), on, x, w };
             if i < n { statuses.push(chip); } else { chips.push(chip); }
             x += w + 10.0 * self.scale;
         }
@@ -843,20 +918,21 @@ impl App {
         let rows = self.filtered.len().div_ceil(self.cols.max(1));
         let ui = self.ui();
         ui.set_grid_h((rows as f32 * self.row_h + 60.0) * self.scale);
+        let releases = tr!("{n} release" | "{n} releases" % self.games.len());
         ui.set_count_label(if self.filtered.len() == self.library_total {
-            format!("{} games · {} releases", self.filtered.len(), self.games.len())
-        } else { format!("{} of {} games · {} releases", self.filtered.len(), self.library_total, self.games.len()) }.into());
+            format!("{} · {releases}", tr!("{n} game" | "{n} games" % self.filtered.len()))
+        } else { format!("{} · {releases}", tr!("{0} of {n} game" | "{0} of {n} games" % self.library_total, self.filtered.len())) }.into());
         ui.set_grid_empty(if !self.filtered.is_empty() {
             "".into()
         } else if self.games.is_empty() {
-            (if self.syncing { "Loading catalog…" } else { "Catalog is empty" }).into()
+            (if self.syncing { tr!("Loading catalog…") } else { tr!("Catalog is empty") }).into()
         } else if !self.searching() {
             let filtered = self.status_filter != "All" || self.platform_filter.is_some() || self.genre != "All";
-            (if filtered { "No games with these filters" } else { "No games to show yet" }).into()
+            (if filtered { tr!("No games with these filters") } else { tr!("No games to show yet") }).into()
         } else if self.hits.scores.iter().any(Option::is_some) {
-            "No matches with these filters. Choose All to see them".into()
+            tr!("No matches with these filters. Choose All to see them").into()
         } else {
-            format!("No games match “{}”", self.query.trim()).into()
+            tr!("No games match “{}”", self.query.trim()).into()
         });
         ui.set_search_note(self.search_note.clone().into());
         if self.zone == Z_GRID && self.idx as usize >= self.filtered.len() {
@@ -982,16 +1058,16 @@ impl App {
             // A one-console Library says how many releases (as the Game Hub numbers them); a mixed
             // one shows the platforms there instead.
             let releases = if self.mixed_consoles { 0 } else { self.release_count(gi) };
-            let meta = size_label(&g.g).unwrap_or_else(|| "Size unknown".into());
+            let meta = size_label(&g.g).unwrap_or_else(|| tr!("Size unknown"));
             cards.push(CardData {
                 index: k as i32,
                 title: self.game_title(gi).into(),
                 meta: meta.into(),
-                releases: if releases > 1 { format!("{releases} releases") } else { String::new() }.into(),
+                releases: if releases > 1 { tr!("{n} release" | "{n} releases" % releases) } else { String::new() }.into(),
                 availability: crate::words::Availability::of(g.g.seeders).label().into(),
                 availability_kind: crate::words::Availability::of(g.g.seeders).kind(),
-                rating: g.info.as_ref().and_then(|i| i.rating.as_ref()).map(|r| format!("{:.1}", r.score)).unwrap_or_default().into(),
-                badge: if g.local.is_some() { "Installed".into() } else if g.is_new { "New".into() } else { "".into() },
+                rating: g.info.as_ref().and_then(|i| i.rating.as_ref()).map(|r| crate::i18n::num(r.score as f64, 1)).unwrap_or_default().into(),
+                badge: if g.local.is_some() { tr!("Installed").into() } else if g.is_new { tr!("New").into() } else { "".into() },
                 console: if self.mixed_consoles { g.g.platform.label().into() } else { "".into() },
                 // Every platform the game is on, in the usual order.
                 consoles: model(self.game_platforms(gi).into_iter().filter(|_| self.mixed_consoles)
@@ -1159,13 +1235,13 @@ impl App {
         // KytyPS5 status is in the facts grid below, so it isn't repeated as a chip here.
         let mut chips: Vec<ChipData> = Vec::new();
         if let Some(r) = info.as_ref().and_then(|i| i.rating.as_ref()) {
-            chips.push(ChipData { stars: r.score as f32, ..chip("", format!("{:.2} · {} ratings", r.score, thousands(r.total)), false) });
+            chips.push(ChipData { stars: r.score as f32, ..chip("", format!("{} · {}", crate::i18n::num(r.score as f64, 2), tr!("{n} rating" | "{n} ratings" % r.total as u64).replace(&r.total.to_string(), &thousands(r.total))), false) });
         }
         if let Some(a) = info.as_ref().and_then(|i| i.age.as_ref()).filter(|a| !a.name.is_empty()) {
             chips.push(chip("", a.name.clone(), false));
         }
         let genres: Vec<String> = info.as_ref().filter(|i| !i.genres.is_empty()).map(|i| i.genres.clone())
-            .or_else(|| t.game.map(|g| self.games[g].buckets.iter().map(|s| s.to_string()).collect())).unwrap_or_default();
+            .or_else(|| t.game.map(|g| self.games[g].buckets.iter().map(|s| crate::app::filter_label(s)).collect())).unwrap_or_default();
         for g in genres.into_iter().take(3) {
             chips.push(chip("", g, false));
         }
@@ -1181,19 +1257,19 @@ impl App {
         let ps4 = self.target_platform(t) == crate::platform::Platform::Ps4;
         let mut facts: Vec<(&str, String)> = vec![
             ("YOUR RESULT", ce.as_ref().filter(|e| e.mine).map(|e| e.status.meaning().to_string()).unwrap_or_default()),
-            ("ON LINUX", ce.as_ref().and_then(|e| e.linux).map(|l| l.meaning().to_string()).unwrap_or_else(|| "Not tested yet".into())),
+            ("ON LINUX", ce.as_ref().and_then(|e| e.linux).map(|l| l.meaning().to_string()).unwrap_or_else(|| tr!("Not tested yet"))),
             ("ON WINDOWS", ce.as_ref().and_then(|e| e.windows).map(|w| w.meaning().to_string()).unwrap_or_default()),
             // Short values only: a fact box fits ~28 characters.
             ("LAST TESTED", ce.as_ref().map(|e| {
                 let d = util::fmt_date(util::parse_iso_date(&e.tested_date()));
-                let r = match e.reports { 0 => String::new(), 1 => "1 report".to_string(), n => format!("{n} reports") };
+                let r = match e.reports { 0 => String::new(), n => tr!("{n} report" | "{n} reports" % n) };
                 [if d.is_empty() { e.tested_date() } else { d }, r].into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" · ")
             }).unwrap_or_default()),
             ("TESTED ON", ce.as_ref().map(|e| e.platforms.join(", ")).unwrap_or_default()),
             ("PUBLISHER", info.as_ref().map(|i| i.publisher.clone()).filter(|publisher| !publisher.is_empty()).unwrap_or_else(|| g.map(|g| g.detail("publisher")).unwrap_or_default())),
             ("RELEASE", g.map(|g| g.release.clone()).filter(|s| !s.is_empty()).or_else(|| info.as_ref().map(|i| util::fmt_date(util::parse_iso_date(&i.release)))).unwrap_or_default()),
             ("SIZE", g.map(|g| g.size.clone()).unwrap_or_default()),
-            ("MODE", g.map(|g| g.mode.clone()).filter(|s| !s.is_empty()).or_else(|| info.as_ref().and_then(|i| i.players.as_ref()).and_then(|p| p.as_i64()).map(|p| format!("{p} player{}", if p > 1 { "s" } else { "" }))).unwrap_or_default()),
+            ("MODE", g.map(|g| mode_label(&g.mode)).filter(|s| !s.is_empty()).or_else(|| info.as_ref().and_then(|i| i.players.as_ref()).and_then(|p| p.as_i64()).map(players)).unwrap_or_default()),
             ("TITLE ID", g.map(|g| g.title_id.clone()).filter(|s| !s.is_empty()).or_else(|| t.local.map(|l| self.locals[l].l.title_id.clone())).unwrap_or_default()),
             ("REGION", region),
             ("UPDATE", g.map(|g| g.update.clone()).unwrap_or_default()),
@@ -1202,9 +1278,9 @@ impl App {
             let observed = util::fmt_date(util::parse_iso_date(&game.peers_observed));
             facts.extend([
                 // Behind "Availability": the catalog's counts, not live ones.
-                ("SHARING IT (SEEDERS)", game.seeders.map(|count| count.to_string()).unwrap_or_else(|| "Unknown".into())),
-                ("GETTING IT (LEECHERS)", game.leechers.map(|count| count.to_string()).unwrap_or_else(|| "Unknown".into())),
-                ("COUNTED", if observed.is_empty() { "Date unknown".into() } else { format!("{observed} · not live") }),
+                ("SHARING IT (SEEDERS)", game.seeders.map(|count| count.to_string()).unwrap_or_else(|| tr!("Unknown"))),
+                ("GETTING IT (LEECHERS)", game.leechers.map(|count| count.to_string()).unwrap_or_else(|| tr!("Unknown"))),
+                ("COUNTED", if observed.is_empty() { tr!("Date unknown") } else { tr!("{observed} · not live", observed) }),
             ]);
             facts.extend([
                 ("RELEASE VERSION", game.version.clone()),
@@ -1219,7 +1295,7 @@ impl App {
         if let Some(l) = t.local {
             let lv = &self.locals[l];
             let pt = self.playtime(&lv.l);
-            facts.push(("PLAY TIME", if pt.total > 0.0 { util::fmt_duration(pt.total) } else { "Never played".into() }));
+            facts.push(("PLAY TIME", if pt.total > 0.0 { util::fmt_duration(pt.total) } else { tr!("Never played") }));
             facts.push(("LAST PLAYED", util::fmt_last_played(pt.last)));
             facts.push(("INSTALLED VERSION", lv.l.version.clone()));
             facts.push(("LOCATION", util::display_path(&lv.l.path.to_string_lossy())));
@@ -1242,13 +1318,14 @@ impl App {
             // Said by version, not by upload order (a newer upload can be an older version).
             let shown = &self.games[index];
             let newest = if shown.newer.is_some() {
-                " · older version"
+                format!(" · {}", tr!("older version"))
             } else if shown.newest {
-                " · newest version"
+                format!(" · {}", tr!("newest version"))
             } else {
-                ""
+                String::new()
             };
-            h.release_label = format!("Release {position} of {}{newest}", members.len()).into();
+            let count = members.len();
+            h.release_label = format!("{}{newest}", tr!("Release {position} of {count}", position, count)).into();
             let game = &self.games[index].g;
             h.release_detail = [game.version.clone(), game.region.clone(), size_label(game).unwrap_or_default(), game.name.clone()].into_iter()
                 .filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" · ").into();
@@ -1273,20 +1350,21 @@ impl App {
         let steam = g.and_then(|g| g.steam.clone());
         // How it runs, said as on its "Play it on" tile (versions.rs): native, or Wine-packed,
         // or an installed .exe (catalogued or not) through Proton or Wine.
-        let pc_runs: Option<(&str, String, i32)> = pc_game.then(|| self.plays_for(t).hub_fact()).flatten();
+        // (Its heading comes already in the interface's language.)
+        let pc_runs: Option<(String, String, i32)> = pc_game.then(|| self.plays_for(t).hub_fact()).flatten();
         // Three overview boxes: how it runs (PC games), how easy it is to get, which version.
         // The size is in the line under Download.
         let availability = g.filter(|_| t.local.is_none()).map(|g| crate::words::Availability::of(g.seeders));
-        let mode = g.map(|g| g.mode.clone()).filter(|s| !s.is_empty())
-            .or_else(|| info.as_ref().and_then(|i| i.players.as_ref()).and_then(|p| p.as_i64()).map(|p| format!("{p} player{}", if p > 1 { "s" } else { "" })))
+        let mode = g.map(|g| mode_label(&g.mode)).filter(|s| !s.is_empty())
+            .or_else(|| info.as_ref().and_then(|i| i.players.as_ref()).and_then(|p| p.as_i64()).map(players))
             .unwrap_or_default();
         let summary: Vec<Fact> = [
-            pc_runs.map(|(k, v, kind)| (k, v, kind)),
-            availability.map(|a| ("AVAILABILITY", a.label().to_string(), a.kind())),
-            Some(if let Some(local) = t.local { ("INSTALLED VERSION", self.locals[local].l.version.clone(), 0) }
-                else { ("VERSION", g.map(|g| g.version.clone()).unwrap_or_default(), 0) }),
-            Some(("PLAYERS", mode, 0)),
-            Some(("DOWNLOAD SIZE", g.and_then(size_label).unwrap_or_default(), 0)),
+            pc_runs,
+            availability.map(|a| (fact_label("AVAILABILITY"), a.label().to_string(), a.kind())),
+            Some(if let Some(local) = t.local { (fact_label("INSTALLED VERSION"), self.locals[local].l.version.clone(), 0) }
+                else { (fact_label("VERSION"), g.map(|g| g.version.clone()).unwrap_or_default(), 0) }),
+            Some((fact_label("PLAYERS"), mode, 0)),
+            Some((fact_label("DOWNLOAD SIZE"), g.and_then(size_label).unwrap_or_default(), 0)),
         ].into_iter().flatten().filter(|(_, v, _)| !v.is_empty()).take(3)
             .map(|(k, v, kind)| Fact { key: k.into(), value: v.into(), kind }).collect();
         h.facts = model(summary.chunks(3).map(|c| FactRow { items: model(c.to_vec()) }).collect());
@@ -1296,7 +1374,7 @@ impl App {
             facts.retain(|(k, _)| !matches!(*k, "YOUR RESULT" | "ON LINUX" | "ON WINDOWS" | "LAST TESTED" | "TESTED ON" | "TITLE ID" | "CONSOLE FIRMWARE NOTE" | "UPDATE"));
             if let Some(s) = &steam {
                 facts.push(("METACRITIC", s.metacritic.map(|m| m.to_string()).unwrap_or_default()));
-                facts.push(("STEAM", if s.linux { "Has a Linux version".into() } else { "Windows only on Steam".into() }));
+                facts.push(("STEAM", if s.linux { tr!("Has a Linux version") } else { tr!("Windows only on Steam") }));
                 if !s.developers.is_empty() { facts.push(("DEVELOPER", s.developers.join(", "))); }
             }
             if let Some(m) = t.local.and_then(|l| self.locals[l].l.pc.as_ref()) {
@@ -1305,7 +1383,7 @@ impl App {
         }
         let details: Vec<Fact> = facts.into_iter().filter(|(k, v)| !v.is_empty()
             && !matches!(*k, "SIZE" | "PUBLISHER" | "RELEASE" | "REGION"))
-            .map(|(k, v)| Fact { key: k.into(), value: v.into(), kind: 0 }).collect();
+            .map(|(k, v)| Fact { key: fact_label(k).into(), value: v.into(), kind: 0 }).collect();
         h.details = model(vec![FactRow { items: model(details) }]);
 
         let shots_urls = self.hub_shots.clone();
@@ -1343,27 +1421,29 @@ impl App {
             Some(e) => {
                 let mut seen = Vec::new();
                 if e.mine {
-                    seen.push(format!("Your result on this PC: {}", low(e.status.meaning())));
+                    seen.push(tr!("Your result on this PC: {}", low(e.status.meaning())));
                 }
                 match e.linux {
-                    Some(l) => seen.push(format!("{} Linux: {}", if e.mine { "Others on" } else { "On" }, low(l.meaning()))),
-                    None if !e.mine => seen.push("On Linux: not tested yet".into()),
+                    Some(l) if e.mine => seen.push(tr!("Others on Linux: {}", low(l.meaning()))),
+                    Some(l) => seen.push(tr!("On Linux: {}", low(l.meaning()))),
+                    None if !e.mine => seen.push(tr!("On Linux: not tested yet")),
                     None => {}
                 }
                 if let Some(w) = e.windows {
-                    seen.push(format!("On Windows: {}", low(w.meaning())));
+                    seen.push(tr!("On Windows: {}", low(w.meaning())));
                 } else if !e.on_linux && !e.mine {
-                    seen.push(format!("On {}: {}", e.source(), low(e.status.meaning())));
+                    seen.push(tr!("On {0}: {1}", e.source(), low(e.status.meaning())));
                 }
                 lines.push(seen.join(" · "));
                 let date = util::fmt_date(util::parse_iso_date(&e.tested_date()));
-                let reports = match e.reports { 0 => String::new(), 1 => " (1 report)".into(), n => format!(" ({n} reports)") };
+                let reports = match e.reports { 0 => String::new(), n => format!(" ({})", tr!("{n} report" | "{n} reports" % n)) };
                 if e.reports > 0 || !date.is_empty() {
-                    lines.push(format!("From the {} community list{}{reports}", platform.emulator(),
-                        if date.is_empty() { String::new() } else { format!(", last tested {date}") }));
+                    let from = if date.is_empty() { tr!("From the {} community list", platform.emulator()) }
+                        else { tr!("From the {0} community list, last tested {1}", platform.emulator(), date) };
+                    lines.push(format!("{from}{reports}"));
                 }
             }
-            None => lines.push(format!("Nobody has reported how far it gets on {} yet", platform.emulator())),
+            None => lines.push(tr!("Nobody has reported how far it gets on {} yet", platform.emulator())),
         }
         lines.extend(self.pc_line(t));
         lines.join("\n")
@@ -1442,7 +1522,7 @@ impl App {
         if let Some(img) = img.or(thumb) {
             ui.set_viewer_image(img);
         }
-        ui.set_viewer_count(format!("{} of {}", self.viewer_i + 1, self.hub_shots.len()).into());
+        ui.set_viewer_count(tr!("{0} of {1}", self.viewer_i + 1, self.hub_shots.len()).into());
         ui.set_viewer_index(self.viewer_i as i32);
     }
 

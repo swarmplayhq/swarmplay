@@ -3,6 +3,7 @@
 //! PKG release is installed and checked against a pinned SHA-256, then kept under
 //! ~/.local/share/azrak/pkg-extractor.
 
+use tr::tr;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -78,7 +79,7 @@ fn install() -> Result<PathBuf, String> {
     let unpacked_tool = staging.join("squashfs-root").join("AppRun");
     if !unpacked || !runs(&unpacked_tool) {
         let _ = std::fs::remove_dir_all(&staging);
-        return Err("the PKG extractor does not run on this system".into());
+        return Err(tr!("the PKG extractor does not run on this system"));
     }
     let final_dir = r.join(VERSION);
     let _ = std::fs::remove_dir_all(&final_dir);
@@ -149,12 +150,12 @@ fn runs(tool: &Path) -> bool {
 pub fn kind(tool: &Path, pkg: &Path) -> Result<Kind, String> {
     let scratch = Scratch::new()?;
     let (mut cmd, _guard) = scratch.command(tool, None)?;
-    let out = cmd.arg(pkg).arg("--check-type").output().map_err(|e| format!("could not run the PKG extractor: {e}"))?;
+    let out = cmd.arg(pkg).arg("--check-type").output().map_err(|e| tr!("could not run the PKG extractor: {e}", e))?;
     match out.status.code() {
         Some(101) => Ok(Kind::Game),
         Some(102) => Ok(Kind::Update),
         Some(103) => Ok(Kind::Dlc),
-        _ => Err(problem(&String::from_utf8_lossy(&out.stdout)).unwrap_or_else(|| "not a PS4 PKG package".into())),
+        _ => Err(problem(&String::from_utf8_lossy(&out.stdout)).unwrap_or_else(|| tr!("not a PS4 PKG package"))),
     }
 }
 
@@ -172,7 +173,7 @@ fn problem(output: &str) -> Option<String> {
 pub fn extract(tool: &Path, pkg: &Path, dest: &Path, cancel: &AtomicBool, progress: &dyn Fn(u64, u64)) -> Result<(), String> {
     let scratch = Scratch::new()?;
     let (mut cmd, guard) = scratch.command(tool, Some(dest))?;
-    let mut child = cmd.arg(pkg).arg(dest).stdout(Stdio::piped()).spawn().map_err(|e| format!("could not run the PKG extractor: {e}"))?;
+    let mut child = cmd.arg(pkg).arg(dest).stdout(Stdio::piped()).spawn().map_err(|e| tr!("could not run the PKG extractor: {e}", e))?;
     drop(guard);
     let mut stdout = child.stdout.take().unwrap();
     let (tx, rx) = std::sync::mpsc::channel::<String>();
@@ -226,17 +227,17 @@ fn finished(status: std::process::ExitStatus, output: &str) -> Result<(), String
         return Err(p);
     }
     if !output.lines().any(|l| l.trim() == GUARD_ACTIVE) {
-        return Err("the PKG extractor ran without its write guard, so its files can't be trusted; nothing was installed".into());
+        return Err(tr!("the PKG extractor ran without its write guard, so its files can't be trusted; nothing was installed"));
     }
     if !status.success() {
-        return Err(format!("the PKG extractor stopped before finishing ({status})"));
+        return Err(tr!("the PKG extractor stopped before finishing ({status})", status));
     }
     let last = regex::Regex::new(r"Extracting file (\d+) of (\d+)").unwrap().captures_iter(output).last()
         .map(|c| (c[1].parse::<u64>().unwrap_or(0), c[2].parse::<u64>().unwrap_or(0)));
     match last {
         Some((done, files)) if files > 0 && done == files && output.contains("THE END") => Ok(()),
-        Some((done, files)) => Err(format!("the PKG extractor stopped after {done} of {files} files")),
-        None => Err("the PKG extractor wrote no files".into()),
+        Some((done, files)) => Err(tr!("the PKG extractor stopped after {done} of {files} files", done, files)),
+        None => Err(tr!("the PKG extractor wrote no files")),
     }
 }
 

@@ -5,6 +5,7 @@
 use crate::platform::Platform;
 use std::path::Path;
 use std::time::Duration;
+use tr::tr;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Gpu {
@@ -86,11 +87,11 @@ pub enum Verdict {
 }
 
 impl Verdict {
-    pub fn headline(&self) -> &'static str {
+    pub fn headline(&self) -> String {
         match self {
-            Verdict::Good => "Should run well",
-            Verdict::Slow(_) => "May run slowly",
-            Verdict::No(_) => "Won't start",
+            Verdict::Good => tr!("Should run well"),
+            Verdict::Slow(_) => tr!("May run slowly"),
+            Verdict::No(_) => tr!("Won't start"),
         }
     }
 
@@ -108,7 +109,7 @@ impl Verdict {
     pub fn short(&self) -> String {
         match self.why() {
             Some(why) => format!("{} · {why}", self.headline()),
-            None => self.headline().into(),
+            None => self.headline(),
         }
     }
 }
@@ -186,12 +187,12 @@ impl Specs {
     /// One line for Settings, e.g. "Ryzen 9 7950X (16 cores) · GeForce RTX 3090, 24 GB · 32 GB RAM".
     pub fn summary(&self) -> String {
         let gpu = match (self.gpus.as_ref(), self.gpu()) {
-            (None, _) => "graphics unknown".to_string(),
-            (_, None) => "no graphics card found".to_string(),
+            (None, _) => tr!("graphics unknown"),
+            (_, None) => tr!("no graphics card found"),
             (_, Some(g)) if g.discrete => format!("{}, {} GB", tidy(&g.name), g.vram_gb.round()),
             (_, Some(g)) => tidy(&g.name),
         };
-        format!("{} ({} cores) · {gpu} · {} GB RAM", tidy(&self.cpu), self.cores, self.ram_gb.round())
+        tr!("{cpu} ({n} cores) · {gpu} · {ram} GB RAM", cpu = tidy(&self.cpu), n = self.cores, gpu, ram = self.ram_gb.round())
     }
 }
 

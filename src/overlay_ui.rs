@@ -18,6 +18,7 @@ use slint::ComponentHandle;
 use slint::winit_030::{winit, WinitWindowAccessor};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
+use tr::tr;
 
 /// Items of the panel: the top row, then the bottom row (ui/overlay.slint's order).
 const TOP: usize = 4;
@@ -97,9 +98,9 @@ impl App {
             // No way above the game here: the launcher comes up, its Control Center open.
             (_, h) => {
                 if matches!(h, Helper::Missing | Helper::NeedsLogin) {
-                    let _ = std::process::Command::new("notify-send").args(["SwarmPlay",
-                        if h == Helper::Missing { "For the in-game overlay, install the GNOME helper: Settings → Playing → In-game overlay" }
-                        else { "Log out and in once to finish setting up the in-game overlay" }]).spawn();
+                    let body = if h == Helper::Missing { tr!("For the in-game overlay, install the GNOME helper: Settings → Playing → In-game overlay") }
+                        else { tr!("Log out and in once to finish setting up the in-game overlay") };
+                    let _ = std::process::Command::new("notify-send").args(["SwarmPlay", body.as_str()]).spawn();
                 }
                 std::thread::spawn(|| { overlay::focus_main(); });
                 if self.overlay != Overlay::ControlCenter { self.toggle_control_center(); }
@@ -266,19 +267,19 @@ impl App {
         let (title, sub, progress) = match active.first() {
             Some(j) => {
                 let p = if j.total > 0 { j.done as f32 / j.total as f32 } else { 0.0 };
-                (j.name.clone(), format!("{:.0}%{}", p * 100.0, if active.len() > 1 { format!(" · {} more", active.len() - 1) } else { String::new() }), p)
+                (j.name.clone(), format!("{:.0}%{}", p * 100.0, if active.len() > 1 { format!(" · {}", tr!("{} more", active.len() - 1)) } else { String::new() }), p)
             }
-            None => ("Nothing downloading".to_string(), "Open Downloads".to_string(), -1.0),
+            None => (tr!("Nothing downloading"), tr!("Open Downloads"), -1.0),
         };
         w.set_dl_title(title.into());
         w.set_dl_sub(sub.into());
         w.set_dl_progress(progress);
         w.set_capture_sub(match &self.last_capture {
-            Some(name) => format!("Last: {name}").into(),
-            None => "Saved in Pictures → SwarmPlay".into(),
+            Some(name) => tr!("Last: {name}", name).into(),
+            None => tr!("Saved in Pictures → SwarmPlay").into(),
         });
         let v = self.sound.volume;
-        w.set_volume(match v { Some(_) if self.sound.muted => "Muted".into(), Some(v) => format!("{v}%").into(), None => "Sound".into() });
+        w.set_volume(match v { Some(_) if self.sound.muted => tr!("Muted").into(), Some(v) => format!("{v}%").into(), None => tr!("Sound").into() });
         w.set_volume_level(if self.sound.muted { 0.0 } else { v.map_or(0.0, |v| v as f32 / 100.0) });
         w.set_pad_battery(crate::battery::controllers().first().map(|b| format!("{}%", b.percent)).unwrap_or_default().into());
     }
@@ -360,10 +361,10 @@ impl App {
                     app.last_capture = Some(name.trim_end_matches(".png").to_string());
                     audio::play(Sound::Shutter);
                     // The answer to the player's own press: shown even in a game, as on a console.
-                    app.notify(crate::toast::Cat::Games, crate::toast::DONE, "check", "Screenshot saved", &format!("Pictures → SwarmPlay → {}", folder.trim()),
+                    app.notify(crate::toast::Cat::Games, crate::toast::DONE, "check", &tr!("Screenshot saved"), &tr!("Pictures → SwarmPlay → {}", folder.trim()),
                         crate::toast::Action::File(path_s.clone()), "", true);
                 }
-                Err(e) => app.toast("No screenshot", &e, "alert", crate::toast::FAILED),
+                Err(e) => app.toast(&tr!("No screenshot"), &e, "alert", crate::toast::FAILED),
             }));
         });
     }
@@ -414,19 +415,19 @@ impl App {
     pub fn overlay_rows(&self, cfg: &crate::config::Config) -> Vec<(SId, SettingData)> {
         let row = |kind: i32, label: &str| SettingData { kind, label: label.into(), ..Default::default() };
         let desk = overlay::desktop();
-        let mut r = row(4, "In-game overlay");
+        let mut r = row(4, &tr!("In-game overlay"));
         (r.value, r.value_kind) = match self.ov_helper {
-            Helper::Ready => ("Ready".into(), 1),
-            Helper::Missing => ("Install the GNOME helper".into(), 3),
-            Helper::NeedsLogin => ("Log out and in to finish".into(), 3),
-            Helper::Steam => ("Steam's overlay is used".into(), 0),
-            Helper::Unsupported => (format!("Not on {}", desk.label()).into(), 0),
+            Helper::Ready => (tr!("Ready").into(), 1),
+            Helper::Missing => (tr!("Install the GNOME helper").into(), 3),
+            Helper::NeedsLogin => (tr!("Log out and in to finish").into(), 3),
+            Helper::Steam => (tr!("Steam's overlay is used").into(), 0),
+            Helper::Unsupported => (tr!("Not on {}", desk.label()).into(), 0),
         };
-        r.hint = "PS in a game: the panel over it · hold PS: Home · Share: a screenshot · keyboard: bind swarmplay --overlay to a key".into();
+        r.hint = tr!("PS in a game: the panel over it · hold PS: Home · Share: a screenshot · keyboard: bind swarmplay --overlay to a key").into();
         let mut rows = vec![(SId::OverlayHelper, r)];
-        let mut r = row(2, "Pause the game while the overlay is open");
+        let mut r = row(2, &tr!("Pause the game while the overlay is open"));
         r.on = cfg.overlay_pause;
-        r.hint = "The game stops under the panel (a few games' sound may stutter)".into();
+        r.hint = tr!("The game stops under the panel (a few games' sound may stutter)").into();
         rows.push((SId::OverlayPause, r));
         rows
     }
@@ -437,18 +438,18 @@ impl App {
                 Ok(()) => {
                     audio::play(Sound::Select);
                     self.ov_helper = Helper::NeedsLogin;
-                    self.note_setting(SId::OverlayHelper, "Installed · log out and in once, then press PS in a game", 1);
+                    self.note_setting(SId::OverlayHelper, &tr!("Installed · log out and in once, then press PS in a game"), 1);
                     self.refresh_settings();
                 }
-                Err(e) => self.note_setting(SId::OverlayHelper, &format!("Couldn't install it: {e}"), 2),
+                Err(e) => self.note_setting(SId::OverlayHelper, &tr!("Couldn't install it: {e}", e), 2),
             },
             Helper::NeedsLogin => match overlay::install_gnome_helper() {
-                Ok(()) => self.note_setting(SId::OverlayHelper, "GNOME loads it at the next login: log out and in once", 0),
-                Err(e) => self.note_setting(SId::OverlayHelper, &format!("Couldn't install it: {e}"), 2),
+                Ok(()) => self.note_setting(SId::OverlayHelper, &tr!("GNOME loads it at the next login: log out and in once"), 0),
+                Err(e) => self.note_setting(SId::OverlayHelper, &tr!("Couldn't install it: {e}", e), 2),
             },
-            Helper::Ready => self.note_setting(SId::OverlayHelper, "Ready: press PS while a game runs", 1),
-            Helper::Steam => self.note_setting(SId::OverlayHelper, "In Steam's Game Mode, the PS button opens Steam's overlay", 0),
-            Helper::Unsupported => self.note_setting(SId::OverlayHelper, &format!("{} has no way to show it over games: PS brings SwarmPlay up instead", overlay::desktop().label()), 0),
+            Helper::Ready => self.note_setting(SId::OverlayHelper, &tr!("Ready: press PS while a game runs"), 1),
+            Helper::Steam => self.note_setting(SId::OverlayHelper, &tr!("In Steam's Game Mode, the PS button opens Steam's overlay"), 0),
+            Helper::Unsupported => self.note_setting(SId::OverlayHelper, &tr!("{} has no way to show it over games: PS brings SwarmPlay up instead", overlay::desktop().label()), 0),
         }
     }
 }

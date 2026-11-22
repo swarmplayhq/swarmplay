@@ -10,6 +10,7 @@
 use serde::{Deserialize, Serialize};
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use tr::tr;
 
 /// Written into an installed PC game's folder; the Library finds PC games by it.
 pub const MANIFEST: &str = ".azrak-game.json";
@@ -54,13 +55,13 @@ impl Manifest {
 /// Make the first alternative what Play starts (the current one goes last): for when the launcher
 /// chose the wrong file. Returns the new manifest.
 pub fn rotate_launch(dir: &Path) -> Result<Manifest, String> {
-    let mut m = Manifest::read(dir).ok_or("This game's manifest is missing")?;
+    let mut m = Manifest::read(dir).ok_or_else(|| tr!("This game's manifest is missing"))?;
     if m.alternatives.is_empty() {
-        return Err("There's nothing else to start".into());
+        return Err(tr!("There's nothing else to start"));
     }
     let next = m.alternatives.remove(0);
     if !safe_relative(&next) || !dir.join(&next).is_file() {
-        return Err(format!("{next} isn't in the game's folder"));
+        return Err(tr!("{next} isn't in the game's folder", next));
     }
     m.alternatives.push(std::mem::replace(&mut m.launch, next));
     m.kind = match probe_file(&dir.join(&m.launch)) {

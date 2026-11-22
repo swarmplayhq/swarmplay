@@ -7,6 +7,7 @@ use crate::app::*;
 use crate::audio::{self, Sound};
 use crate::os::system;
 use crate::settings::SId;
+use tr::tr;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Power {
@@ -44,7 +45,7 @@ impl App {
     /// is saved: the card doesn't open while one runs.
     pub fn power_ask(&mut self, what: Power) {
         if !self.live.is_empty() {
-            return self.note_setting(power_row(what), "A game is running: close it first, so its progress is saved", 2);
+            return self.note_setting(power_row(what), &tr!("A game is running: close it first, so its progress is saved"), 2);
         }
         audio::play(Sound::Select);
         let next = self.sys.update.as_ref().and_then(|u| u.staged.clone()).unwrap_or_default();
@@ -97,7 +98,7 @@ impl App {
                 // held it up: give the screen back rather than leave it waiting forever.
                 Ok(()) => slint::Timer::single_shot(std::time::Duration::from_secs(30), move || with_app(move |app| {
                     if app.power.busy {
-                        app.power_failed(restart, "It didn't happen. Try again in a moment.");
+                        app.power_failed(restart, &tr!("It didn't happen. Try again in a moment."));
                     }
                 })),
             }));
@@ -109,7 +110,7 @@ impl App {
         if self.overlay == Overlay::Power {
             self.back();
         }
-        let what = if restart { "Couldn't restart" } else { "Couldn't shut down" };
+        let what = if restart { tr!("Couldn't restart") } else { tr!("Couldn't shut down") };
         // On the row that was pressed (Restart to update is a System row).
         let id = self.power.what.map(power_row).unwrap_or(if restart { SId::Restart } else { SId::ShutDown });
         self.note_setting(id, &format!("{what}: {why}"), 2);
@@ -119,16 +120,16 @@ impl App {
         let ui = self.ui();
         let p = &self.power;
         let (title, text, yes) = match (p.what, p.busy) {
-            (Some(Power::ShutDown), false) => ("Shut down now?".to_string(), "The PC turns off. Its power button turns it on again.".to_string(), "Shut down"),
-            (Some(Power::ShutDown), true) => ("Shutting down…".into(), "See you soon.".into(), ""),
-            (Some(Power::Update), false) => ("Restart and update?".into(),
-                format!("AzrakOS {} is downloaded. The PC restarts into it and comes back here.", p.next), "Restart and update"),
-            (_, false) => ("Restart now?".into(), "The PC restarts and comes back here.".into(), "Restart"),
-            (_, true) => ("Restarting…".into(), "The PC comes back here in a moment.".into(), ""),
+            (Some(Power::ShutDown), false) => (tr!("Shut down now?"), tr!("The PC turns off. Its power button turns it on again."), tr!("Shut down")),
+            (Some(Power::ShutDown), true) => (tr!("Shutting down…"), tr!("See you soon."), String::new()),
+            (Some(Power::Update), false) => (tr!("Restart and update?"),
+                tr!("AzrakOS {} is downloaded. The PC restarts into it and comes back here.", p.next), tr!("Restart and update")),
+            (_, false) => (tr!("Restart now?"), tr!("The PC restarts and comes back here."), tr!("Restart")),
+            (_, true) => (tr!("Restarting…"), tr!("The PC comes back here in a moment."), String::new()),
         };
         ui.set_power_title(title.into());
         ui.set_power_text(text.into());
-        ui.set_power_buttons(std::rc::Rc::new(slint::VecModel::from(vec![yes.into(), "Cancel".into()])).into());
+        ui.set_power_buttons(std::rc::Rc::new(slint::VecModel::from(vec![yes.into(), tr!("Cancel").into()])).into());
         ui.set_power_danger(p.what == Some(Power::ShutDown));
         ui.set_power_sel(p.sel as i32);
         ui.set_power_busy(p.busy);

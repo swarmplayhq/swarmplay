@@ -51,6 +51,16 @@ const OVER_GAME_GAIN: f32 = 0.7;
 
 /// The settings' levels: Off, Low, Medium, High.
 pub const LEVELS: [&str; 4] = ["Off", "Low", "Medium", "High"];
+
+/// A level (0 Off … 3 High; LEVELS' name), as Settings shows it.
+pub fn level_label(level: usize) -> String {
+    match LEVELS[level.min(LEVELS.len() - 1)] {
+        "Off" => tr::tr!("Off"),
+        "Low" => tr::tr!("Low"),
+        "Medium" => tr::tr!("Medium"),
+        _ => tr::tr!("High"),
+    }
+}
 const GAINS: [f32; 4] = [0.0, 0.5, 0.8, 1.0];
 
 pub fn set_enabled(on: bool) {
@@ -477,6 +487,11 @@ mod tests {
         }
         assert!(render(Sound::Move).len() < render(Sound::Select).len());
         assert!(render(Sound::Select).len() < render(Sound::Start).len());
+    }
+
+    #[test]
+    fn every_level_has_a_label() {
+        for (i, l) in LEVELS.iter().enumerate() { assert_eq!(level_label(i), *l); }
     }
 
     #[test]

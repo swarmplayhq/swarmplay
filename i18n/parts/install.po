@@ -1,0 +1,591 @@
+# Group "install": installer, archives, PKG, kyty/shad updates, versions.
+msgid "Inspecting"
+msgstr "Verificando"
+
+msgid "Extracting"
+msgstr "Extraindo"
+
+msgid "Validating"
+msgstr "Validando"
+
+msgid "Installed"
+msgstr "Instalado"
+
+msgid "Failed"
+msgstr "Falhou"
+
+msgid "Cancelled"
+msgstr "Cancelado"
+
+msgid "Interrupted; retry"
+msgstr "Interrompido; tente novamente"
+
+msgid "Another installation is active"
+msgstr "Outra instalação está em andamento"
+
+msgid "This download is already installed; existing games are never overwritten"
+msgstr "Este download já está instalado; jogos existentes nunca são substituídos"
+
+msgid "Installed, but could not persist record: {}"
+msgstr "Instalado, mas o registro não pôde ser salvo: {}"
+
+msgid "Installer worker panicked; retry"
+msgstr "O instalador parou de forma inesperada; tente novamente"
+
+msgid "Installer queue unavailable: {e}"
+msgstr "Fila do instalador indisponível: {e}"
+
+msgid "This game wasn't installed by SwarmPlay"
+msgstr "Este jogo não foi instalado pelo SwarmPlay"
+
+msgid "Its install folder wasn't recorded"
+msgstr "A pasta de instalação dele não foi registrada"
+
+msgid "Refusing to delete {}"
+msgstr "Exclusão de {} recusada"
+
+msgid "Delete {}: {}"
+msgstr "Excluir {}: {}"
+
+msgid "Installation is not active (publication may have completed)"
+msgstr "A instalação não está em andamento (ela pode ter terminado)"
+
+msgid "Cancelled; source files retained"
+msgstr "Cancelado; os arquivos baixados foram mantidos"
+
+msgid "Symlinks, hardlinks and special source files are forbidden"
+msgstr "Links simbólicos, hardlinks e arquivos especiais não são permitidos"
+
+msgid "File exceeds size limit ({max} bytes)"
+msgstr "O arquivo passa do limite de tamanho ({max} bytes)"
+
+msgid "Symlink {path} points outside the game"
+msgstr "O link simbólico {path} aponta para fora do jogo"
+
+msgid "Absolute or drive-qualified archive path is forbidden"
+msgstr "Caminhos absolutos ou com unidade no arquivo compactado não são permitidos"
+
+msgid "Archive path traversal is forbidden"
+msgstr "Caminhos com \"..\" no arquivo compactado não são permitidos"
+
+msgid "Duplicate archive entry: {}"
+msgstr "Item duplicado no arquivo compactado: {}"
+
+msgid "Open owned torrent folder"
+msgstr "Abrir a pasta do torrent"
+
+msgid "Torrent folder belongs to another user"
+msgstr "A pasta do torrent pertence a outro usuário"
+
+msgid "Source must be a launcher-owned torrent folder"
+msgstr "A origem precisa ser uma pasta de torrent do SwarmPlay"
+
+msgid "Torrent ownership marker does not match installation key"
+msgstr "A marca da pasta do torrent não corresponde a esta instalação"
+
+msgid "Ambiguous source filename (backslash separators are archive-only)"
+msgstr "Nome de arquivo ambíguo (barras invertidas só valem dentro de arquivos compactados)"
+
+msgid "Source directory changed during inspection"
+msgstr "A pasta de origem mudou durante a verificação"
+
+msgid "Symlinks, hardlinks and special source entries are forbidden: {path}"
+msgstr "Links simbólicos, hardlinks e arquivos especiais não são permitidos: {path}"
+
+msgid "Source changed during inspection"
+msgstr "A origem mudou durante a verificação"
+
+msgid "Source changed after inspection: {path}; wait until download is complete"
+msgstr "A origem mudou depois da verificação: {path}; espere o download terminar"
+
+msgid "Invalid RAR volume number"
+msgstr "Número de volume RAR inválido"
+
+msgid "Multiple independent archives found; choose a single release folder"
+msgstr "Há vários arquivos compactados independentes; escolha uma única pasta de versão"
+
+msgid "Missing multipart volume {}; all volumes must be complete"
+msgstr "Falta o volume {}; todos os volumes precisam estar completos"
+
+msgid "System libarchive missing; install your distribution's libarchive runtime (libarchive13 on Debian/Ubuntu). No external extraction fallback is used"
+msgstr "A libarchive do sistema não foi encontrada; instale a libarchive da sua distribuição (libarchive13 no Debian/Ubuntu). Nenhuma outra ferramenta de extração é usada"
+
+msgid "unsupported format or missing volume"
+msgstr "formato sem suporte ou volume ausente"
+
+msgid "{action}: {error} [{version}]; verify all volumes, format support and that the archive is not password-protected"
+msgstr "{action}: {error} [{version}]; confira se todos os volumes estão presentes, se o formato tem suporte e se o arquivo não tem senha"
+
+msgid "The archive inside {} starts {} KiB in; only the first {} KiB can be searched"
+msgstr "O arquivo compactado dentro de {} começa em {} KiB; só os primeiros {} KiB podem ser procurados"
+
+msgid "Open archive (unsupported format, missing volume, or password protection)"
+msgstr "Abrir o arquivo compactado (formato sem suporte, volume ausente ou senha)"
+
+msgid "Password-protected archives are unsupported"
+msgstr "Arquivos compactados com senha não têm suporte"
+
+msgid "Archive entry {} is a {what}, which is unsupported"
+msgstr "O item {} do arquivo compactado é um(a) {what}, que não tem suporte"
+
+msgid "Read archive header"
+msgstr "Ler o cabeçalho do arquivo compactado"
+
+msgid "Archive hardlinks are unsupported"
+msgstr "Hardlinks em arquivos compactados não têm suporte"
+
+msgid "Archive symlinks are forbidden"
+msgstr "Links simbólicos em arquivos compactados não são permitidos"
+
+msgid "Symlink without a target: {path}"
+msgstr "Link simbólico sem destino: {path}"
+
+msgid "Archive has unknown uncompressed size; cannot safely install"
+msgstr "O tamanho descompactado é desconhecido; não dá para instalar com segurança"
+
+msgid "Extract archive data (corruption, password, or missing volume)"
+msgstr "Extrair os dados (arquivo danificado, com senha ou volume ausente)"
+
+msgid "Inspect archive data (missing volume or corrupt archive)"
+msgstr "Verificar os dados (volume ausente ou arquivo danificado)"
+
+msgid "Inspect archive data (corruption, password, or missing volume)"
+msgstr "Verificar os dados (arquivo danificado, com senha ou volume ausente)"
+
+msgid "Archive is empty"
+msgstr "O arquivo compactado está vazio"
+
+msgid "Atomic publication refused (existing destination is never overwritten): {}"
+msgstr "Instalação final recusada (um destino existente nunca é substituído): {}"
+
+msgid "Cannot check destination free space: {}"
+msgstr "Não foi possível verificar o espaço livre no destino: {}"
+
+msgid "Not enough destination disk space: need {required} bytes including staging overhead; available {free}"
+msgstr "Espaço insuficiente no destino: são necessários {required} bytes, incluindo a área temporária; disponíveis {free}"
+
+msgid "Source changed during copy"
+msgstr "A origem mudou durante a cópia"
+
+msgid "Archive truncated since inspection"
+msgstr "O arquivo compactado ficou incompleto depois da verificação"
+
+msgid "Archive headers changed since inspection"
+msgstr "O arquivo compactado mudou depois da verificação"
+
+msgid "Archive entry truncated: {}"
+msgstr "Item incompleto no arquivo compactado: {}"
+
+msgid "Archive added entries after inspection"
+msgstr "O arquivo compactado ganhou itens depois da verificação"
+
+msgid "This download has {} disk images; install supports one game image at a time"
+msgstr "Este download tem {} imagens de disco; a instalação aceita uma imagem de jogo por vez"
+
+msgid "Open the exFAT image inside the PFS image"
+msgstr "Abrir a imagem exFAT dentro da imagem PFS"
+
+msgid "Open exFAT disk image"
+msgstr "Abrir a imagem de disco exFAT"
+
+msgid "Unsafe path in disk image: {}"
+msgstr "Caminho inseguro na imagem de disco: {}"
+
+msgid "Disk image is empty"
+msgstr "A imagem de disco está vazia"
+
+msgid "Disk image file truncated: {}"
+msgstr "Arquivo incompleto na imagem de disco: {}"
+
+msgid "Invalid sce_sys/param.sfo"
+msgstr "sce_sys/param.sfo inválido"
+
+msgid "param.sfo is missing TITLE_ID"
+msgstr "Falta o TITLE_ID no param.sfo"
+
+msgid "Invalid sce_sys/param.json JSON"
+msgstr "JSON inválido em sce_sys/param.json"
+
+msgid "param.json is missing titleId"
+msgstr "Falta o titleId no param.json"
+
+msgid "Invalid title ID in the game's metadata"
+msgstr "ID do título inválido nos dados do jogo"
+
+msgid "Missing eboot.bin; an update/PKG is not a complete extracted game"
+msgstr "Falta o eboot.bin; uma atualização ou PKG não é um jogo extraído completo"
+
+msgid "eboot.bin is empty"
+msgstr "O eboot.bin está vazio"
+
+msgid "Multiple valid game roots found; install one complete game at a time"
+msgstr "Há mais de um jogo aqui; instale um jogo completo por vez"
+
+msgid "Unsupported PKG package; provide an already extracted game with sce_sys/param.json and eboot.bin"
+msgstr "Pacote PKG sem suporte; use um jogo já extraído, com sce_sys/param.json e eboot.bin"
+
+msgid "No valid extracted game found; require bounded sce_sys/param.json (PS5) or param.sfo (PS4) with a title ID and nonempty eboot.bin. {}"
+msgstr "Nenhum jogo extraído válido foi encontrado; é preciso um sce_sys/param.json (PS5) ou param.sfo (PS4) com ID do título e um eboot.bin não vazio. {}"
+
+msgid "Title ID mismatch: extracted {tid}, expected {}"
+msgstr "O ID do título não confere: extraído {tid}, esperado {}"
+
+msgid "This download has both an archive and a disk image; choose a single release folder"
+msgstr "Este download tem um arquivo compactado e uma imagem de disco; escolha uma única pasta de versão"
+
+msgid "Open explicit installation destination"
+msgstr "Abrir o destino da instalação"
+
+msgid "Source and destination trees must be separate"
+msgstr "A origem e o destino precisam ser pastas separadas"
+
+msgid "Disk image changed while installing"
+msgstr "A imagem de disco mudou durante a instalação"
+
+msgid "Nothing in this release can start the game: no start script, Linux program, AppImage or Windows .exe was found"
+msgstr "Nada nesta versão inicia o jogo: não há script de início, programa Linux, AppImage nem .exe do Windows"
+
+msgid "Game folder is nested too deeply"
+msgstr "A pasta do jogo tem subpastas demais"
+
+msgid "Too many files"
+msgstr "Arquivos demais"
+
+msgid "Could not get the PKG extractor: {e}"
+msgstr "Não foi possível obter o extrator de PKG: {e}"
+
+msgid "This download has no game PKG, only add-ons; install the game itself first"
+msgstr "Este download não tem o PKG do jogo, só complementos; instale o jogo primeiro"
+
+msgid "This download has no game PKG, only an update; install the game itself first"
+msgstr "Este download não tem o PKG do jogo, só uma atualização; instale o jogo primeiro"
+
+msgid "This download has {} game PKGs; install one game at a time"
+msgstr "Este download tem {} PKGs de jogo; instale um jogo por vez"
+
+msgid "Create shadPS4 add-on folder"
+msgstr "Criar a pasta de complementos do shadPS4"
+
+msgid "Open shadPS4 add-on folder"
+msgstr "Abrir a pasta de complementos do shadPS4"
+
+msgid "PKG changed while installing"
+msgstr "O PKG mudou durante a instalação"
+
+msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS4 PKG packages are unpacked for shadPS4, with their update and DLC. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
+msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc) e arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema; arquivos com senha não têm suporte). Pacotes PKG de PS4 são extraídos para o shadPS4, com a atualização e os DLCs. A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."
+
+msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS5 PKG packages can't be installed: choose a release of this game that isn't a PKG. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
+msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc) e arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema; arquivos com senha não têm suporte). Pacotes PKG de PS5 não podem ser instalados: escolha uma versão deste jogo que não seja um PKG. A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."
+
+msgid "Folders, RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive), GOG Linux installers (.sh) and AppImages. Installing unpacks the game and finds how to start it; nothing in it runs until you press Play. Unlike console games, which run inside an emulator, PC games run with your user's access to your files: only install releases you trust."
+msgstr "Pastas, arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema), instaladores Linux da GOG (.sh) e AppImages. A instalação extrai o jogo e descobre como iniciá-lo; nada nele é executado até você pressionar Jogar. Diferente dos jogos de console, que rodam dentro de um emulador, os jogos de PC rodam com o acesso do seu usuário aos seus arquivos: só instale versões em que você confia."
+
+msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images, RAR, ZIP, 7z or TAR archives, and PS4 PKG packages (not PS5 PKG). Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
+msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc), arquivos RAR, ZIP, 7z ou TAR e pacotes PKG de PS4 (não PKG de PS5). A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."
+
+msgid "The download isn't finished"
+msgstr "O download não terminou"
+
+msgid "Waiting to install: it starts once the game installing now is done"
+msgstr "Aguardando para instalar: começa quando o jogo que está sendo instalado terminar"
+
+msgid "Couldn't install: {}"
+msgstr "Não foi possível instalar: {}"
+
+msgid "Ready to play"
+msgstr "Pronto para jogar"
+
+msgid "Couldn't install"
+msgstr "Não foi possível instalar"
+
+msgid "it's a PS5 PKG package; PS5 games install from extracted folders, archives and exFAT or PFS (.ffpfsc) images"
+msgstr "é um pacote PKG de PS5; jogos de PS5 são instalados a partir de pastas extraídas, arquivos compactados e imagens exFAT ou PFS (.ffpfsc)"
+
+msgid "it's {kind}, which SwarmPlay doesn't install"
+msgstr "é {kind}, que o SwarmPlay não instala"
+
+msgid "it's a disc image, which SwarmPlay doesn't mount"
+msgstr "é uma imagem de disco, que o SwarmPlay não monta"
+
+msgid "it's a Java .jar with nothing that starts it"
+msgstr "é um .jar do Java sem nada que o inicie"
+
+msgid "it's a LÖVE game file without the LÖVE runtime"
+msgstr "é um arquivo de jogo LÖVE sem o LÖVE para rodá-lo"
+
+msgid "it holds only a Windows installer"
+msgstr "tem só um instalador do Windows"
+
+msgid "nothing in it starts a game"
+msgstr "nada nele inicia um jogo"
+
+msgid "a Debian package (.deb)"
+msgstr "um pacote Debian (.deb)"
+
+msgid "an RPM package"
+msgstr "um pacote RPM"
+
+msgid "a Flatpak bundle"
+msgstr "um pacote Flatpak"
+
+msgid "a Snap package"
+msgstr "um pacote Snap"
+
+msgid "an Arch Linux package"
+msgstr "um pacote do Arch Linux"
+
+msgid "a CrossOver bottle (.cxarchive)"
+msgstr "uma garrafa do CrossOver (.cxarchive)"
+
+msgid "a PlayOnLinux package (.polApp)"
+msgstr "um pacote do PlayOnLinux (.polApp)"
+
+msgid "the PKG extractor does not run on this system"
+msgstr "o extrator de PKG não roda neste sistema"
+
+msgid "could not run the PKG extractor: {e}"
+msgstr "não foi possível executar o extrator de PKG: {e}"
+
+msgid "not a PS4 PKG package"
+msgstr "não é um pacote PKG de PS4"
+
+msgid "the PKG extractor ran without its write guard, so its files can't be trusted; nothing was installed"
+msgstr "o extrator de PKG rodou sem a proteção de escrita, então os arquivos dele não são confiáveis; nada foi instalado"
+
+msgid "the PKG extractor stopped before finishing ({status})"
+msgstr "o extrator de PKG parou antes de terminar ({status})"
+
+msgid "the PKG extractor stopped after {done} of {files} files"
+msgstr "o extrator de PKG parou depois de {done} de {files} arquivos"
+
+msgid "the PKG extractor wrote no files"
+msgstr "o extrator de PKG não gravou nenhum arquivo"
+
+msgid "Not a PFS image"
+msgstr "Não é uma imagem PFS"
+
+msgid "This PFS image is encrypted; only decrypted images can be installed"
+msgstr "Esta imagem PFS está criptografada; só imagens descriptografadas podem ser instaladas"
+
+msgid "Unsupported PFS image (signed or 64-bit inodes)"
+msgstr "Imagem PFS sem suporte (assinada ou com inodes de 64 bits)"
+
+msgid "The PFS image is shorter than its header says; wait until the download is complete"
+msgstr "A imagem PFS é menor do que o cabeçalho indica; espere o download terminar"
+
+msgid "Unsupported PFS image (fragmented file)"
+msgstr "Imagem PFS sem suporte (arquivo fragmentado)"
+
+msgid "Unsupported PFS image: only one holding a single exFAT game image can be installed"
+msgstr "Imagem PFS sem suporte: só uma que contenha uma única imagem de jogo exFAT pode ser instalada"
+
+msgid "Missing RAR volume {}"
+msgstr "Falta o volume RAR {}"
+
+msgid "RAR needs a {} GiB dictionary; more memory than an install may take"
+msgstr "O RAR precisa de um dicionário de {} GiB; mais memória do que uma instalação pode usar"
+
+msgid "This build of the launcher can't read RAR archives ({e}): its C++ compiler left unrar's start-up code out. Rebuild it with the system compiler (CXX=c++)"
+msgstr "Esta compilação do SwarmPlay não lê arquivos RAR ({e}): o compilador C++ deixou de fora o código de início do unrar. Compile de novo com o compilador do sistema (CXX=c++)"
+
+msgid "Open RAR archive"
+msgstr "Abrir o arquivo RAR"
+
+msgid "not enough memory"
+msgstr "memória insuficiente"
+
+msgid "damaged data (checksum mismatch)"
+msgstr "dados danificados (soma de verificação não confere)"
+
+msgid "not a RAR archive, or a damaged one"
+msgstr "não é um arquivo RAR, ou está danificado"
+
+msgid "a volume is missing or can't be opened"
+msgstr "um volume está ausente ou não pode ser aberto"
+
+msgid "read error"
+msgstr "erro de leitura"
+
+msgid "password-protected archives are unsupported"
+msgstr "arquivos compactados com senha não têm suporte"
+
+msgid "its dictionary is larger than an install may use"
+msgstr "o dicionário dele é maior do que uma instalação pode usar"
+
+msgid "unknown error"
+msgstr "erro desconhecido"
+
+msgid "Read RAR header"
+msgstr "Ler o cabeçalho do RAR"
+
+msgid "Read RAR data"
+msgstr "Ler os dados do RAR"
+
+msgid "Not an exFAT image"
+msgstr "Não é uma imagem exFAT"
+
+msgid "The exFAT image is shorter than its header says; wait until the download is complete"
+msgstr "A imagem exFAT é menor do que o cabeçalho indica; espere o download terminar"
+
+msgid "exFAT folder entry checksum mismatch; the image is damaged"
+msgstr "A soma de verificação de uma pasta exFAT não confere; a imagem está danificada"
+
+msgid "Native Linux game"
+msgstr "Jogo nativo para Linux"
+
+msgid "Needs Proton or Wine"
+msgstr "Precisa do Proton ou do Wine"
+
+msgid "Doesn't run with Wine yet"
+msgstr "Ainda não roda com o Wine"
+
+msgid "Runs with Wine · {}"
+msgstr "Roda com o Wine · {}"
+
+msgid "Runs with Wine, included"
+msgstr "Roda com o Wine, incluído"
+
+msgid "Runs with {runner}"
+msgstr "Roda com {runner}"
+
+msgid "ON LINUX"
+msgstr "NO LINUX"
+
+msgid "Native game"
+msgstr "Jogo nativo"
+
+msgid "WINDOWS GAME"
+msgstr "JOGO DE WINDOWS"
+
+msgid "PROTONDB · WINE"
+msgstr "PROTONDB · WINE"
+
+msgid "Doesn't run yet"
+msgstr "Ainda não roda"
+
+msgid "PROTONDB · RUNS WITH WINE"
+msgstr "PROTONDB · RODA COM O WINE"
+
+msgid "RUNS WITH"
+msgstr "RODA COM"
+
+msgid "Wine, included"
+msgstr "Wine, incluído"
+
+msgid "WINDOWS GAME · RUNS WITH"
+msgstr "JOGO DE WINDOWS · RODA COM"
+
+msgid "Availability: {}"
+msgstr "Disponibilidade: {}"
+
+msgid "no releases found"
+msgstr "nenhuma versão encontrada"
+
+msgid "download failed: {}"
+msgstr "o download falhou: {}"
+
+msgid "download is corrupted (checksum mismatch)"
+msgstr "o download está corrompido (soma de verificação não confere)"
+
+msgid "Downloading KytyPS5 {} · {}%"
+msgstr "Fazendo download do KytyPS5 {} · {}%"
+
+msgid "Installing KytyPS5…"
+msgstr "Instalando o KytyPS5…"
+
+msgid "could not extract the archive (is `tar` installed?)"
+msgstr "não foi possível extrair o arquivo (o `tar` está instalado?)"
+
+msgid "the downloaded emulator does not run on this system"
+msgstr "o emulador baixado não roda neste sistema"
+
+msgid "no previous version to roll back to"
+msgstr "não há versão anterior para voltar"
+
+msgid "Update check failed: {e}"
+msgstr "Falha ao procurar atualizações: {e}"
+
+msgid "KytyPS5 emulator found"
+msgstr "Emulador KytyPS5 encontrado"
+
+msgid "Could not download KytyPS5 · retry from Settings"
+msgstr "Não foi possível baixar o KytyPS5 · tente de novo em Configurações"
+
+msgid "KytyPS5 {} · up to date"
+msgstr "KytyPS5 {} · atualizado"
+
+msgid "Official build {} is out · switch to get it, and updates from then on"
+msgstr "A versão oficial {} saiu · mude para recebê-la, e as atualizações a partir daí"
+
+msgid "Up to date with the latest official build, {}"
+msgstr "Atualizado com a versão oficial mais recente, {}"
+
+msgid "Installs when you finish playing"
+msgstr "Instala quando você terminar de jogar"
+
+msgid "KytyPS5 update will install after your game"
+msgstr "A atualização do KytyPS5 será instalada depois do seu jogo"
+
+msgid "Starting download…"
+msgstr "Iniciando o download…"
+
+msgid "KytyPS5 updated"
+msgstr "KytyPS5 atualizado"
+
+msgid "KytyPS5 {} ready"
+msgstr "KytyPS5 {} pronto"
+
+msgid "Switched to official builds · your saves were copied over"
+msgstr "Mudou para as versões oficiais · seus dados salvos foram copiados"
+
+msgid "Switched to official builds"
+msgstr "Mudou para as versões oficiais"
+
+msgid "Update failed: {e}"
+msgstr "Falha na atualização: {e}"
+
+msgid "Rolled back to {}"
+msgstr "Voltou para {}"
+
+msgid "Couldn't roll back: {e}"
+msgstr "Não foi possível voltar: {e}"
+
+msgid "Couldn't reach GitHub: {e}"
+msgstr "Não foi possível acessar o GitHub: {e}"
+
+msgid "damaged zip"
+msgstr "zip danificado"
+
+msgid "not a zip file"
+msgstr "não é um arquivo zip"
+
+msgid "unsupported zip compression"
+msgstr "compressão de zip sem suporte"
+
+msgid "download is corrupted (zip checksum mismatch)"
+msgstr "o download está corrompido (soma de verificação do zip não confere)"
+
+msgid "no {suffix} in the download"
+msgstr "não há {suffix} no download"
+
+msgid "Downloading shadPS4 {} · {}%"
+msgstr "Fazendo download do shadPS4 {} · {}%"
+
+msgid "Installing shadPS4…"
+msgstr "Instalando o shadPS4…"
+
+msgid "the downloaded shadPS4 does not run on this system"
+msgstr "o shadPS4 baixado não roda neste sistema"
+
+msgid "Getting PS4 support first (once, about 35 MB), then it starts"
+msgstr "Obtendo o suporte a PS4 primeiro (uma vez, cerca de 35 MB); depois o jogo inicia"
+
+msgid "Couldn't get PS4 support: {e}. Check your connection and try again."
+msgstr "Não foi possível obter o suporte a PS4: {e}. Verifique sua conexão e tente novamente."
+
+msgid "shadPS4 updated"
+msgstr "shadPS4 atualizado"
+
+msgid "Couldn't install PS4 support: {e}"
+msgstr "Não foi possível instalar o suporte a PS4: {e}"

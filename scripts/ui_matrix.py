@@ -6,8 +6,10 @@ with a throwaway home folder seeded from your cache (no network wait, nothing pe
 
     scripts/ui_matrix.py                      # all sizes
     scripts/ui_matrix.py 1280x720 3440x1440   # just these
+    scripts/ui_matrix.py --lang pt_BR 1920x1080   # in another language (src/i18n.rs)
 
-Writes dist/ui-matrix/<size>/<screen>.png and a contact sheet per size.
+Writes dist/ui-matrix/<size>/<screen>.png and a contact sheet per size; another language's go to
+dist/ui-matrix/<lang>/.
 Needs: Xvfb, xfwm4, xdotool, ImageMagick.
 """
 
@@ -57,6 +59,9 @@ STEPS = [
     ("09f4-storage-back", ["Escape", "sleep:0.4", "Escape", "sleep:0.8"]),              # Up, closed: Storage again
     ("09g-settings-notifications", ["Escape", "sleep:0.5", "Down", "Down", "Down", "Return", "sleep:0.8"]),
     ("10-settings-bottom", ["Escape", "sleep:0.6"] + ["Down"] * 12 + ["sleep:0.8"]), # Quit, at the end
+    # The language switched live (Launcher → Language, its first row), then back.
+    ("10b-language-switched", ["Up"] * 12 + ["Down"] * 8 + ["Return", "sleep:0.6", "Right", "sleep:1"]),
+    ("10c-language-back", ["Left", "sleep:0.8", "Escape", "sleep:0.6"]),
     ("11-toasts", ["Escape", "sleep:0.5", "Home", "Down", "Right", "Right", "Right", "Return", "sleep:0.4",
                    "Up", "Right", "Right", "Down", "Return", "sleep:0.8"]),
     ("12-power", ["Escape", "Escape", "F1", "sleep:0.7", "Down", "Right", "Right", "Right", "Return", "sleep:0.6"]),  # Control Center → Power
@@ -75,7 +80,7 @@ def run(cmd, **kw):
     return subprocess.run(cmd, **kw)
 
 
-def shoot(size: str, n: int, out: Path, binary: Path, game: Path | None):
+def shoot(size: str, n: int, out: Path, binary: Path, game: Path | None, lang: str = ""):
     w, h = size.split("x")
     disp = f":{90 + n}"
     work = Path(tempfile.mkdtemp(prefix="ps5-ui-"))
@@ -92,7 +97,8 @@ def shoot(size: str, n: int, out: Path, binary: Path, game: Path | None):
     fake.write_text(f"#!/bin/sh\n[ -e \"$HOME/.play\" ] && exec display -backdrop -background '#0c0907' -title 'Stand-in game' {picture}\nexit 0\n")
     fake.chmod(0o755)
     (home / ".config/azrak/config.json").write_text(json.dumps(
-        {"game_dirs": ["~/Games"], "sounds": False, **NO_UPDATES, "emulator": str(fake), "seed_after_download": False}))
+        {"game_dirs": ["~/Games"], "sounds": False, **NO_UPDATES, "emulator": str(fake), "seed_after_download": False,
+         "language": lang or "en"}))
     seed_downloads(home)
     # No browsers or players may pop up; pretend to be an old version so the update notification shows.
     stubs = work / "stubs"
@@ -177,14 +183,24 @@ exit 0
 
 
 def main():
-    sizes = sys.argv[1:] or SIZES
+    args = sys.argv[1:]
+    lang = ""
+    if "--lang" in args:
+        i = args.index("--lang")
+        lang = args[i + 1]
+        del args[i:i + 2]
+    sizes = args or SIZES
     # scripts/check.sh shoots the quick build; by itself, the release one.
     binary = Path(os.environ.get("SWARMPLAY_BIN", ROOT / "target/release/swarmplay")).resolve()
     out = ROOT / "dist/ui-matrix"
+    if lang and lang != "en":
+        out = out / lang
     out.mkdir(parents=True, exist_ok=True)
     game = Path(os.environ["DEMO_GAME"]) if os.environ.get("DEMO_GAME") else None
+    # Another language's run gets displays of its own (check.sh runs both side by side).
+    base = 20 if lang and lang != "en" else 0
     for i, s in enumerate(sizes):
-        shoot(s, i, out, binary, game)
+        shoot(s, base + i, out, binary, game, lang)
 
 
 if __name__ == "__main__":

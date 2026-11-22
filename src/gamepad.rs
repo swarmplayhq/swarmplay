@@ -162,8 +162,8 @@ pub fn connected() -> Vec<String> {
 /// "DualSense Wireless Controller connected" or "No controller connected".
 pub fn status() -> String {
     match connected().first() {
-        Some(name) => format!("{name} connected"),
-        None => "No controller connected".into(),
+        Some(name) => tr::tr!("{name} connected", name),
+        None => tr::tr!("No controller connected"),
     }
 }
 
