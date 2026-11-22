@@ -64,6 +64,8 @@ pub const Z_AVATAR: i32 = 33;
 pub const Z_PROFILES: i32 = 34;
 /// The installed games' list (src/games.rs).
 pub const Z_GAMES: i32 = 35;
+/// The Game Library's covers (src/game_library.rs).
+pub const Z_LIBRARY: i32 = 36;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Overlay {
@@ -99,6 +101,8 @@ pub enum Overlay {
     Avatar = 20,
     /// Installed games: delete, move to another drive (src/games.rs).
     Games = 21,
+    /// Your games, apart from the catalog (src/game_library.rs).
+    GameLibrary = 22,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -483,6 +487,8 @@ pub struct App {
     pub pick: Option<crate::folder_pick::Pick>,
     /// Installed games (src/games.rs): the list, what's picked, a move under way.
     pub games_view: crate::games::GamesView,
+    /// The Game Library (src/game_library.rs): its tab and covers.
+    pub lib_view: crate::game_library::LibView,
     /// The first-run setup, while it's open (src/onboard.rs).
     pub ob: Option<crate::onboard::Onboard>,
     /// The grid of avatars, while it's open (src/avatar.rs).
@@ -839,6 +845,7 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         notes: crate::toast::Store::load(),
         pick: None,
         games_view: Default::default(),
+        lib_view: Default::default(),
         ob: None,
         avatar_pick: None,
         remove_armed: None,
@@ -1328,9 +1335,10 @@ impl App {
             seen.insert(key)
         }).map(RowItem::Local).collect();
         // Games tab = your installed games only; the whole catalog is the Library tab. With
-        // games, the Welcome comes first, as on a console; Home opens on the last game played.
+        // games, the Welcome comes first, as on a console, and the Game Library last (every game
+        // of yours, src/game_library.rs); Home opens on the last game played.
         let first = prev.is_none();
-        self.row = if row.is_empty() { row } else { std::iter::once(RowItem::Welcome).chain(row).collect() };
+        self.row = if row.is_empty() { row } else { std::iter::once(RowItem::Welcome).chain(row).chain(std::iter::once(RowItem::All)).collect() };
         self.sel = prev.and_then(|p| self.row.iter().position(|r| *r == p))
             .unwrap_or(if first && self.row.len() > 1 { 1 } else { self.sel.min(self.row.len().saturating_sub(1)) });
     }
@@ -2103,6 +2111,7 @@ impl App {
         self.settle_pending_uninstall();
         self.storage_watch();
         self.games_tick();
+        self.lib_tick();
         self.push_installs();
         self.auto_install();
         self.push_downloads();
@@ -2321,9 +2330,9 @@ impl App {
             Act::Trailer
         } else if text == "/" {
             Act::Search
-        } else if self.overlay == Overlay::Downloads && (text == "q" || text == "Q") {
+        } else if matches!(self.overlay, Overlay::Downloads | Overlay::GameLibrary) && (text == "q" || text == "Q") {
             Act::TabPrev
-        } else if self.overlay == Overlay::Downloads && (text == "e" || text == "E") {
+        } else if matches!(self.overlay, Overlay::Downloads | Overlay::GameLibrary) && (text == "e" || text == "E") {
             Act::TabNext
         } else if (text == "s" || text == "S") && self.overlay == Overlay::None && self.view == 0 {
             Act::Settings
@@ -2406,6 +2415,9 @@ impl App {
         }
         if zone == Z_GAMES && self.overlay == Overlay::Games {
             return self.click_games(idx);
+        }
+        if zone == Z_LIBRARY && self.overlay == Overlay::GameLibrary {
+            return self.click_game_library(idx);
         }
         if zone == Z_ONBOARD && self.overlay == Overlay::Onboard {
             return self.click_onboard(idx);
@@ -2550,6 +2562,7 @@ impl App {
             Overlay::Notifications => self.act_notifications(a),
             Overlay::Folders => self.act_folder_pick(a),
             Overlay::Games => self.act_games(a),
+            Overlay::GameLibrary => self.act_game_library(a),
             Overlay::Onboard => self.act_onboard(a),
             Overlay::Avatar => self.act_avatar_pick(a),
             Overlay::Settings if self.zone == Z_SETTINGS_NAV => self.act_settings_nav(a),
@@ -3004,7 +3017,7 @@ impl App {
     /// a moment, then closes. Everything else closes at once. (Code that needs the page gone right
     /// away calls `back`.)
     pub fn back_soft(&mut self) {
-        const SOFT: [Overlay; 10] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar, Overlay::Games];
+        const SOFT: [Overlay; 11] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar, Overlay::Games, Overlay::GameLibrary];
         let ov = self.overlay;
         if !SOFT.contains(&ov) || (ov == Overlay::Downloads && self.ui().get_download_consent()) {
             return self.back();
@@ -3066,6 +3079,7 @@ impl App {
             self.overlay = ov;
             self.ui().set_overlay(ov as i32);
             self.ui().set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
+            self.ui().set_lib_open(ov == Overlay::GameLibrary || self.stack.iter().any(|s| s.0 == Overlay::GameLibrary));
             self.set_focus(zone, idx);
             if ov == Overlay::None {
                 self.ui().set_hub_open(false);
@@ -3109,6 +3123,7 @@ impl App {
         ui.set_overlay(ov as i32);
         ui.set_hub_open(self.hub.is_some() && (ov == Overlay::Hub || self.stack.iter().any(|s| s.0 == Overlay::Hub)));
         ui.set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
+        ui.set_lib_open(ov == Overlay::GameLibrary || self.stack.iter().any(|s| s.0 == Overlay::GameLibrary));
         self.set_focus(zone, idx);
     }
 
@@ -3189,7 +3204,8 @@ impl App {
 
     fn activate_row(&mut self) {
         match self.row.get(self.sel).copied() {
-            Some(RowItem::All) => self.switch_view(1, true),
+            // Your games (the catalog is the Library tab).
+            Some(RowItem::All) => self.open_game_library(),
             Some(RowItem::Welcome) => self.move_focus(Z_WELCOME, 0),
             Some(RowItem::Local(l)) => {
                 if self.session_for_local(l).is_some() {
@@ -3346,6 +3362,7 @@ impl App {
             // Straight to the row that adds it, not the top of Settings.
             "add_folder" => self.open_setting(crate::settings::SId::GameDirAdd),
             "library" => self.switch_view(1, true),
+            "game_library" => self.open_game_library(),
             "rate" => {
                 if let Some(l) = t.local {
                     self.open_rating(l, false);
@@ -3779,6 +3796,7 @@ impl App {
             self.overlay = ov;
             self.ui().set_overlay(ov as i32);
             self.ui().set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
+            self.ui().set_lib_open(ov == Overlay::GameLibrary || self.stack.iter().any(|s| s.0 == Overlay::GameLibrary));
             self.set_focus(z, i);
         }
     }

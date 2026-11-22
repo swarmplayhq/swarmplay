@@ -1,4 +1,4 @@
-import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData, GameRowData } from "theme.slint";
+import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData, GameRowData, LibTile } from "theme.slint";
 import { FocusRing, Chip, Btn, Kicker, Badge, Switch, KeyCap, KeyboardKey, BackButton, Shimmer, Cover, Particles, AvatarCircle } from "widgets.slint";
 import { DownloadsPage, DownloadConsent, DownloadPanel, Capsule } from "downloads.slint";
 import { LibraryFilter, LibrarySortPicker } from "library.slint";
@@ -405,6 +405,11 @@ export component AppWindow inherits Window {
     in property <bool> games-picking;
     // Open, perhaps under its Options menu or the Delete card (which then show over it).
     in property <bool> games-open;
+    // The Game Library (src/game_library.rs): open (perhaps under its Options menu), its tab, covers.
+    in property <bool> lib-open;
+    in property <int> lib-tab;
+    in property <[string]> lib-tabs;
+    in property <[LibTile]> lib-tiles;
     in property <[GameRowData]> games-rows;
     callback toast-click(int);
 
@@ -2444,6 +2449,127 @@ export component AppWindow inherits Window {
                         }
                         TouchArea { mouse-cursor: pointer; clicked => { root.viewer-step(i - root.viewer-index); } }
                     }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------ GAME LIBRARY
+        // Before the installed games' list, the Options menu and the Power card, which open over it.
+        if root.lib-open: lib := Rectangle {
+            property <bool> entered: false;
+            init => { entered = true; }
+            property <bool> on: entered && root.closing != 22;
+            opacity: on ? 1 : 0;
+            transform-scale: on ? 1 : 0.985;
+            animate opacity { duration: 260ms; easing: ease-out-quad; }
+            animate transform-scale { duration: 420ms; easing: ease-out-expo; }
+            Wallpaper { kind: root.wallpaper-kind == 0 ? 1 : root.wallpaper-kind; image: root.wallpaper-image; }
+            Rectangle { background: @linear-gradient(180deg, #04060ebb 0%, #04060ee0 45%, #04060ef2 100%); }
+            TouchArea {}
+            HorizontalLayout {
+                x: (96px * S.k); y: (40px * S.k); height: (64px * S.k);
+                spacing: (18px * S.k); alignment: start;
+                Rectangle {
+                    width: (52px * S.k); height: self.width; y: (6px * S.k);
+                    border-radius: self.width / 2;
+                    background: ta-lb.has-hover ? #ffffff2e : #ffffff17;
+                    Image { source: Icons.chevl; colorize: Theme.text; width: (24px * S.k); height: self.width; }
+                    ta-lb := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.library, -1); } }
+                }
+                Text { text: @tr("Game Library"); font-size: (36px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
+            }
+            // The tabs, L1 and R1 either side (as a console's).
+            HorizontalLayout {
+                x: (96px * S.k); y: (128px * S.k); height: (44px * S.k);
+                spacing: (12px * S.k); alignment: start;
+                KeyCap { text: root.pad-hints ? "L1" : "Q"; round: false; y: (10px * S.k); }
+                for t[i] in root.lib-tabs: Rectangle {
+                    property <bool> cur: i == root.lib-tab;
+                    width: ltl.preferred-width + (36px * S.k);
+                    border-radius: self.height / 2;
+                    background: cur ? #f2f5fb : ta-lt.has-hover ? #ffffff24 : #ffffff12;
+                    animate background { duration: 180ms; }
+                    ltl := Text { text: t; font-size: (17px * S.k); font-weight: 600; color: cur ? #0a0f22 : Theme.text2; vertical-alignment: center; horizontal-alignment: center; }
+                    ta-lt := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.library, -2 - i); } }
+                }
+                KeyCap { text: root.pad-hints ? "R1" : "E"; round: false; y: (10px * S.k); }
+            }
+            property <length> gw: root.width - (192px * S.k);
+            property <length> gap: (22px * S.k);
+            property <length> tw: (gw - 5 * gap) / 6;
+            property <length> th: tw + (66px * S.k);
+            if root.lib-tiles.length == 0: Text {
+                x: (96px * S.k); y: (210px * S.k);
+                text: root.lib-tab == 0 ? @tr("No games installed yet · download one from the Library") : @tr("Nothing here yet · download a game from the Library");
+                font-size: (20px * S.k); color: Theme.hint;
+            }
+            Flickable {
+                x: (96px * S.k) - (8px * S.k);
+                y: (196px * S.k);
+                width: lib.gw + (16px * S.k);
+                height: root.height - self.y - (80px * S.k);
+                interactive: false;
+                content-height: (floor((root.lib-tiles.length + 5) / 6) * (lib.th + lib.gap)) + (24px * S.k);
+                // Only as far as needed to show the selected row whole.
+                content-y: -max(0px, min(floor(root.idx / 6) * (lib.th + lib.gap) - (self.height - lib.th - 2 * lib.gap), self.content-height - self.height));
+                animate content-y { duration: 280ms; easing: ease-out-quart; }
+                for t[i] in root.lib-tiles: Rectangle {
+                    property <bool> f: root.zone == Zone.library && root.idx == i;
+                    property <bool> shown: false;
+                    init => { self.shown = true; }
+                    x: (8px * S.k) + mod(i, 6) * (lib.tw + lib.gap);
+                    y: (8px * S.k) + floor(i / 6) * (lib.th + lib.gap);
+                    width: lib.tw;
+                    height: lib.th;
+                    opacity: self.shown ? 1 : 0;
+                    animate opacity { duration: 240ms; delay: min(i, 12) * 18ms; easing: ease-out-quad; }
+                    lcover := Rectangle {
+                        x: 0; y: 0;
+                        width: lib.tw; height: lib.tw;
+                        border-radius: (16px * S.k);
+                        clip: true;
+                        background: #ffffff12;
+                        transform-scale: f ? 1.04 : 1.0;
+                        animate transform-scale { duration: 320ms; easing: ease-out-back; }
+                        Image { source: t.image; width: parent.width; height: parent.height; image-fit: cover; opacity: t.loaded ? 1 : 0; animate opacity { duration: 260ms; } }
+                        if t.badge != "": Rectangle {
+                            x: (10px * S.k); y: (10px * S.k);
+                            width: lbt.preferred-width + (16px * S.k); height: (26px * S.k);
+                            border-radius: (7px * S.k);
+                            background: t.kind == 1 ? #0e6b4bd9 : t.kind == 2 ? #1e4fc8e6 : t.kind == 3 ? #5b4512e6 : #000000a8;
+                            lbt := Text { text: t.badge; font-size: (13px * S.k); font-weight: 700; color: #ffffff; vertical-alignment: center; horizontal-alignment: center; }
+                        }
+                        if t.bar >= 0: Rectangle {
+                            x: (10px * S.k); y: parent.height - (16px * S.k);
+                            width: parent.width - (20px * S.k); height: (5px * S.k);
+                            border-radius: (3px * S.k);
+                            background: #ffffff40;
+                            Rectangle { x: 0; width: parent.width * clamp(t.bar, 0, 1); height: parent.height; border-radius: parent.border-radius; background: #ffffff; animate width { duration: 900ms; } }
+                        }
+                    }
+                    // The focus halo, as on Home.
+                    if f: Rectangle {
+                        x: -(6px * S.k) - (lcover.width * 0.02); y: -(6px * S.k) - (lcover.height * 0.02);
+                        width: lcover.width * 1.04 + (12px * S.k); height: lcover.height * 1.04 + (12px * S.k);
+                        border-radius: (21px * S.k);
+                        border-width: (3px * S.k);
+                        border-color: #f5f7fb;
+                    }
+                    Text { x: 0; y: lib.tw + (14px * S.k); width: parent.width; height: (24px * S.k); vertical-alignment: top; text: t.label; font-size: (18px * S.k); font-weight: 600; color: f ? Theme.text : Theme.text2; overflow: elide; }
+                    Text { x: 0; y: lib.tw + (40px * S.k); width: parent.width; height: (20px * S.k); vertical-alignment: top; text: t.sub; font-size: (14px * S.k); color: Theme.hint; overflow: elide; }
+                    TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.library, i); } }
+                }
+            }
+            HorizontalLayout {
+                x: root.width - self.width - (96px * S.k); y: root.height - (60px * S.k);
+                width: self.preferred-width; height: (26px * S.k);
+                spacing: (22px * S.k);
+                for h in root.pad-hints
+                    ? [{ k: "✕", l: @tr("Play") }, { k: "☰", l: @tr("Options") }, { k: "L1 R1", l: @tr("Tabs") }, { k: "○", l: @tr("Back") }]
+                    : [{ k: "Enter", l: @tr("Play") }, { k: "O", l: @tr("Options") }, { k: "Q E", l: @tr("Tabs") }, { k: "Esc", l: @tr("Back") }]: HorizontalLayout {
+                    spacing: (8px * S.k);
+                    KeyCap { text: h.k; round: root.pad-hints && h.k.character-count == 1; }
+                    Text { text: h.l; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
                 }
             }
         }

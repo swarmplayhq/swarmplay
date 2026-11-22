@@ -346,7 +346,7 @@ impl App {
     pub fn push_row_text(&mut self) {
         let (name, sub) = match self.row.get(self.sel).copied() {
             None => (String::new(), String::new()),
-            Some(RowItem::All) => (tr!("Game Library"), format!("{} · {}", tr!("{n} game" | "{n} games" % self.library_total), tr!("{n} release" | "{n} releases" % self.games.len()))),
+            Some(RowItem::All) => (tr!("Game Library"), tr!("{n} game installed" | "{n} games installed" % self.locals.len())),
             Some(RowItem::Welcome) => (tr!("Welcome"), tr!("Your SwarmPlay at a glance")),
             Some(RowItem::Local(l)) => {
                 let lv = &self.locals[l];
@@ -498,9 +498,9 @@ impl App {
                 } else {
                     h.kicker = tr!("COLLECTION").into();
                     h.title = tr!("Game Library").into();
-                    h.chips = model(vec![chip("grid", tr!("{n} game" | "{n} games" % self.groups.members.len()), false)]);
-                    h.desc = tr!("Browse every PS5 game in the catalog. Search, filter by genre and sort by date, name, rating or size.").into();
-                    self.hero_actions = vec![mk("library", &tr!("Open Library"), "grid", true)];
+                    h.chips = model(vec![chip("grid", tr!("{n} game installed" | "{n} games installed" % self.locals.len()), false)]);
+                    h.desc = tr!("Your games, apart from the catalog: what's installed and what's on its way. Play them, move them to another drive or delete them.").into();
+                    self.hero_actions = vec![mk("game_library", &tr!("Open Game Library"), "grid", true)];
                 }
             }
             // Its widgets show in place of a hero (src/welcome.rs); nothing to press but them.
@@ -733,6 +733,7 @@ impl App {
     /// An image finished loading: update whatever shows it.
     pub fn refresh_images(&mut self, key: &str) {
         self.games_image(key);
+        self.lib_image(key);
         if self.bg_standin.as_deref() == Some(key) && self.bg_pending.is_some() {
             if let Some(img) = self.images.get(key) {
                 self.apply_bg_standin(img);
