@@ -19,6 +19,35 @@ const FALLBACK_REPOS = new Set([
 // Reviewed repositories that moved since their crates were published. GitHub redirects the
 // old name, but requests never follow redirects, so ask the new location directly.
 const MOVED_REPOS = new Map([['brendanzab/gl-rs', 'rust-windowing/gl-rs']]);
+// Crates that ship no license text anywhere (not in the package, not in their repository), reviewed
+// one publication at a time: the license their Cargo.toml declares is the one their own README
+// states, so the README is kept as the statement, with that license's standard text naming the
+// crate's authors.
+const STATEMENT_ONLY = new Map([
+  ['tr@0.1.11', { license: 'MIT', readme: 'The `tr` crate is licensed under the [MIT](https://opensource.org/licenses/MIT) license.' }],
+]);
+export const MIT_TEXT = holders => `MIT License
+
+Copyright (c) ${holders}
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+`;
 const DOCUMENT = /^(?:licen[cs]es?|notices?|copying|copyright|authors|ofl)(?:[._-]|$)/i;
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const key = p => `${p.name}@${p.version}`;
@@ -223,7 +252,17 @@ export async function packageLicenses({ output, cargo = process.env.CARGO || 'ca
       }
       // A vendored library's license (unrar_sys's vendor/unrar/license.txt) isn't the crate's own.
       const own = documents.filter(d => !d.relative.startsWith('vendor/'));
-      if (!own.some(d => /^(?:licen[cs]e|copying)/i.test(path.posix.basename(d.relative))) || expression.includes(ROYALTY)) {
+      const statementOnly = STATEMENT_ONLY.get(key(pkg));
+      if (statementOnly && !own.length) {
+        const readme = await fs.readFile(path.join(path.dirname(pkg.manifest_path), 'README.md'));
+        if (expression !== statementOnly.license || !readme.toString('utf8').includes(statementOnly.readme)) {
+          throw new Error(`${key(pkg)} no longer states the reviewed license; review it again`);
+        }
+        record.documents.push(await store(`crates/${key(pkg)}/README.md`, readme, `crate:${key(pkg)}/README.md`));
+        record.documents.push(await store(`crates/${key(pkg)}/LICENSE-MIT.txt`,
+          Buffer.from(MIT_TEXT((pkg.authors ?? []).join(', '))), 'standard MIT text, holders from the crate\'s authors'));
+        record.statementOnly = 'No license text published; the README states the license (reviewed).';
+      } else if (!own.some(d => /^(?:licen[cs]e|copying)/i.test(path.posix.basename(d.relative))) || expression.includes(ROYALTY)) {
         const fallback = await upstreamDocuments(pkg, allowUpstream, cache);
         for (const document of fallback.documents) record.documents.push(await store(
           `crates/${key(pkg)}/${document.relative}`, document.bytes, document.source));

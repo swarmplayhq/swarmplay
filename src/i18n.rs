@@ -78,11 +78,26 @@ struct Fallback(Box<dyn tr::Translator + Send + Sync>);
 
 impl tr::Translator for Fallback {
     fn translate<'a>(&'a self, text: &'a str, context: Option<&'a str>) -> Cow<'a, str> {
+        // rspolib 0.1 reads a .mo's "context\u{4}text" the wrong way round (the context as the
+        // text, the text as the context), so a text with a context is asked for that way first;
+        // the usual way after, should a newer reader get it right.
+        if let Some(c) = context {
+            let t = self.0.translate(c, Some(text));
+            if !t.is_empty() && t != c {
+                return t;
+            }
+        }
         let t = self.0.translate(text, context);
         if t.is_empty() { Cow::Borrowed(text) } else { t }
     }
 
     fn ntranslate<'a>(&'a self, n: u64, one: &'a str, many: &'a str, context: Option<&'a str>) -> Cow<'a, str> {
+        if let Some(c) = context {
+            let t = self.0.ntranslate(n, c, many, Some(one));
+            if !t.is_empty() && t != c && t != many {
+                return t;
+            }
+        }
         let t = self.0.ntranslate(n, one, many, context);
         if t.is_empty() { Cow::Borrowed(if n == 1 { one } else { many }) } else { t }
     }
@@ -203,6 +218,9 @@ mod tests {
         let pt = pt();
         assert_eq!(pt.translate("Yesterday", None), "Ontem");
         assert_eq!(pt.translate("Oct", None), "out.");
+        // With a context (rspolib reads those the wrong way round: see Fallback).
+        assert_eq!(pt.translate("All", Some("Notifications")), "Todas");
+        assert_eq!(pt.translate("Good", Some("Availability")), "Boa");
         // Not in the file: the English text, never an empty one.
         assert_eq!(pt.translate("A text nobody translated", None), "A text nobody translated");
         assert_eq!(pt.ntranslate(3, "One thing", "{n} things", None), "{n} things");
@@ -232,3 +250,4 @@ mod tests {
         assert_eq!(date_in(Lang::PtBr, 2026, &pt().translate("Oct", None), 30), "30 de out. de 2026");
     }
 }
+
