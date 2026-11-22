@@ -7,6 +7,7 @@ with a throwaway home folder seeded from your cache (no network wait, nothing pe
     scripts/ui_matrix.py                      # all sizes
     scripts/ui_matrix.py 1280x720 3440x1440   # just these
     scripts/ui_matrix.py --lang pt_BR 1920x1080   # in another language (src/i18n.rs)
+    scripts/ui_matrix.py --onboard 1920x1080      # the first-run setup, every page
 
 Writes dist/ui-matrix/<size>/<screen>.png and a contact sheet per size; another language's go to
 dist/ui-matrix/<lang>/.
@@ -30,7 +31,7 @@ SIZES = ["1280x720", "1366x768", "1920x1080", "1920x1200", "2560x1440", "3440x14
 # (screen name, keys to press before the shot)
 STEPS = [
     ("00-boot", []),                                       # the start screen (held: SWARMPLAY_BOOT_HOLD_MS)
-    ("01-home", ["sleep:9"]),
+    ("01-home", ["Return", "sleep:4"]),                   # who's playing: the one highlighted, then Home
     ("01b-welcome", ["Left", "Down", "sleep:0.8"]),         # the Welcome tile's widgets
     ("01c-top-buttons", ["Up", "Up", "Right", "Right", "sleep:0.5"]),  # Search, round, focused
     ("01d-avatar", ["Right", "Right", "sleep:0.5"]),        # past Settings: you (the avatar)
@@ -75,12 +76,38 @@ STEPS = [
     ("13c-screenshot-notice", ["run:{bin} --screenshot", "sleep:1.6"]),
 ]
 
+# The first-run setup (--onboard: SWARMPLAY_ONBOARD=all, every page), through to the start screen.
+# "Next" (Page Down) goes on from anywhere on a page, as R2 does.
+ONBOARD_STEPS = [
+    ("o00-press", ["sleep:2.5"]),
+    ("o01-language", ["Return", "sleep:1.2"]),
+    ("o02-controller", ["Return", "sleep:1.2"]),           # the language in use, chosen again: on
+    ("o03-internet", ["Next", "sleep:1.2"]),
+    ("o04-profile", ["Next", "sleep:1.2"]),
+    ("o04b-name-keys", ["Return", "sleep:0.8"] + ["BackSpace"] * 10 + ["J", "o", "a", "n", "a", "sleep:0.6"]),
+    ("o04c-named", ["Return", "sleep:0.8", "Down", "Down", "Right", "Right", "sleep:0.8"]),   # the name, then a colour
+    ("o04d-avatars", ["Up", "Return", "sleep:1.5"]),                                 # Avatar: the grid
+    ("o04e-avatar-game", ["Right", "Right", "Right", "sleep:0.4", "Return", "sleep:1.2"]),  # a game's art
+    ("o05-look", ["Next", "sleep:1.2", "Left", "sleep:1.8"]),                        # Particles, live
+    ("o06-sound", ["Next", "sleep:1.2"]),
+    ("o07-storage", ["Next", "sleep:1.2"]),
+    ("o07b-pick", ["Return", "sleep:1"]),                                            # Install new games to: the drives
+    ("o07c-back", ["Escape", "sleep:1"]),                                            # closed: the same page
+    ("o08-playing", ["Next", "sleep:1.2"]),
+    ("o09-notify", ["Next", "sleep:1.2"]),
+    ("o10-done", ["Next", "sleep:1.4"]),
+    ("o11-who", ["Return", "sleep:3"]),                                              # who's using this controller?
+    ("o12-add-user", ["Left", "sleep:0.5", "Return", "sleep:1.5"]),                  # Add user: the short setup
+    ("o13-two-users", ["Next", "sleep:0.8", "Next", "sleep:0.8", "Next", "sleep:0.8", "Return", "sleep:2"]),
+    ("o14-home", ["Left", "sleep:0.4", "Return", "sleep:4"]),                        # Joana again, then Home
+]
+
 
 def run(cmd, **kw):
     return subprocess.run(cmd, **kw)
 
 
-def shoot(size: str, n: int, out: Path, binary: Path, game: Path | None, lang: str = ""):
+def shoot(size: str, n: int, out: Path, binary: Path, game: Path | None, lang: str = "", onboard: bool = False):
     w, h = size.split("x")
     disp = f":{90 + n}"
     work = Path(tempfile.mkdtemp(prefix="ps5-ui-"))
@@ -124,6 +151,11 @@ exit 0
            "AZRAK_PRETEND_VERSION": "1.3.0", "SWARMPLAY_BOOT_HOLD_MS": "6000",
            "XDG_RUNTIME_DIR": str(work / "run"), "XDG_PICTURES_DIR": str(work / "pictures"), "XDG_CURRENT_DESKTOP": "XFCE",
            "SWARMPLAY_NO_PAD": "1"}
+    if onboard:
+        env["SWARMPLAY_ONBOARD"] = "all"
+    # Software rendering (no GPU on the virtual display) takes every core it's given: two
+    # threads are plenty for screenshots, and leave the desktop alone.
+    env["LP_NUM_THREADS"] = "2"
     for k in ("XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "DBUS_SESSION_BUS_ADDRESS"):
         env.pop(k, None)
     procs = [subprocess.Popen(["Xvfb", disp, "-screen", "0", f"{w}x{h}x24", "+extension", "GLX", "-noreset"],
@@ -152,7 +184,7 @@ exit 0
             raise SystemExit(f"the launcher showed no window (exit code {app.poll()})")
         time.sleep(2)
         win = ids[-1]
-        for name, keys in STEPS:
+        for name, keys in (ONBOARD_STEPS if onboard else STEPS):
             for k in keys:
                 if k.startswith("sleep:"):
                     time.sleep(float(k[6:]))
@@ -167,13 +199,20 @@ exit 0
                 time.sleep(0.25)
             time.sleep(0.7)
             run(["import", "-window", "root", str(d / f"{name}.png")], env=env)
-        pngs = sorted(str(p) for p in d.glob("[0-9]*.png"))
+        pngs = sorted(str(p) for p in d.glob("[0-9]*.png")) or sorted(str(p) for p in d.glob("o[0-9]*.png"))
         run(["montage", *pngs, "-tile", "3x", "-geometry", "960x+6+6", "-background", "#333", str(out / f"sheet-{size}.png")])
         print("done", size, flush=True)
     finally:
+        # The launcher doesn't always leave on SIGTERM once its display is gone; one left behind
+        # holds ~1 GB, and runs add up until the desktop freezes. Asked, then made to.
         for p in reversed(procs):
             p.terminate()
-        time.sleep(0.5)
+        for p in reversed(procs):
+            try:
+                p.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                p.kill()
+                p.wait()
         # The launcher's log beside the shots (the run's folder holds a copy of the cache: big).
         shutil.copy(work / "launcher.log", d / "launcher.log")
         if os.environ.get("UI_MATRIX_KEEP"):
@@ -189,18 +228,23 @@ def main():
         i = args.index("--lang")
         lang = args[i + 1]
         del args[i:i + 2]
+    onboard = "--onboard" in args
+    if onboard:
+        args.remove("--onboard")
     sizes = args or SIZES
     # scripts/check.sh shoots the quick build; by itself, the release one.
     binary = Path(os.environ.get("SWARMPLAY_BIN", ROOT / "target/release/swarmplay")).resolve()
     out = ROOT / "dist/ui-matrix"
+    if onboard:
+        out = out / "onboard"
     if lang and lang != "en":
         out = out / lang
     out.mkdir(parents=True, exist_ok=True)
     game = Path(os.environ["DEMO_GAME"]) if os.environ.get("DEMO_GAME") else None
     # Another language's run gets displays of its own (check.sh runs both side by side).
-    base = 20 if lang and lang != "en" else 0
+    base = (20 if lang and lang != "en" else 0) + (40 if onboard else 0)
     for i, s in enumerate(sizes):
-        shoot(s, base + i, out, binary, game, lang)
+        shoot(s, base + i, out, binary, game, lang, onboard)
 
 
 if __name__ == "__main__":

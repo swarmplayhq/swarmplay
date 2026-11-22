@@ -221,6 +221,7 @@ mod tests {
         // With a context (rspolib reads those the wrong way round: see Fallback).
         assert_eq!(pt.translate("All", Some("Notifications")), "Todas");
         assert_eq!(pt.translate("Good", Some("Availability")), "Boa");
+        assert_eq!(pt.translate("Next", Some("Setup")), "Avançar");
         // Not in the file: the English text, never an empty one.
         assert_eq!(pt.translate("A text nobody translated", None), "A text nobody translated");
         assert_eq!(pt.ntranslate(3, "One thing", "{n} things", None), "{n} things");

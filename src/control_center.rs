@@ -32,7 +32,7 @@ impl App {
         if self.overlay == Overlay::ControlCenter {
             return self.back_soft();
         }
-        if self.boot.active || BUSY.contains(&self.overlay) {
+        if self.boot.active || BUSY.contains(&self.overlay) || self.in_setup() {
             return;
         }
         // It opens over the screens underneath, not over another panel: those close first.

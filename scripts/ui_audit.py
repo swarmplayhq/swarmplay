@@ -38,7 +38,7 @@ SIZES = ["1280x720", "1920x1080", "2560x1440", "3440x1440", "1280x800"]
 
 # (name, keys before the first capture, keys to step through with a capture after each)
 WALK = [
-    ("home-actions", [], ["Down"] + ["Right"] * 4),
+    ("home-actions", ["sleep:4", "Return", "sleep:3"], ["Down"] + ["Right"] * 4),  # past who's playing
     ("home-top", ["Up", "Up"], ["Right"] * 6),
     ("home-row", ["Down"], ["Right"] * 3),
     ("library-chips", ["Up", "Right", "Return", "sleep:1", "Up"], ["Right"] * 22),
@@ -149,6 +149,9 @@ def audit(size: str, n: int, out: Path, binary: Path, game: Path | None, lang: s
         (stubs / tool).chmod(0o755)
     env = {**os.environ, "DISPLAY": disp, "HOME": str(home), "AZRAK_NO_ART": "1",
            "PATH": f"{stubs}:{os.environ['PATH']}"}
+    # Software rendering (no GPU on the virtual display) takes every core it's given: two
+    # threads are plenty for screenshots, and leave the desktop alone.
+    env["LP_NUM_THREADS"] = "2"
     for k in ("XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME"):
         env.pop(k, None)
     procs = [subprocess.Popen(["Xvfb", disp, "-screen", "0", f"{w}x{h}x24", "+extension", "GLX", "-noreset"],
@@ -192,9 +195,16 @@ def audit(size: str, n: int, out: Path, binary: Path, game: Path | None, lang: s
                     problems.append(f"{size} {name} step {s}: white shape at ({x},{y}) {cw}x{ch} is cut on its {side} edge  -> {crop.name}")
         print("audited", size, "-", len(problems), "problem(s)", flush=True)
     finally:
+        # The launcher doesn't always leave on SIGTERM once its display is gone; one left behind
+        # holds ~1 GB, and runs add up until the desktop freezes. Asked, then made to.
         for p in reversed(procs):
             p.terminate()
-        time.sleep(0.5)
+        for p in reversed(procs):
+            try:
+                p.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                p.kill()
+                p.wait()
         shutil.rmtree(work, ignore_errors=True)
     return problems
 

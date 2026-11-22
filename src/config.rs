@@ -69,6 +69,35 @@ pub struct Config {
     pub last_digest_day: i64,
     /// The interface's language (src/i18n.rs): "en", "pt_BR", or empty for the system's.
     pub language: String,
+    /// The first-run setup (src/onboard.rs) was gone through. A settings file from before it
+    /// existed counts as set up: someone who already uses the launcher never sees it by surprise.
+    pub setup_done: bool,
+    /// The name on the avatar and the start screen (empty: the system's, see app::user_name).
+    pub user_name: String,
+    /// The avatar's colour, one of theme::ACCENTS' names (empty: the accent colour).
+    pub avatar_color: String,
+    /// The avatar's picture (a square PNG made by src/avatar.rs; empty: the initial on its colour).
+    pub avatar_image: String,
+    /// Who uses this launcher (the start screen asks who's playing). The fields above that a
+    /// profile has (name, avatar, theme, language) are the one playing now's; `profiles` keeps
+    /// everyone's, the one playing's brought up to date on every save.
+    pub profiles: Vec<Profile>,
+    /// Which of `profiles` is playing.
+    pub profile: usize,
+}
+
+/// Someone who plays here: their name, avatar, theme and language. Games, downloads and the rest
+/// of the settings are everyone's.
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq)]
+#[serde(default)]
+pub struct Profile {
+    pub user_name: String,
+    pub avatar_color: String,
+    pub avatar_image: String,
+    pub theme_wallpaper: String,
+    pub theme_image: String,
+    pub theme_accent: String,
+    pub language: String,
 }
 
 impl Default for Config {
@@ -114,6 +143,12 @@ impl Default for Config {
             notify_off: Vec::new(),
             last_digest_day: 0,
             language: String::new(),
+            setup_done: false,
+            user_name: String::new(),
+            avatar_color: String::new(),
+            avatar_image: String::new(),
+            profiles: Vec::new(),
+            profile: 0,
         }
     }
 }
@@ -137,16 +172,24 @@ fn present_text(key: &str) -> Option<String> {
     })
 }
 
+/// A settings file written before the first-run setup existed (it has no `setup_done`).
+fn from_before_setup(json: &[u8]) -> bool {
+    serde_json::from_slice::<serde_json::Value>(json).is_ok_and(|v| v.get("setup_done").is_none())
+}
+
 impl Config {
     pub fn path() -> PathBuf {
         config_dir().join("config.json")
     }
 
     pub fn load() -> Config {
-        let mut cfg: Config = std::fs::read(Self::path())
-            .ok()
-            .and_then(|b| serde_json::from_slice(&b).ok())
-            .unwrap_or_default();
+        let bytes = std::fs::read(Self::path()).ok();
+        let mut cfg: Config = bytes.as_deref().and_then(|b| serde_json::from_slice(b).ok()).unwrap_or_default();
+        if bytes.as_deref().is_some_and(from_before_setup) {
+            cfg.setup_done = true;
+        }
+        // Every settings file has its first profile (made from the fields when it's older).
+        cfg.keep_profile();
         cfg.one_update_switch();
         cfg.dedup_game_dirs();
         if cfg.emulator.is_empty() || !cfg.emulator_path().is_file() {
@@ -176,11 +219,85 @@ impl Config {
     }
 
     pub fn save(&self) {
-        if let Ok(json) = serde_json::to_vec_pretty(self) {
+        let mut this = self.clone();
+        this.keep_profile();
+        if let Ok(json) = serde_json::to_vec_pretty(&this) {
             if let Err(e) = atomic_write(&Self::path(), &json) {
                 crate::log!("could not save config: {e}");
             }
         }
+    }
+
+    /// The one playing, as the fields hold them now.
+    pub fn profile_now(&self) -> Profile {
+        Profile {
+            user_name: self.user_name.clone(),
+            avatar_color: self.avatar_color.clone(),
+            avatar_image: self.avatar_image.clone(),
+            theme_wallpaper: self.theme_wallpaper.clone(),
+            theme_image: self.theme_image.clone(),
+            theme_accent: self.theme_accent.clone(),
+            language: self.language.clone(),
+        }
+    }
+
+    /// The one playing's entry in `profiles` as the fields hold it (the first profile is made here
+    /// from a settings file older than profiles).
+    pub fn keep_profile(&mut self) {
+        if self.profiles.is_empty() {
+            self.profile = 0;
+            self.profiles.push(Profile::default());
+        }
+        self.profile = self.profile.min(self.profiles.len() - 1);
+        let now = self.profile_now();
+        self.profiles[self.profile] = now;
+    }
+
+    /// Someone else plays now: their name, avatar, theme and language in the fields.
+    pub fn use_profile(&mut self, i: usize) {
+        self.keep_profile();
+        let Some(p) = self.profiles.get(i).cloned() else { return };
+        self.profile = i;
+        self.user_name = p.user_name;
+        self.avatar_color = p.avatar_color;
+        self.avatar_image = p.avatar_image;
+        self.theme_wallpaper = p.theme_wallpaper;
+        self.theme_image = p.theme_image;
+        self.theme_accent = p.theme_accent;
+        self.language = p.language;
+    }
+
+    /// A new profile, with the one playing's theme and language to start from; it plays now.
+    pub fn add_profile(&mut self, name: &str) -> usize {
+        self.keep_profile();
+        let p = Profile { user_name: name.to_string(), avatar_color: String::new(), avatar_image: String::new(), ..self.profile_now() };
+        self.profiles.push(p);
+        let i = self.profiles.len() - 1;
+        self.use_profile(i);
+        i
+    }
+
+    /// Someone leaves (never the last one); the first profile plays then.
+    pub fn remove_profile(&mut self, i: usize) {
+        self.keep_profile();
+        if self.profiles.len() < 2 || i >= self.profiles.len() {
+            return;
+        }
+        self.profiles.remove(i);
+        self.profile = usize::MAX;
+        self.use_first();
+    }
+
+    fn use_first(&mut self) {
+        let p = self.profiles[0].clone();
+        self.profile = 0;
+        self.user_name = p.user_name;
+        self.avatar_color = p.avatar_color;
+        self.avatar_image = p.avatar_image;
+        self.theme_wallpaper = p.theme_wallpaper;
+        self.theme_image = p.theme_image;
+        self.theme_accent = p.theme_accent;
+        self.language = p.language;
     }
 
     /// "Download only through a VPN": `Some(preferred interface)` ("" = any connected VPN).
@@ -209,6 +326,35 @@ fn is_executable(m: &std::fs::Metadata) -> bool {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn profiles_keep_their_own_name_theme_and_language() {
+        let mut c = Config { user_name: "Ana".into(), theme_accent: "Teal".into(), language: "pt_BR".into(), ..Default::default() };
+        c.keep_profile();
+        assert_eq!(c.profiles.len(), 1);
+        let bia = c.add_profile("Bia");
+        assert_eq!((bia, c.user_name.as_str(), c.theme_accent.as_str()), (1, "Bia", "Teal"), "a new one starts from the theme in use");
+        c.theme_accent = "Pink".into();
+        c.language = "en".into();
+        c.use_profile(0);
+        assert_eq!((c.user_name.as_str(), c.theme_accent.as_str(), c.language.as_str()), ("Ana", "Teal", "pt_BR"));
+        c.use_profile(1);
+        assert_eq!((c.user_name.as_str(), c.theme_accent.as_str(), c.language.as_str()), ("Bia", "Pink", "en"));
+        c.remove_profile(1);
+        assert_eq!((c.profiles.len(), c.profile, c.user_name.as_str()), (1, 0, "Ana"));
+        c.remove_profile(0);
+        assert_eq!(c.profiles.len(), 1, "never the last one");
+    }
+
+    #[test]
+    fn a_settings_file_from_before_the_setup_counts_as_set_up() {
+        assert!(from_before_setup(br#"{"fullscreen": true}"#));
+        assert!(!from_before_setup(br#"{"setup_done": false}"#));
+        assert!(!from_before_setup(b"not json"));
+        let old: Config = serde_json::from_slice(br#"{"fullscreen": true}"#).unwrap();
+        assert!(old.user_name.is_empty() && old.avatar_color.is_empty());
+    }
+
     use super::*;
 
     #[test]

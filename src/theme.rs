@@ -10,7 +10,7 @@ use tr::tr;
 
 /// The wallpapers, in the order Settings steps through them; ui/app.slint draws each by its
 /// position ("Your image" is the user's picture).
-pub const WALLPAPERS: [&str; 6] = ["Game art", "Deep blue", "Midnight", "Aurora", "Ember", "Your image"];
+pub const WALLPAPERS: [&str; 7] = ["Game art", "Deep blue", "Midnight", "Aurora", "Ember", "Your image", "Particles"];
 const YOUR_IMAGE: usize = 5;
 
 /// The accent colours and their focus glow.
@@ -31,6 +31,7 @@ fn wallpaper_text(key: &str) -> Option<String> {
         "Aurora" => tr!("Aurora"),
         "Ember" => tr!("Ember"),
         "Your image" => tr!("Your image"),
+        "Particles" => tr!("Particles"),
         _ => return None,
     })
 }
@@ -50,6 +51,11 @@ fn accent_text(key: &str) -> Option<String> {
         "Green" => tr!("Green"),
         _ => return None,
     })
+}
+
+/// An accent's colour by its name (ACCENTS'); None for an unknown or empty one.
+pub fn accent_color(name: &str) -> Option<Color> {
+    ACCENTS.iter().find(|(n, _)| *n == name).map(|a| rgb(a.1))
 }
 
 fn rgb(hex: u32) -> Color {
@@ -80,6 +86,8 @@ impl App {
         // The picture can't be read: the default wallpaper, not an empty one.
         ui.set_wallpaper_kind(if kind == YOUR_IMAGE && image.is_none() { 1 } else { kind as i32 });
         ui.set_wallpaper_image(image.unwrap_or_default());
+        // An avatar without a colour of its own wears the accent.
+        self.push_user();
     }
 
     pub fn theme_rows(&self) -> Vec<(SId, SettingData)> {
@@ -148,8 +156,8 @@ mod tests {
     #[test]
     fn choices_step_round_and_start_over_when_unknown() {
         assert_eq!(step(&WALLPAPERS, "Game art", 1), "Deep blue");
-        assert_eq!(step(&WALLPAPERS, "Game art", -1), "Your image");
-        assert_eq!(step(&WALLPAPERS, "Your image", 1), "Game art");
+        assert_eq!(step(&WALLPAPERS, "Game art", -1), "Particles");
+        assert_eq!(step(&WALLPAPERS, "Particles", 1), "Game art");
         assert_eq!(step(&WALLPAPERS, "Gone", 1), "Deep blue", "an unknown name counts as the first");
     }
 

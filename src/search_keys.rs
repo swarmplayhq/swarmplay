@@ -59,7 +59,13 @@ pub struct SearchKeys {
     pub shown: Vec<Suggestion>,
     /// The accented letters are on the keys (the "áç" key).
     pub accents: bool,
+    /// Typing a name (the setup's Who's playing?, Settings → Your name), not a search: what's
+    /// typed so far.
+    pub name: Option<String>,
 }
+
+/// The longest name kept (it shows on the start screen and under the avatar).
+const NAME_MAX: usize = 20;
 
 /// How many keys `row` has, with `suggestions` in the first.
 fn row_len(row: usize, suggestions: usize) -> usize {
@@ -142,10 +148,27 @@ impl App {
         self.sk_push();
     }
 
+    /// The keyboard for a name: the one used now, ready to change.
+    pub fn open_name_keys(&mut self) {
+        audio::play(Sound::Select);
+        let name = self.player_name();
+        self.sk = SearchKeys { row: 2, name: Some(name), ..Default::default() };
+        self.push_overlay(Overlay::SearchKeys, Z_SEARCH_KEYS, 0);
+        self.ui().invoke_focus_root();
+        self.sk_push();
+    }
+
+    /// What's on the keyboard's line: the name being typed, or the search.
+    fn sk_text(&self) -> String {
+        self.sk.name.clone().unwrap_or_else(|| self.query.clone())
+    }
+
     /// What the row above the keys offers, with labels: recent searches before anything is
-    /// typed, then the best matches.
+    /// typed, then the best matches. Nothing for a name.
     fn sk_suggestions(&self) -> Vec<(Suggestion, String)> {
-        if self.query.trim().is_empty() {
+        if self.sk.name.is_some() {
+            Vec::new()
+        } else if self.query.trim().is_empty() {
             self.cfg.lock().unwrap().recent_searches.iter().take(MAX_SUGGESTIONS).map(|q| (Suggestion::Recent(q.clone()), q.clone())).collect()
         } else {
             // Named as their cards are. Cards by one name are told apart by the first of their
@@ -163,18 +186,22 @@ impl App {
     }
 
     fn sk_set_query(&mut self, q: String) {
+        if let Some(name) = self.sk.name.as_mut() {
+            *name = q.chars().take(NAME_MAX).collect();
+            return;
+        }
         self.ui().set_query(q.clone().into());
         // The results (and with them the suggestions: see `push_grid`) follow.
         self.on_search(q);
     }
 
     fn sk_type(&mut self, c: char) {
-        let q = format!("{}{}", self.query, c);
+        let q = format!("{}{}", self.sk_text(), c);
         self.sk_set_query(q);
     }
 
     fn sk_delete(&mut self) {
-        let mut q = self.query.clone();
+        let mut q = self.sk_text();
         q.pop();
         self.sk_set_query(q);
     }
@@ -194,6 +221,17 @@ impl App {
 
     /// Done typing: the keyboard goes and the highlight goes to the first result.
     fn sk_done(&mut self) {
+        if let Some(name) = self.sk.name.take() {
+            // Saved as typed; nothing typed goes back to the system's name.
+            let name = name.trim().to_string();
+            let system = crate::app::user_name();
+            self.cfg.lock().unwrap().user_name = if name == system { String::new() } else { name };
+            self.cfg.lock().unwrap().save();
+            audio::play(Sound::Select);
+            self.push_user();
+            self.back();
+            return self.refresh_settings();
+        }
         self.remember_search();
         self.back();
         if !self.filtered.is_empty() {
@@ -343,12 +381,14 @@ impl App {
                 Action::Accents => if s.accents { "abc".to_string() } else { "áç".to_string() },
                 Action::Delete => tr!("Delete"),
                 Action::Clear => tr!("Clear"),
-                Action::Done => tr!("Show results"),
+                Action::Done => if s.name.is_some() { tr!("Done") } else { tr!("Show results") },
             };
             crate::WjKey { on: *a == Action::Accents && s.accents, ..key(&label, *width, s.row == ACTION_ROW && s.col == c, *a == Action::Done) }
         }).collect()));
+        ui.set_sk_name(s.name.is_some());
+        ui.set_sk_text(self.sk_text().into());
         let n = self.filtered.len();
-        ui.set_sk_count(if self.query.trim().is_empty() {
+        ui.set_sk_count(if s.name.is_some() || self.query.trim().is_empty() {
             String::new()
         } else if !self.search_note.is_empty() {
             self.search_note.clone()
@@ -357,7 +397,7 @@ impl App {
         } else {
             tr!("{n} game" | "{n} games" % n)
         }.into());
-        ui.set_sk_count_warn(!self.search_note.is_empty() || (n == 0 && !self.query.trim().is_empty()));
+        ui.set_sk_count_warn(s.name.is_none() && (!self.search_note.is_empty() || (n == 0 && !self.query.trim().is_empty())));
         ui.set_sk_enter_done(s.typed || (s.row == ACTION_ROW && ACTIONS[s.col].0 == Action::Done));
     }
 }

@@ -24,7 +24,7 @@ GAMES = ["Hades II", "Cyberpunk 2077", "Baldur's Gate III", "Hollow Knight: Silk
          "Stardew Valley", "Celeste", "Balatro", "Dead Cells", "Outer Wilds", "Terraria"]
 
 STEPS = [
-    ("home", ["sleep:12"]),
+    ("home", ["sleep:8", "Return", "sleep:4"]),   # past who's playing
     ("welcome", ["Left", "Down", "sleep:0.8"]),
     ("home-peek", ["Up", "Right", "Down", "Down", "sleep:0.8"]),
     ("hub", ["Return", "sleep:1.5"]),

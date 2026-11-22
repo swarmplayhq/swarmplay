@@ -330,3 +330,65 @@ export component Cover inherits Rectangle {
         animate opacity { duration: 250ms; }
     }
 }
+
+// Floating light: soft out-of-focus specks drifting up and swaying, twinkling, under a beam of
+// light from the top left, as a console's welcome screens have. Warm specks with a few in the
+// accent colour; a handful of large, very soft ones close by. Moves only while `running`.
+export component Particles inherits Rectangle {
+    in property <bool> running: true;
+    in property <color> warm: #ffe0ad;
+    in property <color> cool: Theme.accent.brighter(0.6);
+    property <float> t: running ? animation-tick() / 1ms / 1000 : 0;
+    clip: true;
+    // The beam, breathing slowly: soft round glows down a diagonal from the top left. Each is
+    // square and fades out well inside its edges (a radial gradient on a long box is cut off at
+    // its sides, which drew hard vertical lines).
+    property <length> big: max(self.width, self.height);
+    for k in 4: Rectangle {
+        property <float> along: k / 3;
+        width: root.big * (0.95 - along * 0.35);
+        height: self.width;
+        x: root.width * (-0.18 + along * 0.22) - self.width / 2 + root.width * 0.12;
+        y: root.height * (-0.35 + along * 0.55) - self.height / 2 + root.height * 0.2;
+        background: @radial-gradient(circle, #fff1dc2e 0%, #fff1dc12 35%, #fff1dc00 65%);
+        opacity: (0.85 - along * 0.35) * (0.8 + 0.2 * sin(root.t * 14deg + k * 30deg));
+    }
+    for i in 64: Rectangle {
+        // Golden-ratio steps spread the specks without any two lining up.
+        property <float> sx: mod(i * 0.6180339 + 0.13, 1);
+        property <float> sy: mod(i * 0.7548776 + 0.31, 1);
+        property <float> sk: mod(i * 0.5698403 + 0.07, 1);
+        property <bool> near: sk > 0.9;
+        // A few out-of-focus discs with a brighter rim, as a lens draws them.
+        property <bool> disc: !near && sk > 0.7;
+        property <float> rise: 0.008 + 0.02 * mod(i * 0.3247179, 1);
+        property <length> d: near ? (80px + sk * 70px) * S.k : disc ? (22px + sk * 20px) * S.k : (4px + sk * sk * 22px) * S.k;
+        property <color> c: mod(i, 4) == 0 ? root.cool : root.warm;
+        width: d; height: d;
+        border-radius: d / 2;
+        x: parent.width * mod(sx + 0.025 * sin(root.t * (6 + mod(i * 7, 9)) * 1deg + i * 40deg), 1) - d / 2;
+        y: parent.height * (1.1 - mod(sy + root.t * rise, 1.2)) - d / 2;
+        background: near ? @radial-gradient(circle, c.with-alpha(0.16) 0%, c.with-alpha(0) 70%)
+            : disc ? @radial-gradient(circle, c.with-alpha(0.22) 0%, c.with-alpha(0.32) 60%, c.with-alpha(0.08) 72%, c.with-alpha(0) 75%)
+            : @radial-gradient(circle, c.with-alpha(1) 0%, c.with-alpha(0.6) 30%, c.with-alpha(0) 70%);
+        opacity: 0.35 + 0.65 * (0.5 + 0.5 * sin(root.t * (24 + mod(i * 13, 40)) * 1deg + i * 57deg));
+    }
+}
+
+// Someone's avatar: their picture in a circle, or their initial on their colour.
+export component AvatarCircle inherits Rectangle {
+    in property <string> initial;
+    in property <color> tint: Theme.accent;
+    in property <image> picture;
+    in property <bool> has-picture;
+    in property <length> size: (56px * S.k);
+    in property <bool> ring;
+    width: size; height: size;
+    border-radius: size / 2;
+    clip: true;
+    background: @linear-gradient(135deg, tint.brighter(0.35) 0%, tint.darker(0.45) 100%);
+    animate background { duration: 260ms; }
+    if !has-picture: Text { text: root.initial; font-size: root.size * 0.43; font-weight: 600; color: #ffffff; }
+    if has-picture: Image { source: root.picture; width: parent.width; height: parent.height; image-fit: cover; }
+    if ring: Rectangle { border-radius: parent.border-radius; border-width: max(2px, root.size * 0.03); border-color: #f5f7fb; }
+}

@@ -56,6 +56,12 @@ pub const Z_HOME_PEEK: i32 = 28;
 pub const Z_WELCOME: i32 = 29;
 pub const Z_NOTES: i32 = 30;
 pub const Z_PICK: i32 = 31;
+/// The first-run setup's rows, then its buttons (src/onboard.rs).
+pub const Z_ONBOARD: i32 = 32;
+/// The grid of avatars (src/avatar.rs).
+pub const Z_AVATAR: i32 = 33;
+/// Who's playing, on the start screen (src/profiles.rs).
+pub const Z_PROFILES: i32 = 34;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Overlay {
@@ -85,6 +91,10 @@ pub enum Overlay {
     Notifications = 17,
     /// A drive, then a folder on it (src/folder_pick.rs).
     Folders = 18,
+    /// The first-run setup (src/onboard.rs).
+    Onboard = 19,
+    /// Choosing an avatar (src/avatar.rs).
+    Avatar = 20,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -463,6 +473,14 @@ pub struct App {
     pub notes: crate::toast::Store,
     /// The drive and folder picker, while it's open (src/folder_pick.rs).
     pub pick: Option<crate::folder_pick::Pick>,
+    /// The first-run setup, while it's open (src/onboard.rs).
+    pub ob: Option<crate::onboard::Onboard>,
+    /// The grid of avatars, while it's open (src/avatar.rs).
+    pub avatar_pick: Option<crate::avatar::AvatarPick>,
+    /// Remove this user was pressed once (when): a second press soon after removes them.
+    pub remove_armed: Option<f64>,
+    /// The setup comes before the start screen: a new install, or SWARMPLAY_ONBOARD=1.
+    pub needs_setup: bool,
     pub popups: Vec<(u64, f64)>,
     pub watch_at: f64,
     pub pads_seen: Vec<String>,
@@ -805,6 +823,10 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         welcome_read: 0.0,
         notes: crate::toast::Store::load(),
         pick: None,
+        ob: None,
+        avatar_pick: None,
+        remove_armed: None,
+        needs_setup: false,
         popups: Vec::new(),
         watch_at: 0.0,
         pads_seen: Vec::new(),
@@ -860,6 +882,9 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
     app.push_all();
     let stale = catalog.stale();
     let first_run = catalog.games.is_empty() || !Config::path().exists();
+    // A new install (no settings file yet, or one written before the setup was done) goes
+    // through the setup first; SWARMPLAY_ONBOARD=1 shows it anyway (screenshots, trying it).
+    app.needs_setup = !cfg.lock().unwrap().setup_done || std::env::var_os("SWARMPLAY_ONBOARD").is_some_and(|v| v == "1" || v == "all");
     if !Config::path().exists() {
         cfg.lock().unwrap().save(); // remember detected defaults
     }
@@ -936,7 +961,20 @@ impl App {
     /// The launcher's own start: the start screen (with its first-run setup), the catalog, the
     /// emulators, its own update check.
     pub fn start_launcher(&mut self, first_run: bool, stale: bool) {
+        if self.needs_setup {
+            // The catalog and the emulators come in while the setup is gone through; the start
+            // screen comes at its end (onboard_finish).
+            self.needs_setup = false;
+            self.start_background(stale);
+            return self.onboard_open(Some(first_run));
+        }
         self.boot_start(first_run);
+        self.start_background(stale);
+    }
+
+    /// What runs behind the start screen (or the setup): the emulators, the launcher's update
+    /// check, compatibility, the network watch, the catalog.
+    fn start_background(&mut self, stale: bool) {
         self.kyty_start();
         self.shad_start();
         self.app_update_start();
@@ -958,9 +996,37 @@ impl App {
     }
 }
 
+impl App {
+    /// The name on the avatar and the start screen: the one chosen in the setup (or Settings),
+    /// else the system's.
+    pub fn player_name(&self) -> String {
+        let chosen = self.cfg.lock().unwrap().user_name.trim().to_string();
+        if chosen.is_empty() { user_name() } else { chosen }
+    }
+
+    /// The avatar everywhere (top bar, start screen, setup): its letter, colour and the name.
+    pub fn push_user(&self) {
+        let name = self.player_name();
+        let color = self.cfg.lock().unwrap().avatar_color.clone();
+        let ui = self.ui();
+        ui.set_user_initial(user_initial(&name).into());
+        ui.set_user_name(name.into());
+        let picture = crate::avatar::load(&self.cfg.lock().unwrap().avatar_image);
+        ui.set_user_has_picture(picture.is_some());
+        ui.set_user_picture(picture.unwrap_or_default());
+        // No colour of its own: the accent's (Theme.accent, set by apply_theme).
+        ui.set_user_color(crate::theme::accent_color(&color).unwrap_or_else(|| ui.global::<crate::Theme>().get_accent()));
+    }
+
+    /// The setup is open, or under what it opened (the folder picker, a Wi-Fi password…).
+    pub fn in_setup(&self) -> bool {
+        self.overlay == Overlay::Onboard || self.stack.iter().any(|s| s.0 == Overlay::Onboard)
+    }
+}
+
 /// Who's signed in, for the avatar and the start screen: the first name of their real name when
 /// the system has one, else the login.
-fn user_name() -> String {
+pub fn user_name() -> String {
     let gecos = std::fs::read_to_string("/etc/passwd").ok().and_then(|passwd| {
         let uid = unsafe { libc::getuid() }.to_string();
         passwd.lines().map(|l| l.split(':').collect::<Vec<_>>())
@@ -972,7 +1038,7 @@ fn user_name() -> String {
 }
 
 /// The avatar's letter: the name's first.
-fn user_initial(name: &str) -> String {
+pub fn user_initial(name: &str) -> String {
     name.chars().find(|c| c.is_alphanumeric()).map(|c| c.to_uppercase().collect()).unwrap_or_else(|| "?".into())
 }
 
@@ -980,9 +1046,6 @@ fn wire_callbacks(ui: &AppWindow) {
     ui.on_key(|text, ctrl, alt, repeat| with_app_ret(|app| app.on_key(&text, ctrl, alt, repeat)));
     ui.on_click(|zone, idx| with_app(move |app| app.on_click(zone, idx)));
     ui.set_on_os(crate::os::system::on_os());
-    let name = user_name();
-    ui.set_user_initial(user_initial(&name).into());
-    ui.set_user_name(name.into());
     ui.on_hover(|zone, idx| with_app(move |app| app.on_hover(zone, idx)));
     ui.on_row_wheel(|d| {
         with_app(move |app| {
@@ -2204,7 +2267,7 @@ impl App {
             quit(&format!("Ctrl+{} pressed", text.to_uppercase()));
             return true;
         }
-        if ctrl && text == "d" && !self.boot.active {
+        if ctrl && text == "d" && !self.boot.active && !self.in_setup() {
             self.open_downloads(None);
             return true;
         }
@@ -2272,10 +2335,19 @@ impl App {
         if zone == Z_OS_INSTALL && self.overlay == Overlay::OsInstall {
             self.hover_os_install(idx);
         }
+        if zone == Z_ONBOARD && self.overlay == Overlay::Onboard {
+            self.hover_onboard(idx);
+        }
+        if zone == Z_AVATAR && self.overlay == Overlay::Avatar && idx >= 0 && idx != self.idx {
+            self.move_focus(Z_AVATAR, idx);
+        }
     }
 
     pub fn on_click(&mut self, zone: i32, mut idx: i32) {
-        if self.boot.active {
+        if self.boot.active && !self.in_setup() {
+            if !self.boot.first {
+                return if zone == Z_PROFILES { self.click_boot_profile(idx) } else {};
+            }
             return self.boot_confirm();
         }
         if self.search_editing && zone != Z_SEARCH {
@@ -2313,6 +2385,12 @@ impl App {
         }
         if zone == Z_PICK && self.overlay == Overlay::Folders {
             return self.click_folder_pick(idx);
+        }
+        if zone == Z_ONBOARD && self.overlay == Overlay::Onboard {
+            return self.click_onboard(idx);
+        }
+        if zone == Z_AVATAR && self.overlay == Overlay::Avatar {
+            return self.click_avatar_pick(idx);
         }
         if zone == Z_OS_INSTALL && self.overlay == Overlay::OsInstall {
             if idx < 0 {
@@ -2415,7 +2493,11 @@ impl App {
         if (self.overlay == Overlay::Hub && self.ui().get_hub_leaving()) || self.ui().get_closing() != 0 {
             return;
         }
-        if self.boot.active {
+        if self.boot.active && !self.in_setup() {
+            // Every start after the first asks who's playing (src/profiles.rs).
+            if !self.boot.first {
+                return self.act_boot_profiles(a);
+            }
             if a == Act::Confirm && (self.boot.first || self.boot.ready) {
                 self.boot_confirm();
             }
@@ -2446,6 +2528,8 @@ impl App {
             Overlay::ControlCenter => self.act_control_center(a),
             Overlay::Notifications => self.act_notifications(a),
             Overlay::Folders => self.act_folder_pick(a),
+            Overlay::Onboard => self.act_onboard(a),
+            Overlay::Avatar => self.act_avatar_pick(a),
             Overlay::Settings if self.zone == Z_SETTINGS_NAV => self.act_settings_nav(a),
             Overlay::Settings => self.act_settings_rows(a),
             Overlay::Hub => self.act_hub(a),
@@ -2898,7 +2982,7 @@ impl App {
     /// a moment, then closes. Everything else closes at once. (Code that needs the page gone right
     /// away calls `back`.)
     pub fn back_soft(&mut self) {
-        const SOFT: [Overlay; 8] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders];
+        const SOFT: [Overlay; 9] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar];
         let ov = self.overlay;
         if !SOFT.contains(&ov) || (ov == Overlay::Downloads && self.ui().get_download_consent()) {
             return self.back();
@@ -2972,6 +3056,9 @@ impl App {
                 }
             } else if ov == Overlay::Hub {
                 self.push_hub();
+            } else if ov == Overlay::Onboard {
+                // Back from what it opened (the folder picker, a Wi-Fi password, the name's keyboard).
+                self.onboard_push();
             }
             return;
         }
@@ -3721,7 +3808,7 @@ impl App {
     /// device): shown on the row of that name, wherever it is by then.
     pub fn note_setting_named(&mut self, id: crate::settings::SId, label: &str, text: &str, kind: i32) {
         self.setting_notes.insert(id, (one_line(text), kind, label.to_string()));
-        if self.overlay == Overlay::Settings || self.stack.iter().any(|s| s.0 == Overlay::Settings) {
+        if self.overlay == Overlay::Settings || self.stack.iter().any(|s| s.0 == Overlay::Settings) || self.in_setup() {
             self.refresh_settings();
         }
     }

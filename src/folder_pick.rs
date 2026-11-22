@@ -22,15 +22,17 @@ pub enum PickFor {
     Download,
     /// Where the files of this download (its key) went.
     Locate(String),
+    /// A picture for an avatar (src/avatar.rs): the folders, then the pictures in it.
+    Picture,
 }
 
 impl PickFor {
     fn title(&self) -> String {
-        match self { PickFor::Place => tr!("Add a place"), PickFor::Install => tr!("Install new games to"), PickFor::Download => tr!("Save downloads to"), PickFor::Locate(_) => tr!("Find the downloaded files") }
+        match self { PickFor::Place => tr!("Add a place"), PickFor::Install => tr!("Install new games to"), PickFor::Download => tr!("Save downloads to"), PickFor::Locate(_) => tr!("Find the downloaded files"), PickFor::Picture => tr!("Choose a picture") }
     }
     /// The Settings row it was opened from (none: Downloads).
     fn row(&self) -> Option<SId> {
-        match self { PickFor::Place => Some(SId::StorageAdd), PickFor::Install => Some(SId::InstallDir), PickFor::Download => Some(SId::DownloadDir), PickFor::Locate(_) => None }
+        match self { PickFor::Place => Some(SId::StorageAdd), PickFor::Install => Some(SId::InstallDir), PickFor::Download => Some(SId::DownloadDir), PickFor::Locate(_) => None, PickFor::Picture => Some(SId::Avatar) }
     }
 }
 
@@ -52,6 +54,8 @@ enum Entry {
     Drive(usize),
     Use,
     Folder(PathBuf),
+    /// A picture (choosing one for an avatar).
+    File(PathBuf),
 }
 
 pub struct Pick {
@@ -221,15 +225,29 @@ impl App {
                     PickFor::Install => (tr!("Install new games here"), util::display_path(&dir.to_string_lossy())),
                     PickFor::Download => (tr!("Save downloads here"), util::display_path(&dir.to_string_lossy())),
                     PickFor::Locate(_) => (tr!("The files are here"), tr!("SwarmPlay looks for the download's folder here and in the folders inside")),
+                    PickFor::Picture => (String::new(), String::new()),
                 };
                 // Finding files only reads: any folder will do.
                 let can = can || matches!(p.purpose, PickFor::Locate(_));
-                rows.push(PickRow {
-                    label: label.into(),
-                    sub: if can { sub.into() } else { tr!("Can't write here · choose a folder of yours").into() },
-                    icon: "check".into(), kind: 1, has_bar: false, bar: 0.0, warn: !can,
-                });
-                entries.push(Entry::Use);
+                if p.purpose == PickFor::Picture {
+                    // The pictures here first (a few hundred at most), then the folders.
+                    let mut files: Vec<PathBuf> = std::fs::read_dir(dir).into_iter().flatten().flatten().map(|e| e.path())
+                        .filter(|f| f.is_file() && crate::avatar::is_picture(f)).collect();
+                    files.sort_by_key(|f| f.file_name().map(|n| n.to_string_lossy().to_lowercase()));
+                    files.truncate(300);
+                    for f in files {
+                        let name = f.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                        rows.push(PickRow { label: name.into(), sub: "".into(), icon: "user".into(), kind: 1, has_bar: false, bar: 0.0, warn: false });
+                        entries.push(Entry::File(f));
+                    }
+                } else {
+                    rows.push(PickRow {
+                        label: label.into(),
+                        sub: if can { sub.into() } else { tr!("Can't write here · choose a folder of yours").into() },
+                        icon: "check".into(), kind: 1, has_bar: false, bar: 0.0, warn: !can,
+                    });
+                    entries.push(Entry::Use);
+                }
                 for f in folders(dir) {
                     let name = f.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
                     let sub = if name == "SwarmPlay" { tr!("SwarmPlay's games and downloads") } else { String::new() };
@@ -267,7 +285,7 @@ impl App {
             // ▸ goes into a folder (or a drive), ◂ up.
             Act::Right if matches!(p.entries.get(i), Some(Entry::Folder(_) | Entry::Drive(_))) => self.pick_enter(i),
             // △: this folder, wherever the selection is.
-            Act::Search if p.at.is_some() => self.pick_enter(0),
+            Act::Search if p.at.is_some() && p.purpose != PickFor::Picture => self.pick_enter(0),
             Act::Back | Act::Left => self.pick_up(a == Act::Back),
             _ => {}
         }
@@ -331,6 +349,12 @@ impl App {
                     });
                 }
             },
+            Entry::File(f) => {
+                // Straight back to what asked for it (the avatars), then the picture is used.
+                self.pick = None;
+                self.back();
+                self.avatar_from_file(&f);
+            }
             Entry::Folder(f) => {
                 if let Some((_, dir)) = p.at.as_mut() { *dir = f; }
                 audio::play(Sound::Move);
@@ -403,6 +427,7 @@ impl App {
                 self.dl_sel = Some(key);
                 return self.push_downloads();
             }
+            PickFor::Picture => return,
             PickFor::Place => {
                 let dev = |p: &Path| { use std::os::unix::fs::MetadataExt; std::fs::metadata(p).map(|m| m.dev()).unwrap_or(0) };
                 if self.storage_places().iter().any(|p| p.dev == dev(dir) && p.added.is_none()) {
