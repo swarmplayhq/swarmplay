@@ -15,6 +15,9 @@ pub enum Power {
     ShutDown,
     /// Restart into the downloaded system update.
     Update,
+    /// Not the PC's: delete installed games (src/games.rs, what `games_view.doomed` holds). The
+    /// same card asks, on Cancel first.
+    Delete,
 }
 
 /// The Settings row that asks for it.
@@ -23,6 +26,7 @@ fn power_row(what: Power) -> SId {
         Power::Restart => SId::Restart,
         Power::ShutDown => SId::ShutDown,
         Power::Update => SId::SystemUpdate,
+        Power::Delete => SId::Rescan,
     }
 }
 
@@ -44,7 +48,7 @@ impl App {
     /// Ask before restarting or shutting down. A running game is closed first, so its progress
     /// is saved: the card doesn't open while one runs.
     pub fn power_ask(&mut self, what: Power) {
-        if !self.live.is_empty() {
+        if what != Power::Delete && !self.live.is_empty() {
             return self.note_setting(power_row(what), &tr!("A game is running: close it first, so its progress is saved"), 2);
         }
         audio::play(Sound::Select);
@@ -86,6 +90,10 @@ impl App {
         if sel == CANCEL {
             return self.back();
         }
+        if what == Power::Delete {
+            self.back();
+            return self.delete_games();
+        }
         audio::play(Sound::Select);
         self.power.busy = true;
         self.power_push();
@@ -119,7 +127,9 @@ impl App {
     fn power_push(&self) {
         let ui = self.ui();
         let p = &self.power;
+        let delete = (p.what == Some(Power::Delete)).then(|| self.delete_words());
         let (title, text, yes) = match (p.what, p.busy) {
+            (Some(Power::Delete), _) => { let (t, x) = delete.unwrap_or_default(); (t, x, tr!("Delete")) }
             (Some(Power::ShutDown), false) => (tr!("Shut down now?"), tr!("The PC turns off. Its power button turns it on again."), tr!("Shut down")),
             (Some(Power::ShutDown), true) => (tr!("Shutting down…"), tr!("See you soon."), String::new()),
             (Some(Power::Update), false) => (tr!("Restart and update?"),
@@ -130,7 +140,8 @@ impl App {
         ui.set_power_title(title.into());
         ui.set_power_text(text.into());
         ui.set_power_buttons(std::rc::Rc::new(slint::VecModel::from(vec![yes.into(), tr!("Cancel").into()])).into());
-        ui.set_power_danger(p.what == Some(Power::ShutDown));
+        ui.set_power_danger(matches!(p.what, Some(Power::ShutDown | Power::Delete)));
+        ui.set_power_icon(if p.what == Some(Power::Delete) { "trash".into() } else { "".into() });
         ui.set_power_sel(p.sel as i32);
         ui.set_power_busy(p.busy);
     }

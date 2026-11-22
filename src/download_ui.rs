@@ -345,7 +345,7 @@ impl App {
         let Some(job) = jobs.iter().find(|job| job.key == key) else { return };
         let install = self.installer.snapshot().into_iter().find(|record| record.key == key);
         // Nothing that changes the download while it's being installed from.
-        let touches = !matches!(action, "folder" | "cancel_install" | "play_install" | "vpn" | "stop_seed" | "share" | "choose");
+        let touches = !matches!(action, "info" | "cancel_install" | "play_install" | "vpn" | "stop_seed" | "share" | "choose");
         self.dl_notes.remove(key);
         self.dl_page_note.clear();
         // A game started from this row: what it says isn't this press's news. (From another
@@ -355,9 +355,10 @@ impl App {
             return self.note_download(key, &tr!("It's installing: cancel the installation first"));
         }
         match action {
-            "folder" => {
-                let path = install.as_ref().filter(|record| record.state == Install::Installed).and_then(|record| record.path.as_ref()).unwrap_or(&job.folder);
-                if path.is_dir() { open_url(&path.to_string_lossy()); }
+            "info" => {
+                if let Some(path) = install.as_ref().filter(|record| record.state == Install::Installed).and_then(|record| record.path.clone()) {
+                    self.open_games(None, Some(&path));
+                }
             }
             "install" => self.install_download(key),
             "locate" => self.open_folder_pick(crate::folder_pick::PickFor::Locate(key.to_string())),
@@ -504,7 +505,10 @@ impl App {
                 // Delete is an icon beside the others until it's focused (it's never the main thing to do).
                 id: (*id).into(), label: label.as_str().into(), icon: (*icon).into(), primary: k == 0, danger: *id == "delete", round: *id == "delete" && k >= 2,
             }).collect();
-            actions.push(ActionData { id: "folder".into(), label: tr!("Open folder").into(), icon: "folder".into(), primary: false, danger: false, round: true });
+            // Installed: where it is and how big, on the installed games' list (no file manager).
+            if installs.iter().any(|r| r.key == job.key && r.state == Install::Installed) {
+                actions.push(ActionData { id: "info".into(), label: tr!("Information").into(), icon: "info".into(), primary: false, danger: false, round: true });
+            }
             // What a press there did, else what the game started from it says now.
             let pressed = self.dl_notes.get(&job.key).cloned()
                 .or_else(|| self.played_from.get(&job.key).and_then(|game| self.game_notes.get(game).cloned()));

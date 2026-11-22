@@ -140,6 +140,7 @@ export global Zone {
     out property <int> onboard: 32;
     out property <int> avatar: 33;
     out property <int> profiles: 34;
+    out property <int> games: 35;
 }
 
 // dot: KytyPS5 compatibility level (0 none, 1 in-game, 2 menus, 3 boots, 4 doesn't boot, 5 untested)
@@ -317,6 +318,10 @@ export struct SettingData {
 
 // A line of the drive and folder picker (src/folder_pick.rs): kind 0 a drive, 1 "Use this
 // folder", 2 a folder to go into. warn: low on room, or can't write there.
+// A line of the installed games' list (src/games.rs): its art, name, platform · drive (or a move's
+// progress, `busy`, with `bar`), size, and whether it's picked (△) to delete with others.
+export struct GameRowData { image: image, loaded: bool, label: string, sub: string, size: string, picked: bool, busy: bool, bar: float }
+
 export struct PickRow { label: string, sub: string, icon: string, kind: int, has-bar: bool, bar: float, warn: bool }
 
 // The parts of a drive, as a console colours them.
