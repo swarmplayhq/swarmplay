@@ -48,6 +48,9 @@ pub struct GamesView {
     pub keys: Vec<String>,
     /// The Power card's "Delete?": which games.
     pub doomed: Vec<PathBuf>,
+    /// The player moved the selection (or it opened on a game): sizes coming in keep that game
+    /// selected; otherwise the top one (the biggest) is.
+    pub touched: bool,
 }
 
 fn dev_of(p: &Path) -> u64 { std::fs::metadata(p).map_or(0, |m| m.dev()) }
@@ -62,7 +65,7 @@ fn count_sizes(paths: Vec<PathBuf>) {
         for p in todo {
             let bytes = crate::storage::du(&p);
             SIZES.lock().unwrap().get_or_insert_with(HashMap::new).insert(p, bytes);
-            let _ = slint::invoke_from_event_loop(|| with_app(|app| if app.overlay == Overlay::Games { app.games_push(); }));
+            let _ = slint::invoke_from_event_loop(|| with_app(|app| app.games_push()));
         }
         COUNTING.store(false, Ordering::Release);
     });
@@ -92,6 +95,35 @@ fn delete_folder(real: &Path) -> Result<()> {
     util::delete_in_background(doomed, move || Ok(std::fs::remove_dir_all(&target)?));
     Ok(())
 }
+
+/// Rename, never over something already there (a plain rename replaces an empty folder).
+fn rename_noreplace(from: &Path, to: &Path) -> Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+    let c = |p: &Path| std::ffi::CString::new(p.as_os_str().as_bytes()).context("NUL in path");
+    let (a, b) = (c(from)?, c(to)?);
+    let r = unsafe { libc::renameat2(libc::AT_FDCWD, a.as_ptr(), libc::AT_FDCWD, b.as_ptr(), libc::RENAME_NOREPLACE) };
+    ensure!(r == 0, tr!("{} already has a folder of that name", to.display()));
+    Ok(())
+}
+
+/// Copies left by a move that SwarmPlay closed during (hidden, never listed): deleted at the
+/// next start. Only straight inside a game folder, and only folders of that name.
+pub fn sweep_moves(dirs: &[PathBuf]) {
+    for dir in dirs {
+        let Ok(entries) = std::fs::read_dir(dir) else { continue };
+        for e in entries.flatten() {
+            let leftover = e.file_name().to_string_lossy().starts_with(MOVING) && e.file_type().is_ok_and(|t| t.is_dir());
+            if !leftover { continue; }
+            let path = e.path();
+            crate::log!("deleting {}, left by a move that didn't finish", path.display());
+            let doomed = path.clone();
+            util::delete_in_background(path, move || Ok(std::fs::remove_dir_all(&doomed)?));
+        }
+    }
+}
+
+/// The hidden name a game has while it's copied to another drive.
+const MOVING: &str = ".azrak-moving-";
 
 /// Copy `from` (a folder) to `to` (made here, not there before): files with their permissions and
 /// times, links as links (never followed), nothing else (sockets, devices). `done` counts the bytes
@@ -146,6 +178,7 @@ impl App {
         audio::play(Sound::Select);
         self.games_view.drive = drive;
         self.games_view.picked.clear();
+        self.games_view.touched = focus.is_some();
         self.games_list();
         let i = focus.and_then(|f| self.games_view.list.iter().position(|p| p == f)).unwrap_or(0) as i32;
         if self.overlay == Overlay::Games { self.set_focus(Z_GAMES, i); } else { self.push_overlay(Overlay::Games, Z_GAMES, i); }
@@ -166,13 +199,19 @@ impl App {
 
     /// The list to the screen (again as sizes, art and a move's progress come in).
     pub fn games_push(&mut self) {
-        if self.overlay != Overlay::Games { return; }
-        // Sizes counted since: biggest first again, the same game selected.
-        let selected = self.games_view.list.get(self.idx.max(0) as usize).cloned();
-        let before = self.games_view.list.clone();
-        self.games_list();
-        if before != self.games_view.list {
-            if let Some(i) = selected.and_then(|s| self.games_view.list.iter().position(|p| *p == s)) { self.idx = i as i32; }
+        // On top, or under its menu or the Delete card (a move's progress shows there too).
+        let on_top = self.overlay == Overlay::Games;
+        if !on_top && !self.ui().get_games_open() { return; }
+        // Sizes counted since: biggest first again, the same game selected, on screen too. Not
+        // under a menu: what it's about mustn't move from under it.
+        if on_top {
+            let selected = self.games_view.list.get(self.idx.max(0) as usize).cloned();
+            let before = self.games_view.list.clone();
+            self.games_list();
+            if before != self.games_view.list {
+                let keep = selected.filter(|_| self.games_view.touched).and_then(|s| self.games_view.list.iter().position(|p| *p == s));
+                self.set_focus(Z_GAMES, keep.unwrap_or(0) as i32);
+            }
         }
         let places = self.storage_places();
         let drive_of = |p: &Path| { let d = dev_of(p); places.iter().find(|pl| pl.dev == d).map(|pl| pl.name.clone()).unwrap_or_default() };
@@ -213,17 +252,18 @@ impl App {
         ui.set_games_sub(sub.into());
         ui.set_games_picking(picked > 0);
         ui.set_games_rows(model(rows));
-        if self.idx >= n as i32 { self.idx = n as i32 - 1; }
+        if on_top && n > 0 && self.idx >= n as i32 { self.set_focus(Z_GAMES, n as i32 - 1); }
     }
 
     /// Art for a row came in.
     pub fn games_image(&mut self, key: &str) {
-        if self.overlay == Overlay::Games && self.games_view.keys.iter().any(|k| k == key) { self.games_push(); }
+        if self.games_view.keys.iter().any(|k| k == key) { self.games_push(); }
     }
 
     pub fn act_games(&mut self, a: Act) {
         let n = self.games_view.list.len() as i32;
         let i = self.idx.max(0);
+        if matches!(a, Act::Up | Act::Down | Act::First | Act::Last | Act::PageUp | Act::PageDown) { self.games_view.touched = true; }
         match a {
             Act::Up if i > 0 => self.move_focus(Z_GAMES, i - 1),
             Act::Down if i + 1 < n => self.move_focus(Z_GAMES, i + 1),
@@ -258,6 +298,7 @@ impl App {
     /// A row clicked: selected, or (already selected) its options.
     pub fn click_games(&mut self, idx: i32) {
         if idx < 0 { return self.back_soft(); }
+        self.games_view.touched = true;
         if self.idx == idx { self.games_options(idx as usize); } else { self.move_focus(Z_GAMES, idx); }
     }
 
@@ -283,7 +324,8 @@ impl App {
         let Some(l) = t.local else { return items };
         let path = &self.locals[l].l.path;
         let running = self.live.iter().any(|s| Path::new(&s.path) == path);
-        if play && !running { items.push(mk("play", tr!("Play"), "play")); }
+        let moving = self.games_view.moving.as_ref().is_some_and(|m| m.from == *path);
+        if play && !running && !moving { items.push(mk("play", tr!("Play"), "play")); }
         if self.games_view.moving.is_none() && !running {
             let here = dev_of(path);
             let size = size_of(path).unwrap_or(0);
@@ -296,7 +338,7 @@ impl App {
         if let Some(m) = self.games_view.moving.as_ref().filter(|m| m.from == *path) {
             items.push(mk("move_cancel", tr!("Cancel moving to {}", m.drive), "close"));
         }
-        if !running { items.push(ActionDef { danger: true, ..mk("delete", tr!("Delete"), "trash") }); }
+        if !running && !moving { items.push(ActionDef { danger: true, ..mk("delete", tr!("Delete"), "trash") }); }
         items
     }
 
@@ -371,7 +413,7 @@ impl App {
         if let Some(why) = failed.first() {
             self.toast(&tr!("Couldn't delete it"), why, "alert", crate::toast::FAILED);
         }
-        if self.overlay == Overlay::Games { self.games_push(); }
+        self.games_push();
     }
 
     /// Copy a game to another drive's games folder, then delete it here. The copy is hidden until
@@ -398,20 +440,17 @@ impl App {
         self.toast(&tr!("Moving {}", game), &tr!("To {} · you can keep playing other games", place.name), "disk", crate::toast::INFO);
         let from = from.to_path_buf();
         std::thread::spawn(move || {
-            let hidden = root.join(format!(".azrak-moving-{}", name.to_string_lossy()));
+            let hidden = root.join(format!("{MOVING}{}", name.to_string_lossy()));
             let result = std::fs::create_dir_all(&root).map_err(anyhow::Error::from)
                 .and_then(|_| copy_tree(&from, &hidden, &done, &cancel))
-                .and_then(|_| {
-                    ensure!(std::fs::symlink_metadata(&to).is_err(), "{} appeared while copying", to.display());
-                    Ok(std::fs::rename(&hidden, &to)?)
-                });
+                .and_then(|_| rename_noreplace(&hidden, &to));
             if result.is_err() && std::fs::symlink_metadata(&hidden).is_ok() {
                 let doomed = hidden.clone();
                 util::delete_in_background(hidden, move || Ok(std::fs::remove_dir_all(&doomed)?));
             }
             let _ = slint::invoke_from_event_loop(move || with_app(move |app| app.move_finished(&from, &to, result)));
         });
-        if self.overlay == Overlay::Games { self.games_push(); }
+        self.games_push();
     }
 
     fn move_finished(&mut self, from: &Path, to: &Path, result: Result<()>) {
@@ -447,12 +486,12 @@ impl App {
                 else { self.toast(&tr!("Couldn't move {}", m.name), &format!("{e:#}"), "alert", crate::toast::FAILED); }
             }
         }
-        if self.overlay == Overlay::Games { self.games_push(); }
+        self.games_push();
     }
 
     /// Every second while a move runs: its progress on the list.
     pub fn games_tick(&mut self) {
-        if self.games_view.moving.is_some() && self.overlay == Overlay::Games { self.games_push(); }
+        if self.games_view.moving.is_some() { self.games_push(); }
     }
 }
 
@@ -497,6 +536,20 @@ mod tests {
         for _ in 0..100 { if std::fs::read_dir(&games).unwrap().count() == 0 { break; } std::thread::sleep(std::time::Duration::from_millis(20)); }
         assert_eq!(std::fs::read_dir(&games).unwrap().count(), 0, "deleted in the background");
         assert_eq!(std::fs::read_to_string(&precious).unwrap(), "keep");
+    }
+
+    #[test]
+    fn a_move_never_lands_on_a_folder_already_there_and_its_leftovers_go() {
+        let temp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(temp.path().join(".azrak-moving-Game/data")).unwrap();
+        std::fs::create_dir_all(temp.path().join("Game")).unwrap();
+        assert!(rename_noreplace(&temp.path().join(".azrak-moving-Game"), &temp.path().join("Game")).is_err(), "an empty folder of that name stays");
+        assert!(temp.path().join(".azrak-moving-Game/data").is_dir());
+        std::fs::create_dir_all(temp.path().join("Keep")).unwrap();
+        sweep_moves(&[temp.path().to_path_buf()]);
+        for _ in 0..100 { if !temp.path().join(".azrak-moving-Game").exists() { break; } std::thread::sleep(std::time::Duration::from_millis(20)); }
+        assert!(!temp.path().join(".azrak-moving-Game").exists());
+        assert!(temp.path().join("Keep").is_dir() && temp.path().join("Game").is_dir(), "nothing else");
     }
 
     #[test]

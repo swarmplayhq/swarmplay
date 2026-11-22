@@ -349,6 +349,8 @@ impl App {
         let first = self.games_sig.is_none();
         self.games_sig = sig;
         if moved { self.downloads.relocate(&bases); }
+        // At start (no move runs yet): copies left by a move SwarmPlay closed during.
+        if first { crate::games::sweep_moves(&dirs); }
         if first && !moved { return; }
         self.rescan_library();
         Self::storage_recount();
