@@ -118,7 +118,7 @@ impl App {
 
     /// Art for a tile came in.
     pub fn lib_image(&mut self, key: &str) {
-        if self.lib_view.keys.iter().any(|k| k == key) { self.lib_push(); }
+        if self.images.get(key).is_some() && self.lib_view.keys.iter().any(|k| k == key) { self.lib_push(); }
     }
 
     /// Every second: downloads, installs and moves as they go.

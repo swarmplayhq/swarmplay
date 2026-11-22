@@ -460,7 +460,7 @@ impl App {
         let body = names.iter().take(3).copied().collect::<Vec<_>>().join(" · ");
         let n = names.len();
         { let mut c = self.cfg.lock().unwrap(); c.last_digest_day = day; c.save(); }
-        self.notify(Cat::Catalog, INFO, "sparkle", &tr!("{n} new game in the Library" | "{n} new games in the Library" % n), &body, Action::Library, "digest", false);
+        self.notify(Cat::Catalog, INFO, "sparkle", &tr!("{n} new game in the Store" | "{n} new games in the Store" % n), &body, Action::Library, "digest", false);
     }
 
     /// The stack's cards go when their time is up (from the tick).

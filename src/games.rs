@@ -257,7 +257,7 @@ impl App {
 
     /// Art for a row came in.
     pub fn games_image(&mut self, key: &str) {
-        if self.games_view.keys.iter().any(|k| k == key) { self.games_push(); }
+        if self.images.get(key).is_some() && self.games_view.keys.iter().any(|k| k == key) { self.games_push(); }
     }
 
     pub fn act_games(&mut self, a: Act) {

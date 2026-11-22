@@ -9,7 +9,9 @@ jeito. Tom: curto, direto, tratando por "você" (implícito: "Instale", não "In
 | English | PT-BR |
 |---|---|
 | Home | Início |
-| Game Library / Library | Biblioteca de jogos / Biblioteca |
+| Game Library | Biblioteca de jogos (os seus jogos) |
+| Store (the catalog, once "Library") | Loja |
+| Discover / Browse (the Store's tabs) | Descobrir / Navegar |
 | Game Hub | Hub do jogo |
 | Settings | Configurações |
 | Control Center | Central de controle |

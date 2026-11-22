@@ -29,6 +29,7 @@ mod storage;
 mod folder_pick;
 mod games;
 mod game_library;
+mod store;
 mod onboard;
 mod avatar;
 mod profiles;

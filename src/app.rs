@@ -66,6 +66,8 @@ pub const Z_PROFILES: i32 = 34;
 pub const Z_GAMES: i32 = 35;
 /// The Game Library's covers (src/game_library.rs).
 pub const Z_LIBRARY: i32 = 36;
+/// The Store's Discover: the featured game, then its rows (src/store.rs).
+pub const Z_DISCOVER: i32 = 37;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Overlay {
@@ -489,6 +491,11 @@ pub struct App {
     pub games_view: crate::games::GamesView,
     /// The Game Library (src/game_library.rs): its tab and covers.
     pub lib_view: crate::game_library::LibView,
+    /// The Store (src/store.rs): 0 Discover, 1 Browse; Discover's rows, art keys, featured game.
+    pub store_tab: i32,
+    pub discover: Vec<(String, Vec<usize>)>,
+    pub discover_keys: Vec<String>,
+    pub discover_hero: Option<usize>,
     /// The first-run setup, while it's open (src/onboard.rs).
     pub ob: Option<crate::onboard::Onboard>,
     /// The grid of avatars, while it's open (src/avatar.rs).
@@ -846,6 +853,10 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         pick: None,
         games_view: Default::default(),
         lib_view: Default::default(),
+        store_tab: 0,
+        discover: Vec::new(),
+        discover_keys: Vec::new(),
+        discover_hero: None,
         ob: None,
         avatar_pick: None,
         remove_armed: None,
@@ -2419,6 +2430,10 @@ impl App {
         if zone == Z_LIBRARY && self.overlay == Overlay::GameLibrary {
             return self.click_game_library(idx);
         }
+        // The Store's tabs (-2 Discover, -3 Browse), and Discover's covers.
+        if zone == Z_DISCOVER && self.overlay == Overlay::None {
+            return if idx < 0 { self.store_switch(-idx - 2) } else { self.click_discover(idx) };
+        }
         if zone == Z_ONBOARD && self.overlay == Overlay::Onboard {
             return self.click_onboard(idx);
         }
@@ -2475,6 +2490,8 @@ impl App {
     }
 
     pub fn start_search_edit(&mut self) {
+        // Searching is Browse's.
+        if self.store_tab != 1 { self.store_tab = 1; self.ui().set_store_tab(1); }
         if self.view != 1 {
             self.switch_view(1, false);
         }
@@ -2580,7 +2597,8 @@ impl App {
             Act::Back => return self.back(),
             Act::Search => return self.open_search(),
             Act::Settings => return self.open_settings(),
-            Act::TabPrev | Act::TabNext => return self.switch_view(1 - self.view, true),
+            // Home ← Discover ↔ Browse (src/store.rs).
+            Act::TabPrev | Act::TabNext => return self.store_tab_key(a == Act::TabNext),
             Act::Trailer => {
                 if let Some(t) = self.focused_target() {
                     self.library_press(t, "trailer", |app| app.play_trailer(t));
@@ -2602,7 +2620,7 @@ impl App {
                 Act::Right if self.idx < 1 => self.move_focus(Z_TABS, self.idx + 1),
                 Act::Right => self.move_focus(Z_TOP, self.top_items()[0]),
                 Act::Down => {
-                    if self.view == 0 { self.move_focus(self.home_zone(), 0) } else { self.move_focus(Z_SEARCH, 0) }
+                    if self.view == 0 { self.move_focus(self.home_zone(), 0) } else if self.store_tab == 0 { self.move_focus(Z_DISCOVER, 0) } else { self.move_focus(Z_SEARCH, 0) }
                 }
                 Act::Confirm => self.switch_view(self.idx, true),
                 _ => {}
@@ -2615,7 +2633,7 @@ impl App {
                     Act::Left => self.move_focus(Z_TABS, 1),
                     Act::Right if pos + 1 < items.len() => self.move_focus(Z_TOP, items[pos + 1]),
                     Act::Down => {
-                        if self.view == 0 { self.move_focus(self.home_zone(), 0) } else { self.move_focus(Z_SEARCH, 0) }
+                        if self.view == 0 { self.move_focus(self.home_zone(), 0) } else if self.store_tab == 0 { self.move_focus(Z_DISCOVER, 0) } else { self.move_focus(Z_SEARCH, 0) }
                     }
                     Act::Confirm => match self.idx {
                         0 => self.resume_game(None),
@@ -2630,6 +2648,7 @@ impl App {
                 }
             }
             Z_WELCOME => self.act_welcome(a),
+            Z_DISCOVER => self.act_discover(a),
             Z_HOME_PEEK => match a {
                 Act::Left if self.idx > 0 => self.move_focus(Z_HOME_PEEK, self.idx - 1),
                 Act::Right if (self.idx as usize) + 1 < self.home_peek => self.move_focus(Z_HOME_PEEK, self.idx + 1),
@@ -3142,7 +3161,10 @@ impl App {
         self.bg_changed();
         if v == 1 {
             self.push_library();
-            if focus {
+            if self.store_tab == 0 { self.refresh_discover(); }
+            if focus && self.store_tab == 0 {
+                self.set_focus(Z_DISCOVER, 0);
+            } else if focus {
                 if self.filtered.is_empty() {
                     self.set_focus(Z_SEARCH, 0);
                 } else {
