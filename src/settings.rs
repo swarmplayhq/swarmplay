@@ -24,7 +24,9 @@ pub enum SId {
     Restart,
     ShutDown,
     // Games
-    Dirs,
+    /// A game folder (src/storage.rs), and the row that adds one with the folder picker.
+    GameDir(u16),
+    GameDirAdd,
     InstallDir,
     DownloadDir,
     Rescan,
@@ -139,11 +141,7 @@ impl App {
 
         rows.extend(self.system_rows());
         header(&mut rows, "GAMES");
-        let mut r = row(1, &tr!("Game folders"));
-        r.value = cfg.game_dirs.iter().map(|d| util::display_path(d)).collect::<Vec<_>>().join("; ").into();
-        r.hint = tr!("{n} installed game found · more than one folder? Put a ; between them" | "{n} installed games found · more than one folder? Put a ; between them" % self.locals.len()).into();
-        rows.push((SId::Dirs, r));
-        rows.push((SId::Rescan, row(4, &tr!("Rescan game folders"))));
+        rows.extend(self.game_folder_rows());
 
         header(&mut rows, "STORAGE");
         rows.extend(self.storage_rows().0);
@@ -372,6 +370,7 @@ impl App {
 
         // Its own section: out of the way without a switch to show it.
         header(&mut rows, "ADVANCED");
+        rows.extend(self.storage_folder_rows());
         {
             let mut r = row(1, &tr!("KytyPS5 location"));
             r.value = util::display_path(&cfg.emulator).into();
@@ -494,7 +493,7 @@ impl App {
             "NOTIFICATIONS" => (tr!("What lets you know, and when"), if cfg_dnd(self) { (tr!("Do not disturb"), 2) } else { (String::new(), 0) }),
             "SOUND" => (tr!("Volume and where sound goes"), if self.sound.muted { (tr!("Muted"), 2) } else { (self.sound.volume.map(|v| format!("{v}%")).unwrap_or_default(), 0) }),
             "LAUNCHER" => (tr!("Language, you, display and your game ratings"), (String::new(), 0)),
-            "ADVANCED" => (tr!("KytyPS5 location and video options, the game catalog"), (String::new(), 0)),
+            "ADVANCED" => (tr!("Folders of your own, KytyPS5 location and video options, the game catalog"), (String::new(), 0)),
             _ => (String::new(), (String::new(), 0)),
         };
         let sub = if header == "ABOUT" { format!("SwarmPlay {}", crate::update::current_version()) } else { sub };
@@ -629,10 +628,12 @@ impl App {
             Act::Left | Act::Right if kind == 3 => self.settings_change(self.idx as usize, if a == Act::Left { -1 } else { 1 }),
             Act::Left => to_nav(self),
             Act::Confirm => self.settings_activate(self.idx as usize),
-            // □ on a place that was added: off the list.
-            Act::Trailer => {
-                if let Some(SId::StoragePlace(n)) = self.settings_ids.get(self.idx.max(0) as usize).copied() { self.storage_remove(n as usize); }
-            }
+            // □ on a place that was added, or a game folder: off the list.
+            Act::Trailer => match self.settings_ids.get(self.idx.max(0) as usize).copied() {
+                Some(SId::StoragePlace(n)) => self.storage_remove(n as usize),
+                Some(SId::GameDir(n)) => self.game_dir_remove(n as usize),
+                _ => {}
+            },
             _ => {}
         }
     }
@@ -719,7 +720,7 @@ impl App {
         self.start_enrich();
     }
 
-    fn save_cfg(&mut self, f: impl FnOnce(&mut crate::config::Config)) {
+    pub(crate) fn save_cfg(&mut self, f: impl FnOnce(&mut crate::config::Config)) {
         let mut c = self.cfg.lock().unwrap();
         f(&mut c);
         c.save();
@@ -876,6 +877,8 @@ impl App {
             SId::StoragePlace(n) => self.storage_use(n as usize),
             SId::StoragePart(n, k) => self.storage_part(n as usize, k as usize),
             SId::StorageAdd => self.open_folder_pick(crate::folder_pick::PickFor::Place),
+            SId::GameDir(n) => self.game_dir_pressed(n as usize),
+            SId::GameDirAdd => self.open_folder_pick(crate::folder_pick::PickFor::GameFolder),
             SId::InstallDir => self.open_folder_pick(crate::folder_pick::PickFor::Install),
             SId::DownloadDir => self.open_folder_pick(crate::folder_pick::PickFor::Download),
             SId::NotifPopups | SId::NotifSound | SId::NotifDesktop | SId::NotifCat(_) => {
@@ -889,13 +892,12 @@ impl App {
             SId::SwitchUser => { audio::play(Sound::Select); self.switch_user(); }
             SId::RemoveUser => self.remove_user_pressed(),
             SId::RunSetup => { audio::play(Sound::Select); self.onboard_open(None); }
-            SId::Emulator | SId::Dirs | SId::Extra | SId::ThemeImage => {
+            SId::Emulator | SId::Extra | SId::ThemeImage => {
                 let cfg = self.cfg.lock().unwrap().clone();
                 let text = match id {
                     SId::ThemeImage if cfg.theme_image.is_empty() => "~/Pictures/".into(),
                     SId::ThemeImage => cfg.theme_image,
                     SId::Emulator => cfg.emulator,
-                    SId::Dirs => cfg.game_dirs.join("; "),
                     SId::Extra => cfg.extra_args,
                     _ => String::new(),
                 };
@@ -1019,13 +1021,6 @@ impl App {
                 self.save_cfg(|c| c.emulator = t);
                 // The row's hint says whether it's runnable (Found, or Nothing runnable at this path).
                 self.kyty_refresh_version();
-            }
-            SId::Dirs => {
-                let dirs: Vec<String> = t.split([';', '\n']).map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
-                self.save_cfg(|c| c.game_dirs = dirs);
-                self.rescan_library();
-                let n = self.locals.len();
-                self.note_setting(SId::Dirs, &tr!("{n} installed game found" | "{n} installed games found" % n), 1);
             }
             SId::Extra => self.save_cfg(|c| c.extra_args = t),
             // Left as it opened: nothing chosen.

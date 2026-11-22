@@ -50,6 +50,10 @@ pub struct Config {
     pub theme_accent: String,
     /// Settings → Storage's other places (folders on other drives); see src/storage.rs.
     pub storage: Vec<String>,
+    /// The drives those folders (and the game folders) are on, by their filesystem's UUID and
+    /// where each was mounted: one mounted somewhere else since takes its folders along
+    /// (storage::follow_drives).
+    pub drives: Vec<KnownDrive>,
     /// The in-game overlay (src/overlay_ui.rs): notifications over games, and pausing the game
     /// while the panel is up.
     pub overlay_toasts: bool,
@@ -100,6 +104,13 @@ pub struct Profile {
     pub language: String,
 }
 
+/// A drive SwarmPlay keeps folders on: its filesystem's UUID, and where it was last mounted.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct KnownDrive {
+    pub uuid: String,
+    pub mount: String,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -131,6 +142,7 @@ impl Default for Config {
             theme_image: String::new(),
             theme_accent: "Blue".into(),
             storage: Vec::new(),
+            drives: Vec::new(),
             overlay_toasts: true,
             overlay_pause: false,
             wine_sdl_pads: true,
@@ -205,7 +217,7 @@ impl Config {
 
     /// The same game folder written two ways (~/Games and /home/me/Games, or with a trailing
     /// /) is one: scanned once and shown once.
-    fn dedup_game_dirs(&mut self) {
+    pub(crate) fn dedup_game_dirs(&mut self) {
         let mut seen = std::collections::HashSet::new();
         self.game_dirs.retain(|d| !d.trim().is_empty() && seen.insert(expand_home(d.trim().trim_end_matches('/'))));
     }

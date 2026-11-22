@@ -20,6 +20,8 @@ pub enum PickFor {
     Place,
     Install,
     Download,
+    /// A folder with games already installed in it (Settings → Games).
+    GameFolder,
     /// Where the files of this download (its key) went.
     Locate(String),
     /// A picture for an avatar (src/avatar.rs): the folders, then the pictures in it.
@@ -28,11 +30,11 @@ pub enum PickFor {
 
 impl PickFor {
     fn title(&self) -> String {
-        match self { PickFor::Place => tr!("Add a place"), PickFor::Install => tr!("Install new games to"), PickFor::Download => tr!("Save downloads to"), PickFor::Locate(_) => tr!("Find the downloaded files"), PickFor::Picture => tr!("Choose a picture") }
+        match self { PickFor::Place => tr!("Add a place"), PickFor::Install => tr!("Install new games to"), PickFor::Download => tr!("Save downloads to"), PickFor::GameFolder => tr!("Add a game folder"), PickFor::Locate(_) => tr!("Find the downloaded files"), PickFor::Picture => tr!("Choose a picture") }
     }
     /// The Settings row it was opened from (none: Downloads).
     fn row(&self) -> Option<SId> {
-        match self { PickFor::Place => Some(SId::StorageAdd), PickFor::Install => Some(SId::InstallDir), PickFor::Download => Some(SId::DownloadDir), PickFor::Locate(_) => None, PickFor::Picture => Some(SId::Avatar) }
+        match self { PickFor::Place => Some(SId::StorageAdd), PickFor::Install => Some(SId::InstallDir), PickFor::Download => Some(SId::DownloadDir), PickFor::GameFolder => Some(SId::GameDirAdd), PickFor::Locate(_) => None, PickFor::Picture => Some(SId::Avatar) }
     }
 }
 
@@ -224,11 +226,12 @@ impl App {
                     PickFor::Place => (if top && !is_home(d) { tr!("Use this drive") } else { tr!("Use this folder") }, tr!("Games and downloads go in {}", util::display_path(&dir.join("SwarmPlay").to_string_lossy()))),
                     PickFor::Install => (tr!("Install new games here"), util::display_path(&dir.to_string_lossy())),
                     PickFor::Download => (tr!("Save downloads here"), util::display_path(&dir.to_string_lossy())),
+                    PickFor::GameFolder => (tr!("Use this folder"), tr!("SwarmPlay finds the games in it and in the folders inside")),
                     PickFor::Locate(_) => (tr!("The files are here"), tr!("SwarmPlay looks for the download's folder here and in the folders inside")),
                     PickFor::Picture => (String::new(), String::new()),
                 };
-                // Finding files only reads: any folder will do.
-                let can = can || matches!(p.purpose, PickFor::Locate(_));
+                // Finding files or games only reads: any folder will do.
+                let can = can || matches!(p.purpose, PickFor::Locate(_) | PickFor::GameFolder);
                 if p.purpose == PickFor::Picture {
                     // The pictures here first (a few hundred at most), then the folders.
                     let mut files: Vec<PathBuf> = std::fs::read_dir(dir).into_iter().flatten().flatten().map(|e| e.path())
@@ -369,7 +372,7 @@ impl App {
                         audio::play(Sound::Back);
                         return self.push_pick();
                     }
-                } else if !writable(&dir) {
+                } else if p.purpose != PickFor::GameFolder && !writable(&dir) {
                     p.note = tr!("Can't write there: choose a folder of yours, or the drive's own top");
                     audio::play(Sound::Back);
                     return self.push_pick();
@@ -415,6 +418,16 @@ impl App {
         let path = dir.to_string_lossy().into_owned();
         let row = purpose.row().unwrap_or(SId::StorageAdd);
         match purpose {
+            PickFor::GameFolder => {
+                let new = !self.cfg.lock().unwrap().game_dir_paths().iter().any(|d| d == dir);
+                if new { self.save_cfg(|c| c.game_dirs.push(path)); }
+                self.rescan_library();
+                let n = self.locals.iter().filter(|l| l.l.path.starts_with(dir)).count();
+                audio::play(Sound::Select);
+                let found = tr!("{n} game found in it" | "{n} games found in it" % n);
+                let text = if new { found } else { tr!("Already in the list · {}", found) };
+                self.note_setting(row, &text, if n > 0 { 1 } else { 0 });
+            }
             PickFor::Locate(key) => {
                 // Checked before the picker closed: found there (unless it went in between).
                 if self.downloads.relocate(&[dir.to_path_buf()]) > 0 {
@@ -432,7 +445,7 @@ impl App {
                 let dev = |p: &Path| { use std::os::unix::fs::MetadataExt; std::fs::metadata(p).map(|m| m.dev()).unwrap_or(0) };
                 if self.storage_places().iter().any(|p| p.dev == dev(dir) && p.added.is_none()) {
                     // Already a place: a folder on it becomes where new games go instead.
-                    self.note_setting(SId::StorageAdd, &tr!("That drive is already in the list · use Install new games to for a folder on it"), 0);
+                    self.note_setting(SId::StorageAdd, &tr!("That drive is already in the list: press it to put new games there"), 0);
                 } else {
                     self.storage_add(&path);
                 }
