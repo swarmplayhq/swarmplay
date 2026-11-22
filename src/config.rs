@@ -148,6 +148,7 @@ impl Config {
             .and_then(|b| serde_json::from_slice(&b).ok())
             .unwrap_or_default();
         cfg.one_update_switch();
+        cfg.dedup_game_dirs();
         if cfg.emulator.is_empty() || !cfg.emulator_path().is_file() {
             let managed = crate::kyty::managed_emulator();
             if managed.is_file() {
@@ -157,6 +158,13 @@ impl Config {
             }
         }
         cfg
+    }
+
+    /// The same game folder written two ways (~/Games and /home/me/Games, or with a trailing
+    /// /) is one: scanned once and shown once.
+    fn dedup_game_dirs(&mut self) {
+        let mut seen = std::collections::HashSet::new();
+        self.game_dirs.retain(|d| !d.trim().is_empty() && seen.insert(expand_home(d.trim().trim_end_matches('/'))));
     }
 
     /// Settings has one "Update automatically" switch for the launcher, KytyPS5 and shadPS4.
@@ -213,6 +221,14 @@ mod tests {
     fn an_older_config_reads_with_the_system_language() {
         let old: Config = serde_json::from_str(r#"{"fullscreen": false}"#).unwrap();
         assert_eq!(old.language, "", "no language saved: the system's");
+    }
+
+    #[test]
+    fn a_game_folder_written_two_ways_is_kept_once() {
+        let home = expand_home("~").to_string_lossy().into_owned();
+        let mut cfg = Config { game_dirs: vec!["~/Games/Azrak".into(), format!("{home}/Games/Azrak/"), "".into(), "/mnt/ssd/Games".into()], ..Default::default() };
+        cfg.dedup_game_dirs();
+        assert_eq!(cfg.game_dirs, vec!["~/Games/Azrak".to_string(), "/mnt/ssd/Games".into()]);
     }
 
     #[test]

@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-22 02:25+0000\n"
+"POT-Creation-Date: 2026-11-22 03:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -675,6 +675,14 @@ msgid "Downloading"
 msgstr ""
 
 #: src/download_ui.rs
+msgid "Files moved"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Find the files"
+msgstr ""
+
+#: src/download_ui.rs
 msgid "Frees {}."
 msgstr ""
 
@@ -703,10 +711,6 @@ msgstr ""
 
 #: src/download_ui.rs
 msgid "In progress"
-msgstr ""
-
-#: src/download_ui.rs
-msgid "Install by hand"
 msgstr ""
 
 #: src/download_ui.rs
@@ -751,6 +755,14 @@ msgstr ""
 
 #: src/download_ui.rs
 msgid "Its download is deleted; the game was running, so it stays"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Its download isn't where it was: find it to share it again"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "Its files were moved"
 msgstr ""
 
 #: src/download_ui.rs
@@ -885,6 +897,10 @@ msgstr ""
 
 #: src/download_ui.rs
 msgid "Stopped"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "They aren't in {} any more: find where they went"
 msgstr ""
 
 #: src/download_ui.rs
@@ -1140,7 +1156,27 @@ msgid "Downloads go to {shown} now"
 msgstr ""
 
 #: src/folder_pick.rs
+msgid "Find the downloaded files"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Found its files"
+msgstr ""
+
+#: src/folder_pick.rs
 msgid "Games and downloads go in {}"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid ""
+"Games can go on any of these. A drive plugged in but not mounted is mounted "
+"when chosen."
+msgstr ""
+
+#: src/folder_pick.rs
+msgid ""
+"Go to the folder its files were moved to. A drive plugged in but not mounted "
+"is mounted when chosen."
 msgstr ""
 
 #. The first drive is always the home folder (drives()); its name is translated.
@@ -1157,6 +1193,10 @@ msgid "Install new games to"
 msgstr ""
 
 #: src/folder_pick.rs
+msgid "Its files weren't there any more"
+msgstr ""
+
+#: src/folder_pick.rs
 msgid "Mounting…"
 msgstr ""
 
@@ -1166,6 +1206,11 @@ msgstr ""
 
 #: src/folder_pick.rs
 msgid "Not changed: {e}"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid ""
+"Not here: its folder is named torrent-{}…, in this folder or one inside it"
 msgstr ""
 
 #: src/folder_pick.rs
@@ -1185,6 +1230,11 @@ msgid "Save downloads to"
 msgstr ""
 
 #: src/folder_pick.rs
+msgid ""
+"SwarmPlay looks for the download's folder here and in the folders inside"
+msgstr ""
+
+#: src/folder_pick.rs
 msgid "SwarmPlay's games and downloads"
 msgstr ""
 
@@ -1193,6 +1243,10 @@ msgstr ""
 msgid ""
 "That drive is already in the list · use Install new games to for a folder on "
 "it"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "The files are here"
 msgstr ""
 
 #: src/folder_pick.rs
@@ -1280,42 +1334,17 @@ msgid "Couldn't install: {}"
 msgstr ""
 
 #: src/install_ui.rs
-msgid ""
-"Folders, RAR, ZIP, 7z or TAR archives (these depend on the system's "
-"libarchive), GOG Linux installers (.sh) and AppImages. Installing unpacks "
-"the game and finds how to start it; nothing in it runs until you press Play. "
-"Unlike console games, which run inside an emulator, PC games run with your "
-"user's access to your files: only install releases you trust."
-msgstr ""
-
-#: src/install_ui.rs
-msgid ""
-"Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR "
-"archives (these depend on the system's libarchive; password-protected ones "
-"aren't supported). PS4 PKG packages are unpacked for shadPS4, with their "
-"update and DLC. Installing checks the game's structure, not that its content "
-"is authentic, and never runs the downloaded files."
-msgstr ""
-
-#: src/install_ui.rs
-msgid ""
-"Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR "
-"archives (these depend on the system's libarchive; password-protected ones "
-"aren't supported). PS5 PKG packages can't be installed: choose a release of "
-"this game that isn't a PKG. Installing checks the game's structure, not that "
-"its content is authentic, and never runs the downloaded files."
-msgstr ""
-
-#: src/install_ui.rs
-msgid ""
-"Folders, exFAT or decrypted PFS (.ffpfsc) images, RAR, ZIP, 7z or TAR "
-"archives, and PS4 PKG packages (not PS5 PKG). Installing checks the game's "
-"structure, not that its content is authentic, and never runs the downloaded "
-"files."
+msgid "Its files aren't where they were downloaded ({}): press Find the files"
 msgstr ""
 
 #: src/install_ui.rs
 msgid "The download isn't finished"
+msgstr ""
+
+#: src/install_ui.rs
+msgid ""
+"The drive for new games isn't connected ({}): connect it, or choose another "
+"in Settings → Storage"
 msgstr ""
 
 #. Its row says "Waiting to install".
@@ -4509,7 +4538,7 @@ msgid "Control Center"
 msgstr ""
 
 #: ui/app.slint:1410 ui/app.slint:1411 ui/app.slint:1414 ui/app.slint:1415
-#: ui/app.slint:2698 ui/app.slint:4064 ui/app.slint:4081
+#: ui/app.slint:2698 ui/app.slint:4065 ui/app.slint:4082
 msgid "Options"
 msgstr ""
 
@@ -4522,7 +4551,7 @@ msgid "Trailer"
 msgstr ""
 
 #: ui/app.slint:1414 ui/app.slint:1415 ui/app.slint:1417 ui/app.slint:1418
-#: ui/app.slint:2256 ui/app.slint:2259 ui/app.slint:3284 ui/app.slint:4008
+#: ui/app.slint:2256 ui/app.slint:2259 ui/app.slint:3284 ui/app.slint:4009
 #: ui/downloads.slint:385
 msgid "Back"
 msgstr ""
@@ -4576,7 +4605,7 @@ msgstr ""
 msgid "About"
 msgstr ""
 
-#: ui/app.slint:1828 ui/app.slint:2603 ui/overlay.slint:147
+#: ui/app.slint:1828 ui/app.slint:2603 ui/overlay.slint:161
 msgid "Settings"
 msgstr ""
 
@@ -4604,7 +4633,7 @@ msgstr ""
 msgid "Change"
 msgstr ""
 
-#: ui/app.slint:2258 ui/app.slint:3889 ui/app.slint:4008 ui/app.slint:4009
+#: ui/app.slint:2258 ui/app.slint:3889 ui/app.slint:4009 ui/app.slint:4010
 msgid "Open"
 msgstr ""
 
@@ -4612,15 +4641,15 @@ msgstr ""
 msgid "NOW PLAYING · {}"
 msgstr ""
 
-#: ui/app.slint:2532 ui/overlay.slint:85
+#: ui/app.slint:2532 ui/overlay.slint:97
 msgid "Back to game"
 msgstr ""
 
-#: ui/app.slint:2532 ui/overlay.slint:86
+#: ui/app.slint:2532 ui/overlay.slint:98
 msgid "Close game"
 msgstr ""
 
-#: ui/app.slint:2556 ui/overlay.slint:101
+#: ui/app.slint:2556 ui/overlay.slint:113
 msgid "DOWNLOADS"
 msgstr ""
 
@@ -4644,7 +4673,7 @@ msgstr ""
 msgid "Controls"
 msgstr ""
 
-#: ui/app.slint:2604 ui/overlay.slint:148
+#: ui/app.slint:2604 ui/overlay.slint:162
 msgid "Power"
 msgstr ""
 
@@ -4664,7 +4693,7 @@ msgstr ""
 msgid "Arrows"
 msgstr ""
 
-#: ui/app.slint:2696 ui/app.slint:2698 ui/app.slint:4064 ui/app.slint:4081
+#: ui/app.slint:2696 ui/app.slint:2698 ui/app.slint:4065 ui/app.slint:4082
 msgid "D-pad"
 msgstr ""
 
@@ -4740,7 +4769,7 @@ msgstr ""
 msgid "Show results"
 msgstr ""
 
-#: ui/app.slint:3394 ui/app.slint:3536 ui/app.slint:4066
+#: ui/app.slint:3394 ui/app.slint:3536 ui/app.slint:4067
 msgid "Space"
 msgstr ""
 
@@ -4838,105 +4867,99 @@ msgstr ""
 msgid "Clear all"
 msgstr ""
 
-#: ui/app.slint:3928
-msgid ""
-"Games can go on any of these. A drive plugged in but not mounted is mounted "
-"when chosen."
-msgstr ""
-
-#: ui/app.slint:3998
+#: ui/app.slint:3999
 msgid "No folders in here"
 msgstr ""
 
-#: ui/app.slint:4009
+#: ui/app.slint:4010
 msgid "Up"
 msgstr ""
 
-#: ui/app.slint:4009
+#: ui/app.slint:4010
 msgid "Use this folder"
 msgstr ""
 
-#: ui/app.slint:4041
+#: ui/app.slint:4042
 msgid "Keyboard controls in games"
 msgstr ""
 
-#: ui/app.slint:4048
+#: ui/app.slint:4049
 msgid "PS4 games · shadPS4"
 msgstr ""
 
-#: ui/app.slint:4048
+#: ui/app.slint:4049
 msgid "PS5 games · KytyPS5"
 msgstr ""
 
-#: ui/app.slint:4057
+#: ui/app.slint:4058
 msgid "◂ ▸ to switch"
 msgstr ""
 
-#: ui/app.slint:4063
+#: ui/app.slint:4064
 msgid "B  (or keypad 6)"
 msgstr ""
 
-#: ui/app.slint:4063
+#: ui/app.slint:4064
 msgid "N  (or keypad 2)"
 msgstr ""
 
-#: ui/app.slint:4063
+#: ui/app.slint:4064
 msgid "V  (or keypad 4)"
 msgstr ""
 
-#: ui/app.slint:4063 ui/app.slint:4080
+#: ui/app.slint:4064 ui/app.slint:4081
 msgid "□  Square"
 msgstr ""
 
-#: ui/app.slint:4063 ui/app.slint:4080
+#: ui/app.slint:4064 ui/app.slint:4081
 msgid "○  Circle"
 msgstr ""
 
-#: ui/app.slint:4063 ui/app.slint:4080
+#: ui/app.slint:4064 ui/app.slint:4081
 msgid "✕  Cross"
 msgstr ""
 
-#: ui/app.slint:4064 ui/app.slint:4081
+#: ui/app.slint:4065 ui/app.slint:4082
 msgid "Arrow keys"
 msgstr ""
 
-#: ui/app.slint:4064
+#: ui/app.slint:4065
 msgid "C  (or keypad 8)"
 msgstr ""
 
-#: ui/app.slint:4064 ui/app.slint:4080
+#: ui/app.slint:4065 ui/app.slint:4081
 msgid "△  Triangle"
 msgstr ""
 
-#: ui/app.slint:4065 ui/app.slint:4082
+#: ui/app.slint:4066 ui/app.slint:4083
 msgid "Left stick"
 msgstr ""
 
-#: ui/app.slint:4065 ui/app.slint:4082
+#: ui/app.slint:4066 ui/app.slint:4083
 msgid "Right stick"
 msgstr ""
 
-#: ui/app.slint:4066 ui/app.slint:4083
+#: ui/app.slint:4067 ui/app.slint:4084
 msgid "Touchpad"
 msgstr ""
 
-#: ui/app.slint:4083
+#: ui/app.slint:4084
 msgid "Left Shift  /  Left Ctrl"
 msgstr ""
 
-#: ui/app.slint:4095
+#: ui/app.slint:4096
 msgid ""
 "F7 turns the mouse into the right stick (press it again to release the "
 "mouse)."
 msgstr ""
 
-#: ui/app.slint:4095
+#: ui/app.slint:4096
 msgid ""
 "shadPS4 keeps its key layout in its own settings file; these are its "
 "defaults."
 msgstr ""
 
-#: ui/app.slint:4097
+#: ui/app.slint:4098
 msgid ""
 "Games play best with a controller: DualSense, DualShock 4, Xbox and most "
 "others work\n"
@@ -5072,39 +5095,39 @@ msgstr ""
 msgid "Sort by"
 msgstr ""
 
-#: ui/overlay.slint:78
+#: ui/overlay.slint:90
 msgid "PLAYING"
 msgstr ""
 
-#: ui/overlay.slint:86
+#: ui/overlay.slint:98
 msgid "Press again to close"
 msgstr ""
 
-#: ui/overlay.slint:102
+#: ui/overlay.slint:114
 msgid "CAPTURE"
 msgstr ""
 
-#: ui/overlay.slint:102
+#: ui/overlay.slint:114
 msgid "Take a screenshot"
 msgstr ""
 
-#: ui/overlay.slint:145
+#: ui/overlay.slint:159
 msgid "Home"
 msgstr ""
 
-#: ui/overlay.slint:197
+#: ui/overlay.slint:211
 msgid "← → Volume   Enter Done   Esc Done"
 msgstr ""
 
-#: ui/overlay.slint:197
+#: ui/overlay.slint:211
 msgid "◂ ▸ Volume   ✕ Done   ○ Done"
 msgstr ""
 
-#: ui/overlay.slint:198
+#: ui/overlay.slint:212
 msgid "Enter Select   Esc Back to game"
 msgstr ""
 
-#: ui/overlay.slint:198
+#: ui/overlay.slint:212
 msgid "✕ Select   ○ Back to game   PS Back to game"
 msgstr ""
 

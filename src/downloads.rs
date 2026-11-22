@@ -167,7 +167,7 @@ impl Default for Policy {
     }
 }
 
-enum Command { Prepare(Job), Begin { key: String, base: PathBuf, selected: Vec<usize>, install_to: Option<PathBuf> }, Discard(Job), Start(String), Pause(String), Cancel(String), Remove(String), Delete(String), Save, StopSeed(String), Seed(String), SetSeedAfterDownload(bool), SetVpn(Option<String>), Shutdown }
+enum Command { Prepare(Job), Begin { key: String, base: PathBuf, selected: Vec<usize>, install_to: Option<PathBuf> }, Discard(Job), Start(String), Pause(String), Cancel(String), Remove(String), Delete(String), Save, Reseed, StopSeed(String), Seed(String), SetSeedAfterDownload(bool), SetVpn(Option<String>), Shutdown }
 
 const VPN_WAIT: &str = "Waiting for your VPN: downloads only run through it (Settings → Downloads)";
 const FILES_CHANGED: &str = "The downloaded files were moved, changed or deleted, so this download can't seed. Remove it, or download it again.";
@@ -182,13 +182,23 @@ pub struct Manager {
 }
 
 impl Manager {
-    /// `vpn`: download only through a VPN (`Some(preferred interface)`, "" for any).
-    pub fn load(seed_after_download: bool, vpn: Option<String>) -> Self {
-        Self::new(crate::util::config_dir().join("transfers"), Policy { seed_after_download, vpn, ..Default::default() })
+    /// `vpn`: download only through a VPN (`Some(preferred interface)`, "" for any). `bases`:
+    /// where downloads can be (see `relocate`), so ones moved since are found before sharing.
+    pub fn load(seed_after_download: bool, vpn: Option<String>, bases: &[PathBuf]) -> Self {
+        Self::open(crate::util::config_dir().join("transfers"), Policy { seed_after_download, vpn, ..Default::default() }, bases)
     }
 
-    fn new(store: PathBuf, policy: Policy) -> Self {
-        let jobs = load_manifest(&store);
+    #[cfg(test)]
+    fn new(store: PathBuf, policy: Policy) -> Self { Self::open(store, policy, &[]) }
+
+    fn open(store: PathBuf, policy: Policy, bases: &[PathBuf]) -> Self {
+        let mut jobs = load_manifest(&store);
+        // Before the worker starts sharing them: no other writer yet, so saved here.
+        if relocate(&mut jobs, bases) > 0 {
+            if let Ok(bytes) = serde_json::to_vec_pretty(&ManifestRef { schema: 1, jobs: &jobs }) {
+                if let Err(error) = secure_write(&store.join("jobs.json"), &bytes) { crate::log!("Could not save transfer state: {error}"); }
+            }
+        }
         let jobs = Arc::new(Mutex::new(jobs));
         let (tx, rx) = mpsc::channel(64);
         let shared = jobs.clone();
@@ -291,6 +301,15 @@ impl Manager {
         job.starting = true;
         job.error.clear();
         Ok(())
+    }
+
+    /// Downloads whose folder isn't where it was (moved to another place, or its drive mounted
+    /// somewhere else) found again in `bases` and pointed there; the ones finished share again.
+    /// How many were found.
+    pub fn relocate(&self, bases: &[PathBuf]) -> usize {
+        let found = relocate(&mut self.jobs.lock().unwrap(), bases);
+        if found > 0 { let _ = self.tx.try_send(Command::Reseed); }
+        found
     }
 
     /// Where it installs by itself (`None`: it doesn't, its game is being deleted). Takes effect
@@ -627,6 +646,35 @@ const BAD_LIST: &str = "Its file list couldn't be read. Retry looks it up again.
 const UNREADABLE: &str = "Its file list couldn't be read";
 
 const NOTHING_ALLOWED: &str = "Nothing in this release can be downloaded: it only holds programs a console game never needs.";
+
+/// Where a download's folder `torrent-<key>` can have gone: one of `bases` itself, straight in
+/// one, or a folder down (a drive's top with its downloads in a folder of their own). Only a
+/// folder that is this download's own (its marker) counts.
+pub fn find_moved(key: &str, bases: &[PathBuf]) -> Option<PathBuf> {
+    let name = format!("torrent-{key}");
+    bases.iter().flat_map(|base| {
+        let itself = base.file_name().is_some_and(|n| *n == *name).then(|| base.clone());
+        // At most a few hundred folders looked into per base: a drive's top, not a whole disk.
+        let below = std::fs::read_dir(base).into_iter().flatten().flatten().take(400).map(|e| e.path().join(&name));
+        itself.into_iter().chain(std::iter::once(base.join(&name))).chain(below)
+    }).find(|candidate| check_owned(candidate, key).is_ok()).and_then(|found| found.canonicalize().ok())
+}
+
+/// Point every download whose folder is gone to where it is now (`find_moved`), unless it's
+/// busy: running, looking its files up, or being chosen for (its folder may not exist yet).
+/// "Its files were moved" no longer holds for the ones found. How many were.
+fn relocate(jobs: &mut [Job], bases: &[PathBuf]) -> usize {
+    let mut found = 0;
+    for job in jobs.iter_mut().filter(|j| matches!(j.state, State::Paused | State::Failed | State::Cancelled | State::Complete) && !j.starting && !j.seeding && !j.verifying) {
+        if job.folder.is_dir() { continue; }
+        let Some(folder) = find_moved(&job.key, bases) else { continue };
+        crate::log!("Found {} again in {}", job.name, folder.display());
+        job.folder = folder;
+        if job.error == FILES_CHANGED { job.error.clear(); job.problem = Problem::Other; }
+        found += 1;
+    }
+    found
+}
 
 /// The folder is this download's own (named for it, with its marker): safe to delete.
 fn own_folder(job: &Job) -> bool {
@@ -1399,6 +1447,12 @@ impl Worker {
                         // The manager changed a download (at once, for the install queue): saved here.
                         Some(Command::Save) => {
                             self.persist();
+                            None
+                        },
+                        // Downloads found again where they were moved (Manager::relocate).
+                        Some(Command::Reseed) => {
+                            self.persist();
+                            self.seed_all().await;
                             None
                         },
                         Some(Command::Seed(key)) => {
@@ -2194,6 +2248,46 @@ mod tests {
         assert!(!store.join(format!("{key}.torrent")).exists());
         assert!(load_manifest(&store).is_empty(), "Remove clears persisted history only");
         rt.block_on(seeder.stop());
+    }
+
+    #[test]
+    fn a_download_moved_to_another_place_is_found_there_again() {
+        let temp = tempfile::tempdir().unwrap();
+        let (old, new) = (temp.path().join("old-drive"), temp.path().join("new-drive"));
+        let mut done = job(&old, "0123456789abcdef0123456789abcdef01234567");
+        owned_folder(&done).unwrap();
+        (done.state, done.done, done.error) = (State::Complete, 1, FILES_CHANGED.into());
+        // Moved a folder down in the new place (its downloads folder), as the player did.
+        std::fs::create_dir_all(new.join("Downloads")).unwrap();
+        let moved = new.join("Downloads").join(done.folder.file_name().unwrap());
+        std::fs::rename(&done.folder, &moved).unwrap();
+        // One still downloading is the engine's: never pointed elsewhere under it.
+        let mut busy = job(&old, "1123456789abcdef0123456789abcdef01234567");
+        owned_folder(&busy).unwrap();
+        std::fs::rename(&busy.folder, new.join(busy.folder.file_name().unwrap())).unwrap();
+        busy.state = State::Downloading;
+        let mut jobs = vec![done, busy];
+        assert_eq!(relocate(&mut jobs, &[temp.path().join("elsewhere"), new.clone()]), 1);
+        assert_eq!(jobs[0].folder, moved.canonicalize().unwrap());
+        assert!(jobs[0].error.is_empty(), "its files are there again, so it can share");
+        assert_eq!(jobs[1].folder, old.join(jobs[1].folder.file_name().unwrap()));
+        // Already where it is: left alone.
+        assert_eq!(relocate(&mut jobs, &[new]), 0);
+    }
+
+    #[test]
+    fn only_a_downloads_own_folder_is_taken_for_it() {
+        let temp = tempfile::tempdir().unwrap();
+        let key = "2123456789abcdef0123456789abcdef01234567";
+        let named = temp.path().join(format!("torrent-{key}"));
+        std::fs::create_dir(&named).unwrap();
+        assert_eq!(find_moved(key, &[temp.path().into()]), None, "no marker: someone else's folder");
+        std::fs::write(named.join(MARKER), "3123456789abcdef0123456789abcdef01234567").unwrap();
+        assert_eq!(find_moved(key, &[temp.path().into()]), None, "another download's marker");
+        std::fs::write(named.join(MARKER), key).unwrap();
+        // The folder itself chosen, or the one holding it.
+        assert_eq!(find_moved(key, &[named.clone()]), Some(named.canonicalize().unwrap()));
+        assert_eq!(find_moved(key, &[temp.path().into()]), Some(named.canonicalize().unwrap()));
     }
 
     #[test]

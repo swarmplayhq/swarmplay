@@ -129,6 +129,32 @@ pub fn drive_name(mount: &str) -> String {
     Path::new(mount).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| mount.to_string())
 }
 
+/// Whether the drive `path` is on is there: a path where extra drives get mounted (/run/media,
+/// /mnt…) is only on one if a drive is mounted above it. Otherwise writing there would fill the
+/// system drive (or a folder in memory) under the name of a drive that's gone.
+pub fn drive_connected(path: &Path) -> bool {
+    let on_drive = |p: &str| crate::folder_pick::MOUNTS.iter().any(|m| p.starts_with(m));
+    !on_drive(&path.to_string_lossy()) || on_drive(&mount_point(path))
+}
+
+/// Where downloads can be: the folder they go to now, the built-in one, each place added in
+/// Storage (its SwarmPlay/Downloads and its top) and each drive mounted now (the same, at its
+/// top). A download moved between them, or on a drive mounted somewhere else since, is found
+/// there again (downloads::find_moved).
+pub fn download_bases(cfg: &crate::config::Config) -> Vec<PathBuf> {
+    let mounts = std::fs::read_to_string("/proc/self/mountinfo").unwrap_or_default();
+    let tops = cfg.storage.iter().map(|f| util::expand_home(f))
+        .chain(crate::folder_pick::mounted(&mounts).into_iter().map(|(root, _)| root));
+    let mut bases = vec![util::expand_home(&cfg.download_dir), util::expand_home("~/Downloads/Azrak")];
+    for top in tops {
+        bases.push(PathBuf::from(under(&top.to_string_lossy()).0));
+        bases.push(top);
+    }
+    let mut seen = std::collections::HashSet::new();
+    bases.retain(|b| b.is_dir() && seen.insert(b.clone()));
+    bases
+}
+
 /// A place added by its folder: SwarmPlay's downloads and games inside it.
 fn under(folder: &str) -> (String, String) {
     let base = Path::new(folder.trim_end_matches('/')).join("SwarmPlay");
