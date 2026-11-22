@@ -77,9 +77,14 @@ pub enum SId {
     Language,
     /// The name on the avatar (src/onboard.rs types it).
     Name,
+    /// The avatar's picture (src/avatar.rs).
+    Avatar,
     AvatarColor,
     /// The first-run setup again (src/onboard.rs).
     RunSetup,
+    /// Who's playing (src/profiles.rs).
+    SwitchUser,
+    RemoveUser,
     Sounds,
     Share,
     // Advanced
@@ -329,6 +334,10 @@ impl App {
         r.value = self.player_name().into();
         r.hint = tr!("On your avatar and the start screen").into();
         rows.push((SId::Name, r));
+        let mut r = row(4, &tr!("Avatar"));
+        r.value = if cfg.avatar_image.is_empty() { tr!("Your initial") } else { tr!("A picture") }.into();
+        r.hint = tr!("A game's art, your account's picture or one of yours").into();
+        rows.push((SId::Avatar, r));
         let mut r = row(3, &tr!("Avatar colour"));
         r.value = avatar_label(&cfg.avatar_color).into();
         rows.push((SId::AvatarColor, r));
@@ -348,6 +357,15 @@ impl App {
             tr!("Tells the emulator teams which games work on Linux · needs a free GitHub account").into()
         };
         rows.push((SId::Share, r));
+        let mut r = row(4, &tr!("Switch user"));
+        r.hint = tr!("Back to who's playing · everyone has their own name, avatar, theme and language").into();
+        rows.push((SId::SwitchUser, r));
+        if cfg.profiles.len() > 1 {
+            let mut r = row(4, &tr!("Remove this user"));
+            r.danger = true;
+            r.hint = tr!("{}'s name, avatar and theme go · games and downloads stay", self.player_name()).into();
+            rows.push((SId::RemoveUser, r));
+        }
         let mut r = row(4, &tr!("Set up again"));
         r.hint = tr!("The first-run setup: language, controller, look, sound, where games go").into();
         rows.push((SId::RunSetup, r));
@@ -867,6 +885,9 @@ impl App {
             SId::NotifSecs | SId::NotifGames | SId::NotifDnd => self.settings_change(i, 1),
             SId::OverlayHelper => self.overlay_helper_pressed(),
             SId::Name => self.open_name_keys(),
+            SId::Avatar => self.open_avatar_pick(),
+            SId::SwitchUser => { audio::play(Sound::Select); self.switch_user(); }
+            SId::RemoveUser => self.remove_user_pressed(),
             SId::RunSetup => { audio::play(Sound::Select); self.onboard_open(None); }
             SId::Emulator | SId::Dirs | SId::Extra | SId::ThemeImage => {
                 let cfg = self.cfg.lock().unwrap().clone();

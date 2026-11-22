@@ -31,7 +31,7 @@ SIZES = ["1280x720", "1366x768", "1920x1080", "1920x1200", "2560x1440", "3440x14
 # (screen name, keys to press before the shot)
 STEPS = [
     ("00-boot", []),                                       # the start screen (held: SWARMPLAY_BOOT_HOLD_MS)
-    ("01-home", ["sleep:9"]),
+    ("01-home", ["Return", "sleep:4"]),                   # who's playing: the one highlighted, then Home
     ("01b-welcome", ["Left", "Down", "sleep:0.8"]),         # the Welcome tile's widgets
     ("01c-top-buttons", ["Up", "Up", "Right", "Right", "sleep:0.5"]),  # Search, round, focused
     ("01d-avatar", ["Right", "Right", "sleep:0.5"]),        # past Settings: you (the avatar)
@@ -84,10 +84,11 @@ ONBOARD_STEPS = [
     ("o02-controller", ["Return", "sleep:1.2"]),           # the language in use, chosen again: on
     ("o03-internet", ["Next", "sleep:1.2"]),
     ("o04-profile", ["Next", "sleep:1.2"]),
-    ("o04b-name-keys", ["Return", "sleep:0.8", "BackSpace", "BackSpace", "BackSpace", "BackSpace", "BackSpace", "BackSpace",
-                        "BackSpace", "BackSpace", "BackSpace", "BackSpace", "J", "o", "a", "n", "a", "sleep:0.6"]),
-    ("o04c-named", ["Return", "sleep:0.8", "Down", "Right", "Right", "sleep:0.8"]),   # the name, then a colour
-    ("o05-look", ["Next", "sleep:1.2", "Right", "Right", "sleep:1.2"]),              # another wallpaper, live
+    ("o04b-name-keys", ["Return", "sleep:0.8"] + ["BackSpace"] * 10 + ["J", "o", "a", "n", "a", "sleep:0.6"]),
+    ("o04c-named", ["Return", "sleep:0.8", "Down", "Down", "Right", "Right", "sleep:0.8"]),   # the name, then a colour
+    ("o04d-avatars", ["Up", "Return", "sleep:1.5"]),                                 # Avatar: the grid
+    ("o04e-avatar-game", ["Right", "Right", "Right", "sleep:0.4", "Return", "sleep:1.2"]),  # a game's art
+    ("o05-look", ["Next", "sleep:1.2", "Left", "sleep:1.8"]),                        # Particles, live
     ("o06-sound", ["Next", "sleep:1.2"]),
     ("o07-storage", ["Next", "sleep:1.2"]),
     ("o07b-pick", ["Return", "sleep:1"]),                                            # Install new games to: the drives
@@ -95,7 +96,10 @@ ONBOARD_STEPS = [
     ("o08-playing", ["Next", "sleep:1.2"]),
     ("o09-notify", ["Next", "sleep:1.2"]),
     ("o10-done", ["Next", "sleep:1.4"]),
-    ("o11-start-screen", ["Return", "sleep:1.5"]),
+    ("o11-who", ["Return", "sleep:3"]),                                              # who's using this controller?
+    ("o12-add-user", ["Left", "sleep:0.5", "Return", "sleep:1.5"]),                  # Add user: the short setup
+    ("o13-two-users", ["Next", "sleep:0.8", "Next", "sleep:0.8", "Next", "sleep:0.8", "Return", "sleep:2"]),
+    ("o14-home", ["Left", "sleep:0.4", "Return", "sleep:4"]),                        # Joana again, then Home
 ]
 
 
@@ -149,6 +153,9 @@ exit 0
            "SWARMPLAY_NO_PAD": "1"}
     if onboard:
         env["SWARMPLAY_ONBOARD"] = "all"
+    # Software rendering (no GPU on the virtual display) takes every core it's given: two
+    # threads are plenty for screenshots, and leave the desktop alone.
+    env["LP_NUM_THREADS"] = "2"
     for k in ("XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME", "DBUS_SESSION_BUS_ADDRESS"):
         env.pop(k, None)
     procs = [subprocess.Popen(["Xvfb", disp, "-screen", "0", f"{w}x{h}x24", "+extension", "GLX", "-noreset"],
@@ -196,9 +203,16 @@ exit 0
         run(["montage", *pngs, "-tile", "3x", "-geometry", "960x+6+6", "-background", "#333", str(out / f"sheet-{size}.png")])
         print("done", size, flush=True)
     finally:
+        # The launcher doesn't always leave on SIGTERM once its display is gone; one left behind
+        # holds ~1 GB, and runs add up until the desktop freezes. Asked, then made to.
         for p in reversed(procs):
             p.terminate()
-        time.sleep(0.5)
+        for p in reversed(procs):
+            try:
+                p.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                p.kill()
+                p.wait()
         # The launcher's log beside the shots (the run's folder holds a copy of the cache: big).
         shutil.copy(work / "launcher.log", d / "launcher.log")
         if os.environ.get("UI_MATRIX_KEEP"):

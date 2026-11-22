@@ -58,6 +58,10 @@ pub const Z_NOTES: i32 = 30;
 pub const Z_PICK: i32 = 31;
 /// The first-run setup's rows, then its buttons (src/onboard.rs).
 pub const Z_ONBOARD: i32 = 32;
+/// The grid of avatars (src/avatar.rs).
+pub const Z_AVATAR: i32 = 33;
+/// Who's playing, on the start screen (src/profiles.rs).
+pub const Z_PROFILES: i32 = 34;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Overlay {
@@ -89,6 +93,8 @@ pub enum Overlay {
     Folders = 18,
     /// The first-run setup (src/onboard.rs).
     Onboard = 19,
+    /// Choosing an avatar (src/avatar.rs).
+    Avatar = 20,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -469,6 +475,10 @@ pub struct App {
     pub pick: Option<crate::folder_pick::Pick>,
     /// The first-run setup, while it's open (src/onboard.rs).
     pub ob: Option<crate::onboard::Onboard>,
+    /// The grid of avatars, while it's open (src/avatar.rs).
+    pub avatar_pick: Option<crate::avatar::AvatarPick>,
+    /// Remove this user was pressed once (when): a second press soon after removes them.
+    pub remove_armed: Option<f64>,
     /// The setup comes before the start screen: a new install, or SWARMPLAY_ONBOARD=1.
     pub needs_setup: bool,
     pub popups: Vec<(u64, f64)>,
@@ -814,6 +824,8 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         notes: crate::toast::Store::load(),
         pick: None,
         ob: None,
+        avatar_pick: None,
+        remove_armed: None,
         needs_setup: false,
         popups: Vec::new(),
         watch_at: 0.0,
@@ -999,6 +1011,9 @@ impl App {
         let ui = self.ui();
         ui.set_user_initial(user_initial(&name).into());
         ui.set_user_name(name.into());
+        let picture = crate::avatar::load(&self.cfg.lock().unwrap().avatar_image);
+        ui.set_user_has_picture(picture.is_some());
+        ui.set_user_picture(picture.unwrap_or_default());
         // No colour of its own: the accent's (Theme.accent, set by apply_theme).
         ui.set_user_color(crate::theme::accent_color(&color).unwrap_or_else(|| ui.global::<crate::Theme>().get_accent()));
     }
@@ -2323,10 +2338,16 @@ impl App {
         if zone == Z_ONBOARD && self.overlay == Overlay::Onboard {
             self.hover_onboard(idx);
         }
+        if zone == Z_AVATAR && self.overlay == Overlay::Avatar && idx >= 0 && idx != self.idx {
+            self.move_focus(Z_AVATAR, idx);
+        }
     }
 
     pub fn on_click(&mut self, zone: i32, mut idx: i32) {
-        if self.boot.active {
+        if self.boot.active && !self.in_setup() {
+            if !self.boot.first {
+                return if zone == Z_PROFILES { self.click_boot_profile(idx) } else {};
+            }
             return self.boot_confirm();
         }
         if self.search_editing && zone != Z_SEARCH {
@@ -2367,6 +2388,9 @@ impl App {
         }
         if zone == Z_ONBOARD && self.overlay == Overlay::Onboard {
             return self.click_onboard(idx);
+        }
+        if zone == Z_AVATAR && self.overlay == Overlay::Avatar {
+            return self.click_avatar_pick(idx);
         }
         if zone == Z_OS_INSTALL && self.overlay == Overlay::OsInstall {
             if idx < 0 {
@@ -2469,7 +2493,11 @@ impl App {
         if (self.overlay == Overlay::Hub && self.ui().get_hub_leaving()) || self.ui().get_closing() != 0 {
             return;
         }
-        if self.boot.active {
+        if self.boot.active && !self.in_setup() {
+            // Every start after the first asks who's playing (src/profiles.rs).
+            if !self.boot.first {
+                return self.act_boot_profiles(a);
+            }
             if a == Act::Confirm && (self.boot.first || self.boot.ready) {
                 self.boot_confirm();
             }
@@ -2501,6 +2529,7 @@ impl App {
             Overlay::Notifications => self.act_notifications(a),
             Overlay::Folders => self.act_folder_pick(a),
             Overlay::Onboard => self.act_onboard(a),
+            Overlay::Avatar => self.act_avatar_pick(a),
             Overlay::Settings if self.zone == Z_SETTINGS_NAV => self.act_settings_nav(a),
             Overlay::Settings => self.act_settings_rows(a),
             Overlay::Hub => self.act_hub(a),
@@ -2953,7 +2982,7 @@ impl App {
     /// a moment, then closes. Everything else closes at once. (Code that needs the page gone right
     /// away calls `back`.)
     pub fn back_soft(&mut self) {
-        const SOFT: [Overlay; 8] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders];
+        const SOFT: [Overlay; 9] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar];
         let ov = self.overlay;
         if !SOFT.contains(&ov) || (ov == Overlay::Downloads && self.ui().get_download_consent()) {
             return self.back();

@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-22 03:39+0000\n"
+"POT-Creation-Date: 2026-11-22 04:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -412,6 +412,30 @@ msgstr ""
 
 #: src/audio.rs src/toast.rs
 msgid "Off"
+msgstr ""
+
+#: src/avatar.rs
+msgid "A picture of yours"
+msgstr ""
+
+#: src/avatar.rs
+msgid "Account picture"
+msgstr ""
+
+#: src/avatar.rs
+msgid "Couldn't use that picture"
+msgstr ""
+
+#: src/avatar.rs src/settings.rs
+msgid "Your initial"
+msgstr ""
+
+#: src/avatar.rs
+msgid "the picture couldn't be read"
+msgstr ""
+
+#: src/avatar.rs
+msgid "the picture isn't ready yet"
 msgstr ""
 
 #: src/boot.rs
@@ -1129,6 +1153,10 @@ msgstr ""
 
 #: src/folder_pick.rs
 msgid "Can't write there: choose a folder of yours, or the drive's own top"
+msgstr ""
+
+#: src/folder_pick.rs
+msgid "Choose a picture"
 msgstr ""
 
 #: src/folder_pick.rs
@@ -3113,6 +3141,14 @@ msgstr ""
 msgid "{} · files and paths"
 msgstr ""
 
+#: src/profiles.rs
+msgid "Player {}"
+msgstr ""
+
+#: src/profiles.rs
+msgid "Press again to remove {} · their games stay"
+msgstr ""
+
 #: src/rar.rs
 msgid "Missing RAR volume {}"
 msgstr ""
@@ -3225,6 +3261,14 @@ msgid "{} is missing from the game's folder"
 msgstr ""
 
 #: src/settings.rs
+msgid "A game's art, your account's picture or one of yours"
+msgstr ""
+
+#: src/settings.rs
+msgid "A picture"
+msgstr ""
+
+#: src/settings.rs
 msgid "AMD CPU patches (PS5 games)"
 msgstr ""
 
@@ -3249,7 +3293,17 @@ msgid "As your desktop's notifications, with Open to go there"
 msgstr ""
 
 #: src/settings.rs
+msgid "Avatar"
+msgstr ""
+
+#: src/settings.rs
 msgid "Avatar colour"
+msgstr ""
+
+#: src/settings.rs
+msgid ""
+"Back to who's playing · everyone has their own name, avatar, theme and "
+"language"
 msgstr ""
 
 #: src/settings.rs
@@ -3508,6 +3562,10 @@ msgid "Reloading…"
 msgstr ""
 
 #: src/settings.rs
+msgid "Remove this user"
+msgstr ""
+
+#: src/settings.rs
 msgid "Rescan game folders"
 msgstr ""
 
@@ -3589,6 +3647,10 @@ msgstr ""
 
 #: src/settings.rs
 msgid "Switch to official builds"
+msgstr ""
+
+#: src/settings.rs
+msgid "Switch user"
 msgstr ""
 
 #: src/settings.rs
@@ -3748,6 +3810,10 @@ msgstr ""
 
 #: src/settings.rs
 msgid "{} · the graphics check didn't finish"
+msgstr ""
+
+#: src/settings.rs
+msgid "{}'s name, avatar and theme go · games and downloads stay"
 msgstr ""
 
 #: src/setup_ui.rs
@@ -4088,6 +4154,10 @@ msgstr ""
 
 #: src/theme.rs
 msgid "Orange"
+msgstr ""
+
+#: src/theme.rs
+msgid "Particles"
 msgstr ""
 
 #: src/theme.rs
@@ -4578,501 +4648,515 @@ msgstr ""
 msgid "Updating the {console} game list…"
 msgstr ""
 
-#: ui/app.slint:311
+#: ui/app.slint:318
 msgid "Starting with KytyPS5…"
 msgstr ""
 
-#: ui/app.slint:638
+#: ui/app.slint:650
 msgid "Already have games on this PC? Add the folder they're in."
 msgstr ""
 
-#: ui/app.slint:939
+#: ui/app.slint:951
 msgid "Availability"
 msgstr ""
 
-#: ui/app.slint:998
+#: ui/app.slint:1010
 msgid "Search games"
 msgstr ""
 
-#: ui/app.slint:1028
+#: ui/app.slint:1040
 msgid "Comfortable"
 msgstr ""
 
-#: ui/app.slint:1028
+#: ui/app.slint:1040
 msgid "Compact"
 msgstr ""
 
-#: ui/app.slint:1028
+#: ui/app.slint:1040
 msgid "Roomy"
 msgstr ""
 
-#: ui/app.slint:1069
+#: ui/app.slint:1081
 msgid "Genre"
 msgstr ""
 
-#: ui/app.slint:1114
+#: ui/app.slint:1126
 msgid "Games"
 msgstr ""
 
-#: ui/app.slint:1114 ui/app.slint:2615
+#: ui/app.slint:1126 ui/app.slint:2628
 msgid "Library"
 msgstr ""
 
-#: ui/app.slint:1169
+#: ui/app.slint:1181
 msgid "Resume"
 msgstr ""
 
-#: ui/app.slint:1169
+#: ui/app.slint:1181
 msgid "Stop"
 msgstr ""
 
-#: ui/app.slint:1419 ui/app.slint:1422 ui/app.slint:1423 ui/app.slint:1426
-#: ui/app.slint:1429 ui/app.slint:1430 ui/app.slint:2261 ui/app.slint:2270
-#: ui/downloads.slint:384 ui/onboard.slint:268
+#: ui/app.slint:1432 ui/app.slint:1435 ui/app.slint:1436 ui/app.slint:1439
+#: ui/app.slint:1442 ui/app.slint:1443 ui/app.slint:2274 ui/app.slint:2283
+#: ui/app.slint:2859 ui/app.slint:3155 ui/onboard.slint:258
+#: ui/onboard.slint:259
 msgid "Select"
 msgstr ""
 
-#: ui/app.slint:1422 ui/app.slint:1423
+#: ui/app.slint:1435 ui/app.slint:1436
 msgid "Control Center"
 msgstr ""
 
-#: ui/app.slint:1422 ui/app.slint:1423 ui/app.slint:1426 ui/app.slint:1427
-#: ui/app.slint:2710 ui/app.slint:4118 ui/app.slint:4135
+#: ui/app.slint:1435 ui/app.slint:1436 ui/app.slint:1439 ui/app.slint:1440
+#: ui/app.slint:2723 ui/app.slint:4250 ui/app.slint:4267
 msgid "Options"
 msgstr ""
 
-#: ui/app.slint:1422 ui/app.slint:1423
+#: ui/app.slint:1435 ui/app.slint:1436
 msgid "Search"
 msgstr ""
 
-#: ui/app.slint:1422 ui/app.slint:1423 ui/app.slint:1426 ui/app.slint:1427
+#: ui/app.slint:1435 ui/app.slint:1436 ui/app.slint:1439 ui/app.slint:1440
 msgid "Trailer"
 msgstr ""
 
-#: ui/app.slint:1426 ui/app.slint:1427 ui/app.slint:1429 ui/app.slint:1430
-#: ui/app.slint:2268 ui/app.slint:2271 ui/app.slint:3338 ui/app.slint:4062
-#: ui/downloads.slint:385 ui/onboard.slint:268 ui/widgets.slint:131
+#: ui/app.slint:1439 ui/app.slint:1440 ui/app.slint:1442 ui/app.slint:1443
+#: ui/app.slint:2281 ui/app.slint:2284 ui/app.slint:3155 ui/app.slint:4075
+#: ui/app.slint:4194 ui/downloads.slint:385 ui/onboard.slint:259
+#: ui/widgets.slint:131
 msgid "Back"
 msgstr ""
 
 #. What Download gets, when the title (a store's name) doesn't say it all.
-#: ui/app.slint:1508
+#: ui/app.slint:1521
 msgid "Release: {}"
 msgstr ""
 
-#: ui/app.slint:1541
+#: ui/app.slint:1554
 msgid "Compatibility"
 msgstr ""
 
-#: ui/app.slint:1583
+#: ui/app.slint:1596
 msgid "Versions"
 msgstr ""
 
-#: ui/app.slint:1621
+#: ui/app.slint:1634
 msgid "Best for this PC"
 msgstr ""
 
-#: ui/app.slint:1624
+#: ui/app.slint:1637
 msgid "Showing"
 msgstr ""
 
-#: ui/app.slint:1638
+#: ui/app.slint:1651
 msgid "Each version has its own saves and updates."
 msgstr ""
 
-#: ui/app.slint:1661
+#: ui/app.slint:1674
 msgid "Choose another release"
 msgstr ""
 
-#: ui/app.slint:1680
+#: ui/app.slint:1693
 msgid "Trailers & screenshots"
 msgstr ""
 
-#: ui/app.slint:1728
+#: ui/app.slint:1741
 msgid "Details"
 msgstr ""
 
-#: ui/app.slint:1755
+#: ui/app.slint:1768
 msgid "+  Technical details & installed game"
 msgstr ""
 
-#: ui/app.slint:1755
+#: ui/app.slint:1768
 msgid "−  Hide technical details"
 msgstr ""
 
-#: ui/app.slint:1776
+#: ui/app.slint:1789
 msgid "About"
 msgstr ""
 
-#: ui/app.slint:1840 ui/app.slint:2615 ui/overlay.slint:161
+#: ui/app.slint:1853 ui/app.slint:2628 ui/overlay.slint:161
 msgid "Settings"
 msgstr ""
 
-#: ui/app.slint:2127
+#: ui/app.slint:2140
 msgid "Not set"
 msgstr ""
 
-#: ui/app.slint:2237
+#: ui/app.slint:2250
 msgid "Version {} · Linux"
 msgstr ""
 
-#: ui/app.slint:2238
+#: ui/app.slint:2251
 msgid "PS5 games on KytyPS5 · PS4 games on shadPS4"
 msgstr ""
 
-#: ui/app.slint:2262 ui/app.slint:2271 ui/app.slint:3448 ui/app.slint:3449
+#: ui/app.slint:2275 ui/app.slint:2284 ui/app.slint:3580 ui/app.slint:3581
 msgid "Close"
 msgstr ""
 
-#: ui/app.slint:2267
+#: ui/app.slint:2280
 msgid "Remove"
 msgstr ""
 
-#: ui/app.slint:2270 ui/downloads.slint:500
+#: ui/app.slint:2283 ui/downloads.slint:500
 msgid "Change"
 msgstr ""
 
-#: ui/app.slint:2270 ui/app.slint:3943 ui/app.slint:4062 ui/app.slint:4063
+#: ui/app.slint:2283 ui/app.slint:4075 ui/app.slint:4194 ui/app.slint:4195
 msgid "Open"
 msgstr ""
 
-#: ui/app.slint:2538
+#: ui/app.slint:2551
 msgid "NOW PLAYING · {}"
 msgstr ""
 
-#: ui/app.slint:2544 ui/overlay.slint:97
+#: ui/app.slint:2557 ui/overlay.slint:97
 msgid "Back to game"
 msgstr ""
 
-#: ui/app.slint:2544 ui/overlay.slint:98
+#: ui/app.slint:2557 ui/overlay.slint:98
 msgid "Close game"
 msgstr ""
 
-#: ui/app.slint:2568 ui/overlay.slint:113
+#: ui/app.slint:2581 ui/overlay.slint:113
 msgid "DOWNLOADS"
 msgstr ""
 
-#: ui/app.slint:2570
+#: ui/app.slint:2583
 msgid "Nothing downloading"
 msgstr ""
 
-#: ui/app.slint:2577
+#: ui/app.slint:2590
 msgid "Open Downloads"
 msgstr ""
 
-#: ui/app.slint:2593
+#: ui/app.slint:2606
 msgid "NOTIFICATIONS"
 msgstr ""
 
-#: ui/app.slint:2603
+#: ui/app.slint:2616
 msgid "Open notifications"
 msgstr ""
 
-#: ui/app.slint:2615
+#: ui/app.slint:2628
 msgid "Controls"
 msgstr ""
 
-#: ui/app.slint:2616 ui/overlay.slint:162
+#: ui/app.slint:2629 ui/overlay.slint:162
 msgid "Power"
 msgstr ""
 
-#: ui/app.slint:2616
+#: ui/app.slint:2629
 msgid "Quit"
 msgstr ""
 
-#: ui/app.slint:2700
+#: ui/app.slint:2713
 msgid "No controller connected: you'll play with the keyboard."
 msgstr ""
 
-#: ui/app.slint:2701
+#: ui/app.slint:2714
 msgid "Games play best with a controller. Connect one before starting a game."
 msgstr ""
 
-#: ui/app.slint:2708 ui/app.slint:2710
+#: ui/app.slint:2721 ui/app.slint:2723
 msgid "Arrows"
 msgstr ""
 
-#: ui/app.slint:2708 ui/app.slint:2710 ui/app.slint:4118 ui/app.slint:4135
+#: ui/app.slint:2721 ui/app.slint:2723 ui/app.slint:4250 ui/app.slint:4267
 msgid "D-pad"
 msgstr ""
 
-#: ui/app.slint:2708 ui/app.slint:2710
+#: ui/app.slint:2721 ui/app.slint:2723
 msgid "Move"
 msgstr ""
 
-#: ui/app.slint:2827
-msgid "Welcome back"
+#: ui/app.slint:2761
+msgid "Welcome back to SwarmPlay"
 msgstr ""
 
-#: ui/app.slint:2827
-msgid "Welcome back, {}"
+#: ui/app.slint:2768
+msgid "Who's using this controller?"
 msgstr ""
 
-#: ui/app.slint:2835
+#: ui/app.slint:2799
+msgid "Add user"
+msgstr ""
+
+#: ui/app.slint:2852
+msgid "Getting ready…"
+msgstr ""
+
+#: ui/app.slint:2886
 msgid "Getting AzrakOS ready"
 msgstr ""
 
-#: ui/app.slint:2835
+#: ui/app.slint:2886
 msgid "Welcome"
 msgstr ""
 
-#: ui/app.slint:2842
+#: ui/app.slint:2893
 msgid "Setting up SwarmPlay"
 msgstr ""
 
-#: ui/app.slint:2849
+#: ui/app.slint:2900
 msgid "You can install it later from Settings."
 msgstr ""
 
-#: ui/app.slint:2976
+#: ui/app.slint:3027
 msgid "Skip and continue"
 msgstr ""
 
-#: ui/app.slint:2976
+#: ui/app.slint:3027
 msgid "Start"
 msgstr ""
 
-#: ui/app.slint:3242
+#: ui/app.slint:3100
+msgid "Choose an avatar"
+msgstr ""
+
+#: ui/app.slint:3374
 msgid "Before you restart"
 msgstr ""
 
-#: ui/app.slint:3245
+#: ui/app.slint:3377
 msgid ""
 "A blue screen comes up once after the restart. On it, use a keyboard's arrow "
 "keys and Enter:"
 msgstr ""
 
-#: ui/app.slint:3253
+#: ui/app.slint:3385
 msgid "Choose "
 msgstr ""
 
-#: ui/app.slint:3256
+#: ui/app.slint:3388
 msgid "Type the password "
 msgstr ""
 
-#: ui/app.slint:3275
+#: ui/app.slint:3407
 msgid ""
 "This lets NVIDIA's graphics driver start. Skipped it? AzrakOS still starts; "
 "the PC asks again later."
 msgstr ""
 
-#: ui/app.slint:3391
+#: ui/app.slint:3523
 msgid "A name, initials (tlou) or a genre"
 msgstr ""
 
-#: ui/app.slint:3391
+#: ui/app.slint:3523
 msgid "Your name"
 msgstr ""
 
-#: ui/app.slint:3448 ui/app.slint:3590 ui/app.slint:3943
+#: ui/app.slint:3580 ui/app.slint:3722 ui/app.slint:4075
 msgid "Delete"
 msgstr ""
 
-#: ui/app.slint:3448 ui/app.slint:3449 ui/downloads.slint:500
+#: ui/app.slint:3580 ui/app.slint:3581 ui/downloads.slint:500
 msgid "Done"
 msgstr ""
 
-#: ui/app.slint:3448 ui/app.slint:3449
+#: ui/app.slint:3580 ui/app.slint:3581
 msgid "Show results"
 msgstr ""
 
-#: ui/app.slint:3448 ui/app.slint:3590 ui/app.slint:4120
+#: ui/app.slint:3580 ui/app.slint:3722 ui/app.slint:4252
 msgid "Space"
 msgstr ""
 
-#: ui/app.slint:3449 ui/app.slint:3591
+#: ui/app.slint:3581 ui/app.slint:3723
 msgid "Press the key"
 msgstr ""
 
-#: ui/app.slint:3493
+#: ui/app.slint:3625
 msgid "Join {}"
 msgstr ""
 
-#: ui/app.slint:3526
+#: ui/app.slint:3658
 msgid "Password"
 msgstr ""
 
-#: ui/app.slint:3556
+#: ui/app.slint:3688
 msgid "Connecting to {}…"
 msgstr ""
 
-#: ui/app.slint:3557
+#: ui/app.slint:3689
 msgid "Choose the letters below"
 msgstr ""
 
-#: ui/app.slint:3557
+#: ui/app.slint:3689
 msgid "Type with your keyboard, or choose the letters below"
 msgstr ""
 
-#: ui/app.slint:3590 ui/app.slint:3591 ui/app.slint:3678
+#: ui/app.slint:3722 ui/app.slint:3723 ui/app.slint:3810
 msgid "Cancel"
 msgstr ""
 
-#: ui/app.slint:3590 ui/app.slint:3591
+#: ui/app.slint:3722 ui/app.slint:3723
 msgid "Join"
 msgstr ""
 
-#: ui/app.slint:3590
+#: ui/app.slint:3722
 msgid "Shift"
 msgstr ""
 
-#: ui/app.slint:3590
+#: ui/app.slint:3722
 msgid "Symbols"
 msgstr ""
 
-#: ui/app.slint:3591
+#: ui/app.slint:3723
 msgid "Hide password"
 msgstr ""
 
-#: ui/app.slint:3591
+#: ui/app.slint:3723
 msgid "Show password"
 msgstr ""
 
-#: ui/app.slint:3700
+#: ui/app.slint:3832
 msgid "Loading trailer…"
 msgstr ""
 
-#: ui/app.slint:3776
+#: ui/app.slint:3908
 msgctxt "Trailer"
 msgid "Pause"
 msgstr ""
 
-#: ui/app.slint:3776
+#: ui/app.slint:3908
 msgctxt "Trailer"
 msgid "Play"
 msgstr ""
 
-#: ui/app.slint:3840
+#: ui/app.slint:3972
 msgid "Click to open"
 msgstr ""
 
-#: ui/app.slint:3840
+#: ui/app.slint:3972
 msgid "PS  to see it"
 msgstr ""
 
-#: ui/app.slint:3861
+#: ui/app.slint:3993
 msgid "Notifications"
 msgstr ""
 
-#: ui/app.slint:3869
+#: ui/app.slint:4001
 msgid "No notifications"
 msgstr ""
 
-#: ui/app.slint:3870
+#: ui/app.slint:4002
 msgid "Downloads, games ready to play and updates show up here."
 msgstr ""
 
-#: ui/app.slint:3893
+#: ui/app.slint:4025
 msgid "Earlier"
 msgstr ""
 
-#: ui/app.slint:3893
+#: ui/app.slint:4025
 msgid "Today"
 msgstr ""
 
-#: ui/app.slint:3934
+#: ui/app.slint:4066
 msgid "Clear all"
 msgstr ""
 
-#: ui/app.slint:3982
+#: ui/app.slint:4114
 msgid ""
 "Games can go on any of these. A drive plugged in but not mounted is mounted "
 "when chosen."
 msgstr ""
 
-#: ui/app.slint:4052
+#: ui/app.slint:4184
 msgid "No folders in here"
 msgstr ""
 
-#: ui/app.slint:4063
+#: ui/app.slint:4195
 msgid "Up"
 msgstr ""
 
-#: ui/app.slint:4063
+#: ui/app.slint:4195
 msgid "Use this folder"
 msgstr ""
 
-#: ui/app.slint:4095
+#: ui/app.slint:4227
 msgid "Keyboard controls in games"
 msgstr ""
 
-#: ui/app.slint:4102
+#: ui/app.slint:4234
 msgid "PS4 games · shadPS4"
 msgstr ""
 
-#: ui/app.slint:4102
+#: ui/app.slint:4234
 msgid "PS5 games · KytyPS5"
 msgstr ""
 
-#: ui/app.slint:4111
+#: ui/app.slint:4243
 msgid "◂ ▸ to switch"
 msgstr ""
 
-#: ui/app.slint:4117
+#: ui/app.slint:4249
 msgid "B  (or keypad 6)"
 msgstr ""
 
-#: ui/app.slint:4117
+#: ui/app.slint:4249
 msgid "N  (or keypad 2)"
 msgstr ""
 
-#: ui/app.slint:4117
+#: ui/app.slint:4249
 msgid "V  (or keypad 4)"
 msgstr ""
 
-#: ui/app.slint:4117 ui/app.slint:4134
+#: ui/app.slint:4249 ui/app.slint:4266
 msgid "□  Square"
 msgstr ""
 
-#: ui/app.slint:4117 ui/app.slint:4134
+#: ui/app.slint:4249 ui/app.slint:4266
 msgid "○  Circle"
 msgstr ""
 
-#: ui/app.slint:4117 ui/app.slint:4134
+#: ui/app.slint:4249 ui/app.slint:4266
 msgid "✕  Cross"
 msgstr ""
 
-#: ui/app.slint:4118 ui/app.slint:4135
+#: ui/app.slint:4250 ui/app.slint:4267
 msgid "Arrow keys"
 msgstr ""
 
-#: ui/app.slint:4118
+#: ui/app.slint:4250
 msgid "C  (or keypad 8)"
 msgstr ""
 
-#: ui/app.slint:4118 ui/app.slint:4134
+#: ui/app.slint:4250 ui/app.slint:4266
 msgid "△  Triangle"
 msgstr ""
 
-#: ui/app.slint:4119 ui/app.slint:4136
+#: ui/app.slint:4251 ui/app.slint:4268
 msgid "Left stick"
 msgstr ""
 
-#: ui/app.slint:4119 ui/app.slint:4136
+#: ui/app.slint:4251 ui/app.slint:4268
 msgid "Right stick"
 msgstr ""
 
-#: ui/app.slint:4120 ui/app.slint:4137
+#: ui/app.slint:4252 ui/app.slint:4269
 msgid "Touchpad"
 msgstr ""
 
-#: ui/app.slint:4137
+#: ui/app.slint:4269
 msgid "Left Shift  /  Left Ctrl"
 msgstr ""
 
-#: ui/app.slint:4149
+#: ui/app.slint:4281
 msgid ""
 "F7 turns the mouse into the right stick (press it again to release the "
 "mouse)."
 msgstr ""
 
-#: ui/app.slint:4149
+#: ui/app.slint:4281
 msgid ""
 "shadPS4 keeps its key layout in its own settings file; these are its "
 "defaults."
 msgstr ""
 
-#: ui/app.slint:4151
+#: ui/app.slint:4283
 msgid ""
 "Games play best with a controller: DualSense, DualShock 4, Xbox and most "
 "others work\n"
@@ -5204,15 +5288,15 @@ msgstr ""
 msgid "Sort by"
 msgstr ""
 
-#: ui/onboard.slint:195
+#: ui/onboard.slint:181
 msgid "Continue"
 msgstr ""
 
-#: ui/onboard.slint:229
+#: ui/onboard.slint:215
 msgid "No controller yet"
 msgstr ""
 
-#: ui/onboard.slint:267
+#: ui/onboard.slint:258
 msgctxt "Setup"
 msgid "Next"
 msgstr ""

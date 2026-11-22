@@ -4,7 +4,7 @@
 // reached from, its rows one after another.
 
 import { S, Theme, Icons, Zone, OnboardData, SettingData, ActionData } from "theme.slint";
-import { Btn, Switch, KeyCap } from "widgets.slint";
+import { Btn, Switch, KeyCap, AvatarCircle } from "widgets.slint";
 
 // One of the page's rows, drawn as Settings draws it (kind 2 a switch, 3 a ‹ choice ›, 4 a
 // button with its value, 7 a line to read).
@@ -105,22 +105,6 @@ component OnboardRow inherits Rectangle {
     }
 }
 
-// The avatar as it'll look: the letter on its colour.
-component Avatar inherits Rectangle {
-    in property <string> initial;
-    in property <color> tint;
-    in property <length> size: (160px * S.k);
-    width: size; height: size;
-    border-radius: size / 2;
-    background: @linear-gradient(135deg, tint.brighter(0.35) 0%, tint.darker(0.45) 100%);
-    animate background { duration: 260ms; }
-    border-width: (4px * S.k);
-    border-color: #f5f7fb;
-    drop-shadow-blur: (34px * S.k);
-    drop-shadow-color: tint.brighter(0.4).with-alpha(0.6);
-    Text { text: root.initial; font-size: size * 0.43; font-weight: 600; color: #ffffff; }
-}
-
 export component OnboardPage inherits Rectangle {
     in property <OnboardData> data;
     // One number per page: a new one makes the page again (and plays its entrance).
@@ -131,6 +115,8 @@ export component OnboardPage inherits Rectangle {
     in property <bool> pad-hints;
     in property <string> user-initial;
     in property <color> user-color;
+    in property <image> user-picture;
+    in property <bool> user-has-picture;
     callback click(int, int);
     callback hover(int, int);
 
@@ -233,12 +219,17 @@ export component OnboardPage inherits Rectangle {
                 }
             }
             // Who's playing? and All set: the avatar, as it'll show.
-            if root.data.step == 4 || root.data.step == 10: Avatar {
+            if root.data.step == 4 || root.data.step == 10: AvatarCircle {
                 x: parent.width - self.width - (180px * S.k);
                 y: (200px * S.k);
                 size: (200px * S.k);
                 initial: root.user-initial;
                 tint: root.user-color;
+                picture: root.user-picture;
+                has-picture: root.user-has-picture;
+                ring: true;
+                drop-shadow-blur: (34px * S.k);
+                drop-shadow-color: root.user-color.brighter(0.4).with-alpha(0.6);
             }
             // The buttons, bottom right.
             HorizontalLayout {

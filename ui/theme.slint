@@ -138,6 +138,8 @@ export global Zone {
     out property <int> notes: 30;
     out property <int> pick: 31;
     out property <int> onboard: 32;
+    out property <int> avatar: 33;
+    out property <int> profiles: 34;
 }
 
 // dot: KytyPS5 compatibility level (0 none, 1 in-game, 2 menus, 3 boots, 4 doesn't boot, 5 untested)
@@ -350,3 +352,10 @@ export struct OnboardData {
     buttons: [ActionData],
     from-settings: bool,
 }
+
+// A square of the avatar grid (src/avatar.rs): 0 the initial, 1 the account's picture, 2 a
+// picture of yours (opens the picker), 3 a game's art.
+export struct AvatarChoice { kind: int, label: string, initial: string, image: image, has-image: bool }
+
+// Someone who plays here, on the start screen's "Who's using this controller?" (src/profiles.rs).
+export struct ProfileData { name: string, initial: string, tint: color, picture: image, has-picture: bool }

@@ -760,6 +760,7 @@ impl App {
             self.push_hero();
         }
         self.grid_image_loaded(key);
+        self.avatar_image_loaded(key);
         if self.hub_keys.contains(key) {
             self.push_hub();
         }

@@ -10,7 +10,7 @@ use tr::tr;
 
 /// The wallpapers, in the order Settings steps through them; ui/app.slint draws each by its
 /// position ("Your image" is the user's picture).
-pub const WALLPAPERS: [&str; 6] = ["Game art", "Deep blue", "Midnight", "Aurora", "Ember", "Your image"];
+pub const WALLPAPERS: [&str; 7] = ["Game art", "Deep blue", "Midnight", "Aurora", "Ember", "Your image", "Particles"];
 const YOUR_IMAGE: usize = 5;
 
 /// The accent colours and their focus glow.
@@ -31,6 +31,7 @@ fn wallpaper_text(key: &str) -> Option<String> {
         "Aurora" => tr!("Aurora"),
         "Ember" => tr!("Ember"),
         "Your image" => tr!("Your image"),
+        "Particles" => tr!("Particles"),
         _ => return None,
     })
 }
@@ -155,8 +156,8 @@ mod tests {
     #[test]
     fn choices_step_round_and_start_over_when_unknown() {
         assert_eq!(step(&WALLPAPERS, "Game art", 1), "Deep blue");
-        assert_eq!(step(&WALLPAPERS, "Game art", -1), "Your image");
-        assert_eq!(step(&WALLPAPERS, "Your image", 1), "Game art");
+        assert_eq!(step(&WALLPAPERS, "Game art", -1), "Particles");
+        assert_eq!(step(&WALLPAPERS, "Particles", 1), "Game art");
         assert_eq!(step(&WALLPAPERS, "Gone", 1), "Deep blue", "an unknown name counts as the first");
     }
 

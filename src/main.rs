@@ -28,6 +28,8 @@ mod sound;
 mod storage;
 mod folder_pick;
 mod onboard;
+mod avatar;
+mod profiles;
 mod overlay;
 mod overlay_ui;
 mod ipc;

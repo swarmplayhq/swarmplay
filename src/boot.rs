@@ -18,6 +18,12 @@ pub const OVERLAY_BOOT: i32 = 6;
 #[derive(Default)]
 pub struct Boot {
     pub active: bool,
+    /// Who's playing (src/profiles.rs): the one highlighted (0: Add user, then everyone), and
+    /// whether they've chosen (the start screen then leaves as soon as it's ready).
+    pub pick: i32,
+    pub chosen: bool,
+    /// Adding a user: who was playing before, to come back to if it's left.
+    pub came_from: Option<usize>,
     pub first: bool,
     pub ready: bool,
     pub waiting_catalog: bool,
@@ -70,6 +76,7 @@ impl App {
             first,
             waiting_catalog: self.games.is_empty(),
             started: Some(Instant::now()),
+            pick: self.cfg.lock().unwrap().profile as i32 + 1,
             f_catalog: if self.games.is_empty() { 0.0 } else { 1.0 },
             ..Default::default()
         };
@@ -88,6 +95,7 @@ impl App {
             "KytyPS5 emulator not found · you can set it in Settings".into()
         };
         self.boot_render();
+        self.push_boot_profiles();
         if kyty_needed {
             self.kyty.force_install = true;
             self.kyty_check(false);
@@ -347,7 +355,7 @@ impl App {
         if self.boot.first {
             ui.set_boot_ready(true);
             audio::play(Sound::Select);
-        } else {
+        } else if self.boot.chosen {
             // Keep the splash up for a short, smooth beat even when everything is cached.
             // (Long enough to read "Welcome back"; everything loads meanwhile anyway. The
             // screenshot run holds it longer, to shoot it.)

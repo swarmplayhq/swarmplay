@@ -1,5 +1,5 @@
-import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, SettingSection, MenuItem, RunningData } from "theme.slint";
-import { FocusRing, Chip, Btn, Kicker, Badge, Switch, KeyCap, KeyboardKey, BackButton, Shimmer, Cover } from "widgets.slint";
+import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData } from "theme.slint";
+import { FocusRing, Chip, Btn, Kicker, Badge, Switch, KeyCap, KeyboardKey, BackButton, Shimmer, Cover, Particles, AvatarCircle } from "widgets.slint";
 import { DownloadsPage, DownloadConsent, DownloadPanel, Capsule } from "downloads.slint";
 import { LibraryFilter, LibrarySortPicker } from "library.slint";
 import { OnboardPage } from "onboard.slint";
@@ -76,7 +76,9 @@ component Wallpaper inherits Rectangle {
         : kind == 3 ? @linear-gradient(135deg, #0f766e 0%, #1e3a8a 48%, #4c1d95 100%)
         : kind == 4 ? @linear-gradient(135deg, #9a3412 0%, #9f1239 45%, #1e1b4b 100%)
         : @linear-gradient(160deg, #0b4fd6 0%, #0a2a7a 45%, #030a24 100%);
-    if kind != 5: Rectangle {
+    if kind == 6: Rectangle { background: @linear-gradient(160deg, #46444a 0%, #23232a 45%, #0b0b0f 100%); }
+    if kind == 6: Particles { running: root.visible && root.opacity > 0; }
+    if kind != 5 && kind != 6: Rectangle {
         background: @radial-gradient(circle, #ffffff2e 0%, #ffffff00 60%);
         x: parent.width * 0.42; y: -parent.height * 0.35;
         width: parent.width * 0.9; height: parent.height * 1.1;
@@ -274,6 +276,11 @@ export component AppWindow inherits Window {
     in property <string> user-name;
     // The avatar's colour (the accent's unless one was chosen: src/app.rs push_user).
     in property <color> user-color: #0a6cff;
+    // The avatar's picture (src/avatar.rs), when it has one.
+    in property <image> user-picture;
+    in property <bool> user-has-picture;
+    // The grid of avatars to choose from (src/avatar.rs).
+    in property <[AvatarChoice]> avatar-choices;
     // The first-run setup (src/onboard.rs): its page, a number per page (a new one plays the
     // entrance), the way it went, and whether it's open (also under what it opened).
     in property <OnboardData> onboard;
@@ -401,6 +408,11 @@ export component AppWindow inherits Window {
     in property <string> boot-detail;
     in property <[BootStep]> boot-steps;
     in property <[image]> boot-covers;
+    // Who's playing, on every start after the first (src/profiles.rs): everyone, the one
+    // highlighted (0: Add user), and whether they've chosen (it's getting ready).
+    in property <[ProfileData]> boot-profiles;
+    in property <int> boot-pick: 1;
+    in property <bool> boot-chosen;
 
     // ---------------------------------------------------------------- callbacks to Rust
     callback key(string, bool, bool, bool) -> bool;   // text, ctrl, alt, repeat
@@ -1291,12 +1303,13 @@ export component AppWindow inherits Window {
                             height: self.width;
                             y: (4px * S.k);
                             FocusRing { w: parent.width; h: parent.height; on: av.f; radius: parent.width / 2; glow: false; }
-                            Rectangle {
-                                border-radius: self.width / 2;
-                                background: @linear-gradient(135deg, root.user-color.brighter(0.35) 0%, root.user-color.darker(0.45) 100%);
-                                border-width: ta-av.has-hover && !av.f ? (2px * S.k) : 0;
-                                border-color: #ffffffb3;
-                                Text { text: root.user-initial; font-size: (26px * S.k); font-weight: 600; color: #ffffff; }
+                            AvatarCircle {
+                                size: parent.width;
+                                initial: root.user-initial;
+                                tint: root.user-color;
+                                picture: root.user-picture;
+                                has-picture: root.user-has-picture;
+                                ring: ta-av.has-hover && !av.f;
                             }
                             ta-av := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.top, 6); } }
                         }
@@ -2733,55 +2746,120 @@ export component AppWindow inherits Window {
             background: #05070f;
             TouchArea { clicked => { root.click(Zone.row, -2); } }
 
-            // A slowly drifting wall of the library's covers.
-            property <length> cw: (190px * S.k);
-            property <length> ch: (285px * S.k);
-            property <length> cg: (22px * S.k);
-            property <int> cols: ceil(root.width / (cw + cg)) + 1;
-            property <int> rows: ceil(root.height / (ch + cg)) + 2;
-            Rectangle {
-                opacity: root.boot-covers.length > 0 ? 0.30 : 0;
-                animate opacity { duration: 1600ms; easing: ease-out-quad; }
-                for c in boot.cols: Rectangle {
-                    property <float> speed: 14 + mod(c * 7, 11);            // px/s, each column differs
-                    property <length> shift: (boot.t * speed * 1px * S.k) + c * (97px * S.k);
-                    property <length> loop-h: boot.rows * (boot.ch + boot.cg);
-                    x: c * (boot.cw + boot.cg) - (40px * S.k);
-                    width: boot.cw;
-                    for r in boot.rows: Rectangle {
-                        property <int> k: mod(c * 7 + r * 11, max(1, root.boot-covers.length));
-                        y: mod(r * (boot.ch + boot.cg) / 1px - shift / 1px, loop-h / 1px) * 1px - boot.ch;
-                        height: boot.ch;
-                        border-radius: (14px * S.k);
-                        clip: true;
-                        background: #121a31;
-                        if root.boot-covers.length > 0: Image {
-                            source: root.boot-covers[k];
-                            width: parent.width;
-                            height: parent.height;
-                            image-fit: cover;
+            // Light floating up through a beam from the top left, as on a console's welcome.
+            Rectangle { background: @linear-gradient(160deg, #46444a 0%, #23232a 45%, #0b0b0f 100%); }
+            Particles { running: boot.shown; }
+            Rectangle { background: @radial-gradient(circle, #00000000 40%, #00000073 100%); }
+
+            // Every start after the first, as a console's: "Welcome back", who's using this
+            // controller (everyone who plays here, and Add user). The one highlighted is larger,
+            // ringed, with the controller over it.
+            if !root.boot-first: Rectangle {
+                Text {
+                    y: parent.height * 0.15;
+                    width: parent.width;
+                    text: @tr("Welcome back to SwarmPlay");
+                    font-size: (54px * S.t); font-weight: 300; color: Theme.text;
+                    horizontal-alignment: center;
+                }
+                Text {
+                    y: parent.height * 0.15 + (80px * S.k);
+                    width: parent.width;
+                    text: @tr("Who's using this controller?");
+                    font-size: (26px * S.t); color: Theme.text2;
+                    horizontal-alignment: center;
+                }
+                HorizontalLayout {
+                    y: parent.height * 0.34;
+                    width: parent.width;
+                    height: (330px * S.k);
+                    alignment: center;
+                    spacing: (34px * S.k);
+                    // Add user.
+                    VerticalLayout {
+                        property <bool> f: root.boot-pick == 0;
+                        width: (230px * S.k);
+                        spacing: (18px * S.k);
+                        alignment: center;
+                        HorizontalLayout {
+                            alignment: center;
+                            Rectangle {
+                                width: f ? (190px * S.k) : (150px * S.k);
+                                height: self.width;
+                                animate width { duration: 260ms; easing: ease-out-back; }
+                                border-radius: self.width / 2;
+                                background: f ? #ffffff2e : #ffffff17;
+                                border-width: f ? (4px * S.k) : 0;
+                                border-color: #f5f7fb;
+                                animate background { duration: 200ms; }
+                                Text { text: "+"; font-size: parent.width * 0.42; font-weight: 300; color: Theme.text; }
+                                TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.profiles, 0); } }
+                            }
                         }
+                        Text { text: @tr("Add user"); font-size: (24px * S.t); color: f ? Theme.text : Theme.text2; horizontal-alignment: center; }
+                    }
+                    for pr[i] in root.boot-profiles: VerticalLayout {
+                        property <bool> f: root.boot-pick == i + 1;
+                        width: (260px * S.k);
+                        spacing: (14px * S.k);
+                        alignment: center;
+                        // The controller, over whoever it's on.
+                        HorizontalLayout {
+                            alignment: center;
+                            height: (34px * S.k);
+                            Image {
+                                source: Icons.gamepad;
+                                colorize: Theme.text;
+                                width: (34px * S.k); height: self.width;
+                                opacity: f ? 1 : 0;
+                                animate opacity { duration: 200ms; }
+                            }
+                        }
+                        HorizontalLayout {
+                            alignment: center;
+                            AvatarCircle {
+                                size: f ? (220px * S.k) : (160px * S.k);
+                                animate size { duration: 260ms; easing: ease-out-back; }
+                                initial: pr.initial;
+                                tint: pr.tint;
+                                picture: pr.picture;
+                                has-picture: pr.has-picture;
+                                ring: f;
+                                opacity: f ? 1 : 0.7;
+                                animate opacity { duration: 200ms; }
+                                drop-shadow-blur: f ? (40px * S.k) : 0;
+                                drop-shadow-color: #ffffff55;
+                                TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.profiles, i + 1); } }
+                            }
+                        }
+                        Text { text: pr.name; font-size: (26px * S.t); font-weight: f ? 600 : 400; color: f ? Theme.text : Theme.text2; horizontal-alignment: center; overflow: elide; }
                     }
                 }
+                // Chosen while it still gets ready: how far it is.
+                if root.boot-chosen: VerticalLayout {
+                    y: parent.height * 0.82;
+                    width: parent.width;
+                    spacing: (12px * S.k);
+                    HorizontalLayout {
+                        alignment: center;
+                        Rectangle {
+                            width: (320px * S.k); height: (4px * S.k);
+                            border-radius: self.height / 2;
+                            background: #ffffff1f;
+                            Rectangle { x: 0; width: parent.width * root.boot-progress; height: parent.height; border-radius: parent.border-radius; background: Theme.accent.brighter(0.2); animate width { duration: 400ms; } }
+                        }
+                    }
+                    Text { text: root.boot-progress < 1 ? @tr("Getting ready…") : ""; font-size: (18px * S.t); color: Theme.text2; horizontal-alignment: center; }
+                }
+                if !root.boot-chosen: HorizontalLayout {
+                    x: parent.width - self.width - (96px * S.k); y: parent.height - (64px * S.k);
+                    width: self.preferred-width; height: self.preferred-height;
+                    spacing: (10px * S.k);
+                    KeyCap { text: root.pad-hints ? "✕" : "Enter"; round: root.pad-hints; }
+                    Text { text: @tr("Select"); font-size: (18px * S.k); color: Theme.hint; vertical-alignment: center; }
+                }
             }
-            // Vignette + drifting light keep the centre calm and readable.
-            Rectangle { background: @radial-gradient(circle, #05070fd9 0%, #05070fa6 45%, #05070f40 100%); }
-            Rectangle {
-                x: root.width * (0.30 + 0.06 * sin(boot.t * 9deg)) - self.width / 2;
-                y: root.height * (0.35 + 0.05 * cos(boot.t * 7deg)) - self.height / 2;
-                width: (1100px * S.k);
-                height: self.width;
-                background: @radial-gradient(circle, #1f4fd13d 0%, #1f4fd100 65%);
-            }
-            Rectangle {
-                x: root.width * (0.70 + 0.05 * cos(boot.t * 8deg)) - self.width / 2;
-                y: root.height * (0.62 + 0.06 * sin(boot.t * 6deg)) - self.height / 2;
-                width: (1000px * S.k);
-                height: self.width;
-                background: @radial-gradient(circle, #8b5cf62e 0%, #8b5cf600 65%);
-            }
-
-            VerticalLayout {
+            if root.boot-first: VerticalLayout {
                 alignment: center;
                 spacing: 0;
                 // Custom chassis emblem, presented calmly rather than as a pulsing play button.
@@ -2803,33 +2881,6 @@ export component AppWindow inherits Window {
                 }
                 Rectangle { height: (24px * S.k); }
                 Text { text: root.boot-stick ? "AZRAKOS" : "SWARMPLAY"; font-size: (19px * S.k); font-weight: 600; letter-spacing: (3px * S.k); color: Theme.text2; horizontal-alignment: center; }
-                // Every start after the first, as a console's: who's playing, welcomed back.
-                if !root.boot-first: VerticalLayout {
-                    spacing: 0;
-                    property <bool> came: false;
-                    init => { self.came = true; }
-                    Rectangle { height: (54px * S.k); }
-                    HorizontalLayout {
-                        alignment: center;
-                        av-boot := Rectangle {
-                            width: (148px * S.k); height: self.width;
-                            border-radius: self.width / 2;
-                            background: @linear-gradient(135deg, root.user-color.brighter(0.35) 0%, root.user-color.darker(0.45) 100%);
-                            border-width: (4px * S.k);
-                            border-color: #f5f7fb;
-                            drop-shadow-blur: (34px * S.k);
-                            drop-shadow-color: Theme.glow;
-                            Text { text: root.user-initial; font-size: (64px * S.k); font-weight: 600; color: #ffffff; }
-                        }
-                    }
-                    Rectangle { height: (26px * S.k); }
-                    Text {
-                        text: root.user-name != "" ? @tr("Welcome back, {}", root.user-name) : @tr("Welcome back");
-                        font-size: (40px * S.k); font-weight: 600; color: Theme.text;
-                        horizontal-alignment: center;
-                    }
-                    Rectangle { height: (30px * S.k); }
-                }
                 Rectangle { height: (18px * S.k); }
                 if root.boot-first: Text {
                     text: root.boot-stick ? @tr("Getting AzrakOS ready") : @tr("Welcome");
@@ -2998,8 +3049,9 @@ export component AppWindow inherits Window {
             animate transform-scale { duration: 600ms; easing: ease-out-expo; }
             background: #05070f;
             TouchArea {}
-            Wallpaper { kind: root.wallpaper-kind == 0 ? 1 : root.wallpaper-kind; image: root.wallpaper-image; }
-            Rectangle { background: @linear-gradient(90deg, #05070fe0 0%, #05070fa6 55%, #05070f73 100%); }
+            Wallpaper { kind: root.wallpaper-kind == 0 ? 6 : root.wallpaper-kind; image: root.wallpaper-image; }
+            Rectangle { background: @linear-gradient(90deg, #05070fd9 0%, #05070f99 55%, #05070f59 100%); }
+            if root.wallpaper-kind != 6: Particles { running: root.onboard-open; opacity: 0.8; }
             Rectangle {
                 x: root.width * (0.30 + 0.06 * sin(ob.t * 9deg)) - self.width / 2;
                 y: root.height * (0.35 + 0.05 * cos(ob.t * 7deg)) - self.height / 2;
@@ -3023,8 +3075,88 @@ export component AppWindow inherits Window {
                 pad-hints: root.pad-hints;
                 user-initial: root.user-initial;
                 user-color: root.user-color;
+                user-picture: root.user-picture;
+                user-has-picture: root.user-has-picture;
                 click(z, i) => { root.click(z, i); }
                 hover(z, i) => { root.hover(z, i); }
+            }
+        }
+
+        // Choosing an avatar: the wallpaper, a title, the grid (your initial, your account's
+        // picture, one of yours, the games' art). The one chosen grows and is ringed.
+        if root.overlay == 20: avp := Rectangle {
+            property <bool> came: false;
+            init => { self.came = true; }
+            opacity: came ? 1 : 0;
+            animate opacity { duration: 260ms; easing: ease-out-quad; }
+            background: #05070f;
+            TouchArea {}
+            Wallpaper { kind: root.wallpaper-kind == 0 ? 6 : root.wallpaper-kind; image: root.wallpaper-image; opacity: 0.55; }
+            Rectangle { background: #05070fa6; }
+            HorizontalLayout {
+                x: (96px * S.k); y: (64px * S.k); height: (56px * S.k);
+                spacing: (16px * S.k);
+                BackButton { clicked => { root.click(Zone.avatar, -1); } }
+                Text { text: @tr("Choose an avatar"); font-size: (40px * S.t); font-weight: 700; color: Theme.text; vertical-alignment: center; }
+            }
+            Rectangle {
+                x: (96px * S.k); y: (160px * S.k);
+                width: parent.width - (192px * S.k); height: parent.height - (240px * S.k);
+                clip: true;
+                // The highlighted row stays in view: the grid slides up under it.
+                Rectangle {
+                y: -max(0, floor(root.idx / 7) - 1) * (196px * S.k);
+                animate y { duration: 260ms; easing: ease-out-quad; }
+                for c[i] in root.avatar-choices: Rectangle {
+                    property <bool> f: root.zone == Zone.avatar && root.idx == i;
+                    property <bool> shown: false;
+                    init => { self.shown = true; }
+                    x: mod(i, 7) * (176px * S.k) + (8px * S.k);
+                    y: floor(i / 7) * (196px * S.k) + (8px * S.k);
+                    width: (150px * S.k); height: (180px * S.k);
+                    opacity: shown ? 1 : 0;
+                    animate opacity { duration: 240ms; delay: min(i, 20) * 25ms; }
+                    av-c := AvatarCircle {
+                        x: (7px * S.k); y: (4px * S.k);
+                        size: (136px * S.k);
+                        initial: c.kind == 0 ? root.user-initial : "";
+                        tint: c.kind == 0 ? root.user-color : #1b2236;
+                        picture: c.image;
+                        has-picture: c.has-image;
+                        ring: f;
+                        transform-scale: f ? 1.08 : 1;
+                        animate transform-scale { duration: 220ms; easing: ease-out-back; }
+                        drop-shadow-blur: f ? (28px * S.k) : 0;
+                        drop-shadow-color: Theme.glow;
+                    }
+                    if c.kind == 2: Image { x: (52px * S.k); y: (49px * S.k); source: Icons.folder; colorize: Theme.text2; width: (46px * S.k); height: self.width; }
+                    if c.kind == 3 && !c.has-image: Rectangle {
+                        x: (7px * S.k); y: (4px * S.k); width: (136px * S.k); height: self.width; border-radius: self.width / 2;
+                        background: #ffffff10;
+                    }
+                    Text {
+                        y: (148px * S.k); width: parent.width;
+                        text: c.label;
+                        font-size: (15px * S.t); color: f ? Theme.text : Theme.text2;
+                        horizontal-alignment: center; overflow: elide;
+                    }
+                    TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { root.click(Zone.avatar, i); }
+                        moved => { root.hover(Zone.avatar, i); }
+                    }
+                }
+            }
+            }
+            HorizontalLayout {
+                x: parent.width - self.width - (96px * S.k); y: parent.height - (56px * S.k);
+                width: self.preferred-width; height: self.preferred-height;
+                spacing: (22px * S.k);
+                for h in root.pad-hints ? [{ key: "✕", what: @tr("Select") }, { key: "○", what: @tr("Back") }] : [{ key: "Enter", what: @tr("Select") }, { key: "Esc", what: @tr("Back") }]: HorizontalLayout {
+                    spacing: (8px * S.k);
+                    KeyCap { text: h.key; round: root.pad-hints && h.key.character-count == 1; }
+                    Text { text: h.what; font-size: (17px * S.k); color: Theme.hint; vertical-alignment: center; }
+                }
             }
         }
 

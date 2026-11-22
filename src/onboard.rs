@@ -68,7 +68,7 @@ fn wants(step: Step, id: SId) -> bool {
     match step {
         Step::Controller => matches!(id, BtPair | BtFound(_) | BtDevice(_)),
         Step::Internet => matches!(id, Internet | WifiNet(_) | WifiMore),
-        Step::Profile => matches!(id, Name | AvatarColor),
+        Step::Profile => matches!(id, Name | Avatar | AvatarColor),
         Step::Look => matches!(id, ThemeWallpaper | ThemeAccent),
         Step::Sound => matches!(id, SoundVolume | SoundOut | SoundOutput | Sounds),
         Step::Storage => matches!(id, InstallDir | DownloadDir),
@@ -103,6 +103,8 @@ pub struct Onboard {
     buttons: Vec<Button>,
     /// Opened at startup (the start screen comes after; Some(first run)) or from Settings (None).
     first_run: Option<bool>,
+    /// Add user (src/profiles.rs): the short setup for a new profile, from the start screen.
+    new_user: bool,
     online: bool,
     pads: Vec<String>,
     /// Bumped on every page change: the window builds the new page (and its entrance) afresh.
@@ -154,6 +156,7 @@ impl App {
             lines: Vec::new(),
             buttons: Vec::new(),
             first_run,
+            new_user: false,
             online,
             pads,
             page: 1,
@@ -180,6 +183,20 @@ impl App {
             let up = crate::util::network_up();
             let _ = slint::invoke_from_event_loop(move || with_app(move |app| app.onboard_online(up)));
         });
+    }
+
+    /// The short setup for a new user (Add user on the start screen): who they are, their
+    /// language and their look. The start screen asks who's playing again at its end.
+    pub fn onboard_open_new_user(&mut self) {
+        self.onboard_open(None);
+        if let Some(ob) = self.ob.as_mut() {
+            ob.new_user = true;
+            ob.steps = vec![Step::Profile, Step::Language, Step::Look, Step::Done];
+            ob.at = 0;
+        }
+        self.build_settings();
+        self.onboard_push();
+        self.onboard_focus_first();
     }
 
     fn onboard_online(&mut self, up: bool) {
@@ -209,6 +226,9 @@ impl App {
     /// The pages again (a controller or the network changed), staying on the one shown.
     fn onboard_restep(&mut self) {
         let Some(ob) = self.ob.as_mut() else { return };
+        if ob.new_user {
+            return self.onboard_push();
+        }
         let now = ob.step();
         let next = pages(ob.online, !ob.pads.is_empty(), ob.first_run.is_some());
         if let Some(at) = next.iter().position(|s| *s == now) {
@@ -504,6 +524,9 @@ impl App {
         }
         audio::play(Sound::Welcome);
         self.onboard_pop();
+        if ob.new_user {
+            return self.new_user_done(true);
+        }
         match ob.first_run {
             Some(first) => self.boot_start(first),
             None => self.refresh_settings(),
@@ -512,9 +535,13 @@ impl App {
 
     /// Left from Settings before the end: what was changed stays changed.
     fn onboard_close(&mut self) {
-        self.ob = None;
+        let new_user = self.ob.take().is_some_and(|o| o.new_user);
         audio::play(Sound::Back);
         self.onboard_pop();
+        if new_user {
+            // Added, then left at once: the new profile goes.
+            return self.new_user_done(false);
+        }
         self.refresh_settings();
     }
 
