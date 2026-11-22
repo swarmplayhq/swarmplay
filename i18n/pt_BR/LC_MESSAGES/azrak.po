@@ -12,7 +12,7 @@ msgstr ""
 
 #: src/app.rs
 msgid "A PKG package: PS5 games install from extracted releases only."
-msgstr "Um pacote PKG: jogos de PS5 só são instalados a partir de lançamentos extraídos."
+msgstr "Um pacote PKG: jogos de PS5 só são instalados a partir de versões extraídas."
 
 #: src/app.rs
 msgid "Action"
@@ -141,7 +141,7 @@ msgstr "Lista de compatibilidade do KytyPS5"
 
 #: src/app.rs
 msgid "Look for a release of this game that is a folder, an archive or an exFAT image."
-msgstr "Procure um lançamento deste jogo que seja uma pasta, um arquivo compactado ou uma imagem exFAT."
+msgstr "Procure uma versão deste jogo que seja uma pasta, um arquivo compactado ou uma imagem exFAT."
 
 #: src/app.rs
 msgid "Main menu, but not gameplay"
@@ -191,7 +191,7 @@ msgstr "Outros"
 
 #: src/app.rs
 msgid "PKG release"
-msgstr "Lançamento em PKG"
+msgstr "Versão em PKG"
 
 #: src/app.rs
 msgid "Platformer"
@@ -303,7 +303,7 @@ msgstr "Sobrevivência"
 
 #: src/app.rs
 msgid "This game has another release that isn't a PKG: switch to it with the release selector."
-msgstr "Este jogo tem outro lançamento que não é PKG: troque para ele no seletor de lançamentos."
+msgstr "Este jogo tem outra versão que não é PKG: troque para ela no seletor de versões."
 
 #: src/app.rs
 msgid "Top rated"
@@ -370,8 +370,8 @@ msgstr[1] "{n} novos lançamentos"
 #: src/app.rs src/present.rs
 msgid "{n} release"
 msgid_plural "{n} releases"
-msgstr[0] "{n} lançamento"
-msgstr[1] "{n} lançamentos"
+msgstr[0] "{n} versão"
+msgstr[1] "{n} versões"
 
 #: src/app.rs
 msgid "{} closed"
@@ -2762,7 +2762,7 @@ msgstr "VERSÃO DO LANÇAMENTO"
 
 #: src/present.rs
 msgid "Release {position} of {count}"
-msgstr "Lançamento {position} de {count}"
+msgstr "Versão {position} de {count}"
 
 #: src/present.rs
 msgid "SHARING IT (SEEDERS)"
@@ -3474,8 +3474,8 @@ msgstr[1] "{n} jogos instalados encontrados · mais de uma pasta? Separe com ;"
 #: src/settings.rs
 msgid "{n} release · {date}"
 msgid_plural "{n} releases · {date}"
-msgstr[0] "{n} lançamento · {date}"
-msgstr[1] "{n} lançamentos · {date}"
+msgstr[0] "{n} versão · {date}"
+msgstr[1] "{n} versões · {date}"
 
 #: src/settings.rs
 msgid "{ready} ready"

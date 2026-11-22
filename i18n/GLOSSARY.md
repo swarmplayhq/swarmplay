@@ -84,6 +84,8 @@ jeito. Tom: curto, direto, tratando por "você" (implícito: "Instale", não "In
 | screenshot | captura de tela |
 | trailer | trailer |
 | rating | avaliação |
+| release (one game's build to download) | versão (o "Choose another release" é "Escolher outra versão") |
+| new releases (in the catalog) | novos lançamentos |
 | seeding / seed | compartilhando (seed) |
 | torrent, VPN, Wi-Fi, Bluetooth, PKG | iguais ao inglês |
 | Game art | Arte do jogo |

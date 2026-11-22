@@ -149,9 +149,11 @@ export component OverlayWindow inherits Window {
 
         // Bottom row: round buttons, then the controller's battery and the clock.
         HorizontalLayout {
-            x: (96px * S.k); y: (262px * S.k);
+            x: (88px * S.k); y: (262px * S.k);
             height: (110px * S.k);
-            spacing: (26px * S.k);
+            // Columns wider than the circles (with less space between, the circles sit as far
+            // apart as ever) so a longer name fits under one ("Configurações").
+            spacing: (10px * S.k);
             alignment: start;
             for b[j] in [
                 { label: @tr("Home"), icon: 0 },
@@ -161,7 +163,7 @@ export component OverlayWindow inherits Window {
             ]: VerticalLayout {
                 property <bool> f: root.idx == j + 4;
                 spacing: (10px * S.k);
-                width: (100px * S.k);
+                width: (116px * S.k);
                 HorizontalLayout {
                     alignment: center;
                     circle := Rectangle {

@@ -1557,12 +1557,15 @@ pub fn size_label(g: &crate::catalog::Game) -> Option<String> {
         .or_else(|| (!g.size.is_empty()).then(|| g.size.clone()))
 }
 
+/// A count with its thousands grouped as the interface's language writes them: "77,838" in
+/// English, "77.838" in Portuguese.
 pub fn thousands(n: i64) -> String {
+    let sep = match crate::i18n::current() { crate::i18n::Lang::PtBr => '.', _ => ',' };
     let s = n.to_string();
     let mut out = String::new();
     for (i, c) in s.chars().enumerate() {
-        if i > 0 && (s.len() - i) % 3 == 0 {
-            out.push(',');
+        if i > 0 && c != '-' && (s.len() - i) % 3 == 0 && !out.ends_with('-') {
+            out.push(sep);
         }
         out.push(c);
     }

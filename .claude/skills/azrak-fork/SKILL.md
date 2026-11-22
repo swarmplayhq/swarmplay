@@ -10,7 +10,7 @@ menu entry `swarmplay.desktop`). The Cargo package, data folders (`util::APP_NAM
 (`.azrak-owned`, `.azrak-game.json`), the game catalog (`update::REPO`) and AzrakOS keep upstream's names on
 purpose: installs keep working and upstream merges stay easy.
 
-- Source: `~/Projects/azrak-launcher` (`origin` = swarmplayhq/swarmplay, `upstream` = AzrakHQ/azrak-launcher).
+- Source: `~/Projects/swarmplay` (`origin` = swarmplayhq/swarmplay, `upstream` = AzrakHQ/azrak-launcher).
 - Installed binary: `~/.local/bin/swarmplay` (previous one kept as `swarmplay.previous`). Menu entry: `~/.local/share/applications/swarmplay.desktop`.
 - User data: config `~/.config/azrak/config.json`, download jobs `~/.config/azrak/transfers/jobs.json`,
   install records `~/.config/azrak/installs/jobs.json`, emulators `~/.local/share/azrak`, cache `~/.cache/azrak`.
@@ -55,7 +55,7 @@ While working, one command builds, runs the tests and shoots the screens (tests 
 side), in about 2–3 minutes; a UI edit rebuilds in under a minute:
 
 ```bash
-distrobox enter azrak-dev -- bash -c 'cd ~/Projects/azrak-launcher && scripts/check.sh'   # or: scripts/check.sh 1280x720 1920x1080
+distrobox enter azrak-dev -- bash -c 'cd ~/Projects/swarmplay && scripts/check.sh'   # or: scripts/check.sh 1280x720 1920x1080
 ```
 
 It uses the `quick` profile (Cargo.toml: our code unoptimised and incremental, libraries fully optimised
@@ -65,7 +65,7 @@ Group a whole area's work in one PR and run this once at the end, not after ever
 Only the build to install is a release build (~3 min), once per PR, after check.sh passed:
 
 ```bash
-distrobox enter azrak-dev -- bash -c 'cd ~/Projects/azrak-launcher && ~/.cargo/bin/cargo build --release --locked'
+distrobox enter azrak-dev -- bash -c 'cd ~/Projects/swarmplay && ~/.cargo/bin/cargo build --release --locked'
 ```
 
 Report test failures with their output; never install a build whose tests fail.
@@ -77,7 +77,7 @@ The launcher must be closed first or it keeps running the old binary (Settings �
 ```bash
 pgrep -x swarmplay && echo "close SwarmPlay first"   # ask the user to quit it; don't kill it while a game/install runs
 install -Dm755 ~/.local/bin/swarmplay ~/.local/bin/swarmplay.previous 2>/dev/null || true
-install -Dm755 ~/Projects/azrak-launcher/target/release/swarmplay ~/.local/bin/swarmplay
+install -Dm755 ~/Projects/swarmplay/target/release/swarmplay ~/.local/bin/swarmplay
 ~/.local/bin/swarmplay --version
 ```
 
@@ -86,7 +86,7 @@ Rollback: `mv ~/.local/bin/swarmplay.previous ~/.local/bin/swarmplay`.
 ## Update from upstream
 
 ```bash
-cd ~/Projects/azrak-launcher
+cd ~/Projects/swarmplay
 git fetch upstream
 git checkout main && git merge upstream/main   # resolve conflicts keeping the fork's fixes (see below)
 ```
@@ -119,15 +119,17 @@ the release one by default). Run it in the box WITHOUT the host's Wayland variab
 the window on the user's real desktop instead of Xvfb:
 
 ```bash
-distrobox enter azrak-dev -- env -u WAYLAND_DISPLAY python3 ~/Projects/azrak-launcher/scripts/ui_matrix.py 1920x1080
+distrobox enter azrak-dev -- env -u WAYLAND_DISPLAY python3 ~/Projects/swarmplay/scripts/ui_matrix.py 1920x1080
 ```
 
 The run is isolated from the real SwarmPlay: its own runtime folder (the `swarmplay --overlay` socket),
 pictures folder and desktop (`XDG_CURRENT_DESKTOP=XFCE`, no session bus), and `SWARMPLAY_NO_PAD=1` so it never
 reads (or, with the overlay open, grabs) the real controller. The last steps play a stand-in game (a full-screen
 picture) and drive the in-game overlay with `swarmplay --overlay` / `--screenshot`. The launcher's log is copied to
-`dist/ui-matrix/<size>/launcher.log`; `UI_MATRIX_KEEP=1` keeps the run's folder (it holds a ~5 GB copy of the cache,
-in /tmp: delete it after).
+`dist/ui-matrix/<size>/launcher.log`; `UI_MATRIX_KEEP=1` keeps the run's folder (a ~2 GB copy of the cache, the
+artwork linked, in /tmp: delete it after). `--lang pt_BR` shoots the same screens in Portuguese to
+`dist/ui-matrix/pt_BR/<size>/` (check.sh runs both); `scripts/ui_audit.py --lang pt_BR` looks for cut-off highlights in it.
+Look at the Portuguese ones too: its texts run 20–30% longer.
 
 Never start the launcher for a test through `distrobox enter … bash -l…`: the login shell sets
 `WAYLAND_DISPLAY=wayland-0` again and the window opens on the user's real desktop. In a shell, run
@@ -136,6 +138,24 @@ Never start the launcher for a test through `distrobox enter … bash -l…`: th
 Box packages it needs (once): `xvfb xfwm4 xdotool imagemagick libgl1-mesa-dri libegl1 libxkbcommon-x11-0
 libxcursor1 libxrandr2 libxi6 libx11-xcb1`. Take a "before" set on `main`, an "after" set on the branch,
 compare the PNGs (Read them), and say in the PR what changed on screen.
+
+## Translations (English + Brazilian Portuguese)
+
+Every visible text goes through the translation: `@tr("…")` in `ui/*.slint`, `tr!("…")` (crate `tr`, the same
+syntax) in Rust; plurals `tr!("{n} game" | "{n} games" % n)`; no format specs inside (`crate::i18n::num`,
+`::date`, `::clock` format values). Values saved in config stay English keys, shown through a `label()` with
+`tr!` literals. Not translated: game titles, paths, raw OS errors (after a translated label), logs, test texts.
+One catalog, `i18n/pt_BR/LC_MESSAGES/azrak.po`, built into the binary; English is the source text. Words follow
+`i18n/GLOSSARY.md` (the console's Brazilian terms). After adding or changing texts, in the box (it has gettext,
+`xtr`, `slint-tr-extractor`):
+
+```bash
+distrobox enter azrak-dev -- bash -c 'cd ~/Projects/swarmplay && scripts/i18n.sh extract'   # new texts come in empty
+```
+
+then translate the empty `msgstr`s in the .po. `scripts/i18n.sh check` (run by check.sh) fails on an untranslated
+text or a translation whose `{…}` differ from the English. The language switches live (Settings → Launcher →
+Language → `App::relocalize`): anything new pushed to the window must be rebuilt there too.
 
 ## Style
 

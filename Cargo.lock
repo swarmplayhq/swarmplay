@@ -457,7 +457,7 @@ dependencies = [
 
 [[package]]
 name = "azrak"
-version = "1.29.1"
+version = "1.30.0"
 dependencies = [
  "anyhow",
  "data-encoding",

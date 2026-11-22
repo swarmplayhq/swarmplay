@@ -12,6 +12,7 @@ How it works:
 
     scripts/ui_audit.py                    # default sizes
     scripts/ui_audit.py 1280x720           # one size
+    scripts/ui_audit.py --lang pt_BR       # in another language (its texts run longer)
 
 Writes dist/ui-audit/<size>/*.png and dist/ui-audit/report.txt (with crops of each problem).
 Exit code 1 if anything was found. Needs: Xvfb, xfwm4, xdotool, ImageMagick, numpy, scipy.
@@ -128,7 +129,7 @@ def _fades(a, sl, side):
     return beyond.mean() > 100
 
 
-def audit(size: str, n: int, out: Path, binary: Path, game: Path | None):
+def audit(size: str, n: int, out: Path, binary: Path, game: Path | None, lang: str = ""):
     w, h = size.split("x")
     disp = f":{70 + n}"
     work = Path(tempfile.mkdtemp(prefix="ps5-audit-"))
@@ -140,7 +141,7 @@ def audit(size: str, n: int, out: Path, binary: Path, game: Path | None):
     fake.write_text("#!/bin/sh\nexit 0\n")
     fake.chmod(0o755)
     (home / ".config/azrak/config.json").write_text(json.dumps(
-        {"game_dirs": ["~/Games"], "sounds": False, **NO_UPDATES, "emulator": str(fake)}))
+        {"game_dirs": ["~/Games"], "sounds": False, **NO_UPDATES, "emulator": str(fake), "language": lang or "en"}))
     stubs = work / "stubs"
     stubs.mkdir()
     for tool in ("xdg-open", "mpv", "vlc", "firefox"):
@@ -199,14 +200,23 @@ def audit(size: str, n: int, out: Path, binary: Path, game: Path | None):
 
 
 def main():
-    sizes = sys.argv[1:] or SIZES
+    args = sys.argv[1:]
+    lang = ""
+    if "--lang" in args:
+        i = args.index("--lang")
+        lang = args[i + 1]
+        del args[i:i + 2]
+    sizes = args or SIZES
     out = ROOT / "dist/ui-audit"
+    if lang and lang != "en":
+        out = out / lang
     shutil.rmtree(out, ignore_errors=True)
     out.mkdir(parents=True)
     game = Path(os.environ["DEMO_GAME"]) if os.environ.get("DEMO_GAME") else None
     problems = []
     for i, s in enumerate(sizes):
-        problems += audit(s, i, out, ROOT / "target/release/swarmplay", game)
+        binary = Path(os.environ.get("SWARMPLAY_BIN", ROOT / "target/release/swarmplay")).resolve()
+        problems += audit(s, i, out, binary, game, lang)
     (out / "report.txt").write_text("\n".join(problems) + "\n" if problems else "No problems found.\n")
     print("\n".join(problems) if problems else "No problems found.")
     sys.exit(1 if problems else 0)
