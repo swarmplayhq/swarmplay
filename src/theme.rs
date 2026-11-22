@@ -52,6 +52,11 @@ fn accent_text(key: &str) -> Option<String> {
     })
 }
 
+/// An accent's colour by its name (ACCENTS'); None for an unknown or empty one.
+pub fn accent_color(name: &str) -> Option<Color> {
+    ACCENTS.iter().find(|(n, _)| *n == name).map(|a| rgb(a.1))
+}
+
 fn rgb(hex: u32) -> Color {
     Color::from_rgb_u8((hex >> 16) as u8, (hex >> 8) as u8, hex as u8)
 }
@@ -80,6 +85,8 @@ impl App {
         // The picture can't be read: the default wallpaper, not an empty one.
         ui.set_wallpaper_kind(if kind == YOUR_IMAGE && image.is_none() { 1 } else { kind as i32 });
         ui.set_wallpaper_image(image.unwrap_or_default());
+        // An avatar without a colour of its own wears the accent.
+        self.push_user();
     }
 
     pub fn theme_rows(&self) -> Vec<(SId, SettingData)> {

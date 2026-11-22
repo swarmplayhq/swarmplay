@@ -27,6 +27,8 @@ log=$(mktemp -d)
 SWARMPLAY_BIN=target/quick/swarmplay python3 scripts/ui_matrix.py "${@:-1920x1080}" >"$log/shots" 2>&1 & shots=$!
 # The same screens in Portuguese (dist/ui-matrix/pt_BR/): its texts run longer.
 SWARMPLAY_BIN=target/quick/swarmplay python3 scripts/ui_matrix.py --lang pt_BR "${@:-1920x1080}" >"$log/shots-pt" 2>&1 & shots_pt=$!
+# The first-run setup, every page (dist/ui-matrix/onboard/).
+SWARMPLAY_BIN=target/quick/swarmplay python3 scripts/ui_matrix.py --onboard "${@:-1920x1080}" >"$log/shots-ob" 2>&1 & shots_ob=$!
 
 status=0
 # Every text translated, and no translation with a mistyped {…}.
@@ -35,5 +37,6 @@ wait $tests || status=1
 grep -E "^test result|FAILED|panicked" "$log/tests" || true
 wait $shots || { status=1; tail -20 "$log/shots"; }
 wait $shots_pt || { status=1; tail -20 "$log/shots-pt"; }
+wait $shots_ob || { status=1; tail -20 "$log/shots-ob"; }
 echo "screenshots: dist/ui-matrix/ · done in $(( $(date +%s) - start ))s"
 exit $status

@@ -75,6 +75,11 @@ pub enum SId {
     // Launcher
     Display,
     Language,
+    /// The name on the avatar (src/onboard.rs types it).
+    Name,
+    AvatarColor,
+    /// The first-run setup again (src/onboard.rs).
+    RunSetup,
     Sounds,
     Share,
     // Advanced
@@ -85,6 +90,11 @@ pub enum SId {
     Extra,
     Refresh,
     Quit,
+}
+
+/// The avatar's colour as Settings shows it ("Same as accent" when it has none of its own).
+pub fn avatar_label(key: &str) -> String {
+    if key.is_empty() { tr!("Same as accent") } else { crate::theme::accent_label(key) }
 }
 
 fn row(kind: i32, label: &str) -> SettingData {
@@ -315,6 +325,13 @@ impl App {
         let mut r = row(3, &tr!("Language"));
         r.value = crate::i18n::current().name().into();
         rows.push((SId::Language, r));
+        let mut r = row(4, &tr!("Your name"));
+        r.value = self.player_name().into();
+        r.hint = tr!("On your avatar and the start screen").into();
+        rows.push((SId::Name, r));
+        let mut r = row(3, &tr!("Avatar colour"));
+        r.value = avatar_label(&cfg.avatar_color).into();
+        rows.push((SId::AvatarColor, r));
         let mut r = row(3, &tr!("Display"));
         r.value = match self.monitors.iter().find(|m| m.name == cfg.monitor) {
             Some(m) => format!("{} · {}×{}", m.name, m.w, m.h),
@@ -331,6 +348,9 @@ impl App {
             tr!("Tells the emulator teams which games work on Linux · needs a free GitHub account").into()
         };
         rows.push((SId::Share, r));
+        let mut r = row(4, &tr!("Set up again"));
+        r.hint = tr!("The first-run setup: language, controller, look, sound, where games go").into();
+        rows.push((SId::RunSetup, r));
 
         // Its own section: out of the way without a switch to show it.
         header(&mut rows, "ADVANCED");
@@ -455,7 +475,7 @@ impl App {
             }),
             "NOTIFICATIONS" => (tr!("What lets you know, and when"), if cfg_dnd(self) { (tr!("Do not disturb"), 2) } else { (String::new(), 0) }),
             "SOUND" => (tr!("Volume and where sound goes"), if self.sound.muted { (tr!("Muted"), 2) } else { (self.sound.volume.map(|v| format!("{v}%")).unwrap_or_default(), 0) }),
-            "LAUNCHER" => (tr!("Language, display and your game ratings"), (String::new(), 0)),
+            "LAUNCHER" => (tr!("Language, you, display and your game ratings"), (String::new(), 0)),
             "ADVANCED" => (tr!("KytyPS5 location and video options, the game catalog"), (String::new(), 0)),
             _ => (String::new(), (String::new(), 0)),
         };
@@ -696,6 +716,10 @@ impl App {
         let before: Vec<(SId, String)> = self.settings_ids.iter().zip(&self.settings_rows).map(|(id, r)| (*id, r.label.to_string())).collect();
         self.build_settings();
         self.push_settings();
+        // The setup shows these same rows: a network found, a device paired, a note, all there too.
+        if self.in_setup() {
+            self.onboard_push();
+        }
         if self.overlay != Overlay::Settings || self.zone != Z_SETTINGS {
             return;
         }
@@ -756,6 +780,15 @@ impl App {
                 let pos = PRESENT_MODES.iter().position(|(k, _)| *k == cur).unwrap_or(0) as i32;
                 let next = PRESENT_MODES[(pos + dir).rem_euclid(PRESENT_MODES.len() as i32) as usize].0.to_string();
                 self.save_cfg(|c| c.present_mode = next);
+            }
+            SId::AvatarColor => {
+                // The accent's own colour first ("Same as accent"), then each colour.
+                let names: Vec<&str> = std::iter::once("").chain(crate::theme::ACCENTS.iter().map(|(n, _)| *n)).collect();
+                let cur = self.cfg.lock().unwrap().avatar_color.clone();
+                let pos = names.iter().position(|n| *n == cur).unwrap_or(0) as i32;
+                let next = names[(pos + dir).rem_euclid(names.len() as i32) as usize].to_string();
+                self.save_cfg(|c| c.avatar_color = next);
+                self.push_user();
             }
             SId::Language => {
                 use crate::i18n::Lang;
@@ -833,6 +866,8 @@ impl App {
             }
             SId::NotifSecs | SId::NotifGames | SId::NotifDnd => self.settings_change(i, 1),
             SId::OverlayHelper => self.overlay_helper_pressed(),
+            SId::Name => self.open_name_keys(),
+            SId::RunSetup => { audio::play(Sound::Select); self.onboard_open(None); }
             SId::Emulator | SId::Dirs | SId::Extra | SId::ThemeImage => {
                 let cfg = self.cfg.lock().unwrap().clone();
                 let text = match id {
@@ -854,7 +889,7 @@ impl App {
                 let on = self.settings_rows[i].on;
                 self.settings_change(i, if on { -1 } else { 1 });
             }
-            SId::Resolution | SId::Present | SId::Display | SId::Language | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
+            SId::Resolution | SId::Present | SId::Display | SId::Language | SId::AvatarColor | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
             // A press turns it up a step (◂ ▸ go both ways).
             SId::SoundVolume => self.settings_change(i, 1),
             // A press goes round Off, Low, Medium, High.

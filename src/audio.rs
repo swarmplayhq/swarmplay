@@ -31,13 +31,16 @@ pub enum Sound {
     Shutter,
     /// A game starting.
     Launch,
+    /// The first-run setup done ("All set"): longer and more open than Start.
+    Welcome,
 }
 
 impl Sound {
     /// Every sound, in the enum's order (the cache is indexed by `as usize`).
-    pub const ALL: [Sound; 12] = [
+    pub const ALL: [Sound; 13] = [
         Sound::Move, Sound::Select, Sound::Back, Sound::Error, Sound::Start, Sound::Notify,
         Sound::Tab, Sound::Open, Sound::ToggleOn, Sound::ToggleOff, Sound::Shutter, Sound::Launch,
+        Sound::Welcome,
     ];
 }
 
@@ -347,6 +350,19 @@ pub fn render(s: Sound) -> Vec<f32> {
             bell(&mut b, 0.5, 2637.0, 0.022, 0.6);
             (0.4, 2.2)
         }
+        Sound::Welcome => {
+            // An open chord (D, A, D, F#, A, E) rising one voice after another, each a little
+            // detuned pair, then three high bells: the end of the setup, wider than Start.
+            for (i, f) in [146.8f32, 220.0, 293.7, 370.0, 440.0, 659.3].into_iter().enumerate() {
+                let t = i as f32 * 0.08;
+                partial(&mut b, t, f * 0.998, f * 0.998, 0.0, 0.5, 0.43, 0.04);
+                partial(&mut b, t, f * 1.002, f * 1.002, 0.0, 0.5, 0.43, 0.04);
+            }
+            bell(&mut b, 0.55, 1760.0, 0.028, 0.6);
+            bell(&mut b, 0.75, 2349.3, 0.022, 0.6);
+            bell(&mut b, 0.95, 2960.0, 0.016, 0.6);
+            (0.45, 2.1)
+        }
     };
     // Under the old sounds' loudness: a console's menus stay quiet next to its games.
     finish(room(b, wet, secs)).into_iter().map(|x| x * HEADROOM).collect()
@@ -487,6 +503,7 @@ mod tests {
         }
         assert!(render(Sound::Move).len() < render(Sound::Select).len());
         assert!(render(Sound::Select).len() < render(Sound::Start).len());
+        assert!(render(Sound::Start).len() < render(Sound::Welcome).len());
     }
 
     #[test]

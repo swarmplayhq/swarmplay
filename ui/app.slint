@@ -1,7 +1,8 @@
-import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, SettingSection, MenuItem, RunningData } from "theme.slint";
+import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, SettingSection, MenuItem, RunningData } from "theme.slint";
 import { FocusRing, Chip, Btn, Kicker, Badge, Switch, KeyCap, KeyboardKey, BackButton, Shimmer, Cover } from "widgets.slint";
 import { DownloadsPage, DownloadConsent, DownloadPanel, Capsule } from "downloads.slint";
 import { LibraryFilter, LibrarySortPicker } from "library.slint";
+import { OnboardPage } from "onboard.slint";
 import { AboutSlint, Palette } from "std-widgets.slint";
 
 export { S, Theme, Zone }
@@ -271,6 +272,14 @@ export component AppWindow inherits Window {
     // The top bar's avatar: the first letter of who's signed in.
     in property <string> user-initial: "?";
     in property <string> user-name;
+    // The avatar's colour (the accent's unless one was chosen: src/app.rs push_user).
+    in property <color> user-color: #0a6cff;
+    // The first-run setup (src/onboard.rs): its page, a number per page (a new one plays the
+    // entrance), the way it went, and whether it's open (also under what it opened).
+    in property <OnboardData> onboard;
+    in property <[int]> onboard-page;
+    in property <int> onboard-dir: 1;
+    in property <bool> onboard-open;
     in property <string> ring-label;
     in property <string> ring-suffix;
     in property <string> ring-sizer;
@@ -348,6 +357,9 @@ export component AppWindow inherits Window {
     in property <[WjKey]> sk-actions;
     in property <string> sk-count;               // "12 games", or what a typo searched for instead
     in property <bool> sk-count-warn;
+    // The keyboard types a name (Who's playing?, Settings → Your name) instead of a search.
+    in property <bool> sk-name;
+    in property <string> sk-text;
     in property <bool> sk-enter-done;            // a keyboard's Enter shows the results now
     // "Restart now?" / "Shut down now?" (os/power.rs): busy once confirmed, with no buttons.
     in property <string> power-title;
@@ -1281,7 +1293,7 @@ export component AppWindow inherits Window {
                             FocusRing { w: parent.width; h: parent.height; on: av.f; radius: parent.width / 2; glow: false; }
                             Rectangle {
                                 border-radius: self.width / 2;
-                                background: @linear-gradient(135deg, Theme.accent.brighter(0.35) 0%, Theme.accent.darker(0.45) 100%);
+                                background: @linear-gradient(135deg, root.user-color.brighter(0.35) 0%, root.user-color.darker(0.45) 100%);
                                 border-width: ta-av.has-hover && !av.f ? (2px * S.k) : 0;
                                 border-color: #ffffffb3;
                                 Text { text: root.user-initial; font-size: (26px * S.k); font-weight: 600; color: #ffffff; }
@@ -2802,7 +2814,7 @@ export component AppWindow inherits Window {
                         av-boot := Rectangle {
                             width: (148px * S.k); height: self.width;
                             border-radius: self.width / 2;
-                            background: @linear-gradient(135deg, Theme.accent.brighter(0.35) 0%, Theme.accent.darker(0.45) 100%);
+                            background: @linear-gradient(135deg, root.user-color.brighter(0.35) 0%, root.user-color.darker(0.45) 100%);
                             border-width: (4px * S.k);
                             border-color: #f5f7fb;
                             drop-shadow-blur: (34px * S.k);
@@ -2974,6 +2986,48 @@ export component AppWindow inherits Window {
         }
 
         // ------------------------------------------------------------ INSTALL AZRAKOS (USB stick)
+        // The first-run setup: the wallpaper (it changes live on the Look page) with the start
+        // screen's drifting lights, darkened, and the page over it. It fades in, a little large.
+        if root.onboard-open: ob := Rectangle {
+            property <float> t: animation-tick() / 1ms / 1000;
+            property <bool> came: false;
+            init => { self.came = true; }
+            opacity: came ? 1 : 0;
+            transform-scale: came ? 1 : 1.04;
+            animate opacity { duration: 600ms; easing: ease-out-quad; }
+            animate transform-scale { duration: 600ms; easing: ease-out-expo; }
+            background: #05070f;
+            TouchArea {}
+            Wallpaper { kind: root.wallpaper-kind == 0 ? 1 : root.wallpaper-kind; image: root.wallpaper-image; }
+            Rectangle { background: @linear-gradient(90deg, #05070fe0 0%, #05070fa6 55%, #05070f73 100%); }
+            Rectangle {
+                x: root.width * (0.30 + 0.06 * sin(ob.t * 9deg)) - self.width / 2;
+                y: root.height * (0.35 + 0.05 * cos(ob.t * 7deg)) - self.height / 2;
+                width: (1100px * S.k);
+                height: self.width;
+                background: @radial-gradient(circle, Theme.accent.with-alpha(0.16) 0%, Theme.accent.with-alpha(0) 65%);
+            }
+            Rectangle {
+                x: root.width * (0.70 + 0.05 * cos(ob.t * 8deg)) - self.width / 2;
+                y: root.height * (0.62 + 0.06 * sin(ob.t * 6deg)) - self.height / 2;
+                width: (1000px * S.k);
+                height: self.width;
+                background: @radial-gradient(circle, #8b5cf62e 0%, #8b5cf600 65%);
+            }
+            OnboardPage {
+                data: root.onboard;
+                page: root.onboard-page;
+                dir: root.onboard-dir;
+                zone: root.zone;
+                idx: root.idx;
+                pad-hints: root.pad-hints;
+                user-initial: root.user-initial;
+                user-color: root.user-color;
+                click(z, i) => { root.click(z, i); }
+                hover(z, i) => { root.hover(z, i); }
+            }
+        }
+
         if root.overlay == 11: osi := Rectangle {
             property <float> t: animation-tick() / 1ms / 1000;
             background: #05070f;
@@ -3320,12 +3374,12 @@ export component AppWindow inherits Window {
                                 padding-left: (22px * S.k);
                                 padding-right: (24px * S.k);
                                 spacing: (14px * S.k);
-                                Image { source: Icons.search; colorize: Theme.text2; width: (24px * S.k); height: self.width; y: (parent.height - self.height) / 2; }
+                                Image { source: root.sk-name ? Icons.user : Icons.search; colorize: Theme.text2; width: (24px * S.k); height: self.width; y: (parent.height - self.height) / 2; }
                                 HorizontalLayout {
                                     horizontal-stretch: 1;
                                     alignment: start;
-                                    if root.query != "": Text {
-                                        text: root.query;
+                                    if root.sk-text != "": Text {
+                                        text: root.sk-text;
                                         font-size: (24px * S.k);
                                         color: Theme.text;
                                         vertical-alignment: center;
@@ -3333,8 +3387,8 @@ export component AppWindow inherits Window {
                                     }
                                     // The caret: letters go in here.
                                     Rectangle { width: (2px * S.k); height: (28px * S.k); y: (parent.height - self.height) / 2; background: Theme.accent; }
-                                    if root.query == "": Text {
-                                        text: "  " + @tr("A name, initials (tlou) or a genre");
+                                    if root.sk-text == "": Text {
+                                        text: "  " + (root.sk-name ? @tr("Your name") : @tr("A name, initials (tlou) or a genre"));
                                         font-size: (22px * S.k);
                                         color: Theme.text3;
                                         vertical-alignment: center;
@@ -3391,8 +3445,8 @@ export component AppWindow inherits Window {
                         spacing: (22px * S.k);
                         padding-top: (6px * S.k);
                         for h in root.pad-hints
-                            ? [{ key: "□", what: @tr("Delete") }, { key: "△", what: @tr("Space") }, { key: "R2", what: @tr("Show results") }, { key: "○", what: @tr("Close") }]
-                            : [{ key: "Enter", what: root.sk-enter-done ? @tr("Show results") : @tr("Press the key") }, { key: "Esc", what: @tr("Close") }]: HorizontalLayout {
+                            ? [{ key: "□", what: @tr("Delete") }, { key: "△", what: @tr("Space") }, { key: "R2", what: root.sk-name ? @tr("Done") : @tr("Show results") }, { key: "○", what: @tr("Close") }]
+                            : [{ key: "Enter", what: !root.sk-enter-done ? @tr("Press the key") : root.sk-name ? @tr("Done") : @tr("Show results") }, { key: "Esc", what: @tr("Close") }]: HorizontalLayout {
                             spacing: (8px * S.k);
                             KeyCap { text: h.key; round: root.pad-hints && h.key.character-count == 1; }
                             Text { text: h.what; font-size: (17px * S.k); color: Theme.hint; vertical-alignment: center; }

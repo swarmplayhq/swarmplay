@@ -69,6 +69,13 @@ pub struct Config {
     pub last_digest_day: i64,
     /// The interface's language (src/i18n.rs): "en", "pt_BR", or empty for the system's.
     pub language: String,
+    /// The first-run setup (src/onboard.rs) was gone through. A settings file from before it
+    /// existed counts as set up: someone who already uses the launcher never sees it by surprise.
+    pub setup_done: bool,
+    /// The name on the avatar and the start screen (empty: the system's, see app::user_name).
+    pub user_name: String,
+    /// The avatar's colour, one of theme::ACCENTS' names (empty: the accent colour).
+    pub avatar_color: String,
 }
 
 impl Default for Config {
@@ -114,6 +121,9 @@ impl Default for Config {
             notify_off: Vec::new(),
             last_digest_day: 0,
             language: String::new(),
+            setup_done: false,
+            user_name: String::new(),
+            avatar_color: String::new(),
         }
     }
 }
@@ -137,16 +147,22 @@ fn present_text(key: &str) -> Option<String> {
     })
 }
 
+/// A settings file written before the first-run setup existed (it has no `setup_done`).
+fn from_before_setup(json: &[u8]) -> bool {
+    serde_json::from_slice::<serde_json::Value>(json).is_ok_and(|v| v.get("setup_done").is_none())
+}
+
 impl Config {
     pub fn path() -> PathBuf {
         config_dir().join("config.json")
     }
 
     pub fn load() -> Config {
-        let mut cfg: Config = std::fs::read(Self::path())
-            .ok()
-            .and_then(|b| serde_json::from_slice(&b).ok())
-            .unwrap_or_default();
+        let bytes = std::fs::read(Self::path()).ok();
+        let mut cfg: Config = bytes.as_deref().and_then(|b| serde_json::from_slice(b).ok()).unwrap_or_default();
+        if bytes.as_deref().is_some_and(from_before_setup) {
+            cfg.setup_done = true;
+        }
         cfg.one_update_switch();
         cfg.dedup_game_dirs();
         if cfg.emulator.is_empty() || !cfg.emulator_path().is_file() {
@@ -209,6 +225,16 @@ fn is_executable(m: &std::fs::Metadata) -> bool {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_settings_file_from_before_the_setup_counts_as_set_up() {
+        assert!(from_before_setup(br#"{"fullscreen": true}"#));
+        assert!(!from_before_setup(br#"{"setup_done": false}"#));
+        assert!(!from_before_setup(b"not json"));
+        let old: Config = serde_json::from_slice(br#"{"fullscreen": true}"#).unwrap();
+        assert!(old.user_name.is_empty() && old.avatar_color.is_empty());
+    }
+
     use super::*;
 
     #[test]

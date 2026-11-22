@@ -1,0 +1,275 @@
+// The first-run setup (src/onboard.rs): one question a page, as a console's. The wallpaper and
+// its lights are behind it (app.slint); this is the page: the progress line, the question, its
+// rows (Settings' own) and the button that goes on. A new page slides in from the side it was
+// reached from, its rows one after another.
+
+import { S, Theme, Icons, Zone, OnboardData, SettingData, ActionData } from "theme.slint";
+import { Btn, Switch, KeyCap } from "widgets.slint";
+
+// One of the page's rows, drawn as Settings draws it (kind 2 a switch, 3 a ‹ choice ›, 4 a
+// button with its value, 7 a line to read).
+component OnboardRow inherits Rectangle {
+    in property <SettingData> s;
+    in property <bool> f;
+    callback clicked();
+    callback hovered();
+    property <bool> info: s.kind == 7;
+    height: max((80px * S.k), words.preferred-height);
+    border-radius: (14px * S.k);
+    background: f ? #ffffff1c : info ? #ffffff0a : ta.has-hover ? #ffffff0d : #0b112266;
+    border-width: (3px * S.k);
+    border-color: f ? #f5f7fb : #f5f7fb00;
+    animate background, border-color { duration: 170ms; easing: ease-out-quad; }
+    ta := TouchArea {
+        mouse-cursor: info ? default : pointer;
+        clicked => { root.clicked(); }
+        moved => { if !info { root.hovered(); } }
+    }
+    words := VerticalLayout {
+        x: 0; y: 0; width: parent.width; height: parent.height;
+        padding-left: (24px * S.k) + (info && s.icon != "" ? (40px * S.k) : 0);
+        padding-right: (24px * S.k) + aside.width + (20px * S.k);
+        padding-top: (16px * S.k); padding-bottom: (16px * S.k);
+        spacing: (5px * S.k);
+        alignment: center;
+        Text { text: s.label; font-size: (21px * S.t); font-weight: 500; color: Theme.text; overflow: elide; }
+        if s.hint != "": Text {
+            text: s.hint;
+            font-size: (17px * S.t);
+            wrap: word-wrap;
+            color: s.hint-kind == 1 ? Theme.ok : s.hint-kind == 2 ? Theme.danger : #9ba6c0;
+        }
+    }
+    // A line to read: its icon on the left.
+    if info && s.icon != "": Image {
+        x: (24px * S.k); y: (parent.height - self.height) / 2;
+        source: Icons.get(s.icon);
+        colorize: s.value-kind == 1 ? Theme.ok : s.value-kind == 2 ? Theme.danger : Theme.text2;
+        width: (24px * S.k); height: self.width;
+    }
+    aside := HorizontalLayout {
+        width: min(self.preferred-width, parent.width * 0.5);
+        height: self.preferred-height;
+        x: parent.width - self.width - (24px * S.k);
+        y: (parent.height - self.height) / 2;
+        spacing: (10px * S.k);
+        alignment: end;
+        if s.kind == 2: Switch { on: s.on; }
+        if s.has-bar: Rectangle {
+            width: (220px * S.k); height: (8px * S.k);
+            y: (parent.height - self.height) / 2;
+            border-radius: (4px * S.k);
+            background: #ffffff1f;
+            Rectangle {
+                x: 0; width: parent.width * clamp(s.bar, 0, 1); height: parent.height;
+                border-radius: parent.border-radius;
+                background: Theme.accent.brighter(0.2);
+                animate width { duration: 160ms; easing: ease-out-quad; }
+            }
+        }
+        if s.kind == 3: Image { y: (parent.height - self.height) / 2; source: Icons.chevl; colorize: f ? Theme.text : Theme.text3; width: (22px * S.k); height: (22px * S.k); }
+        if s.kind == 3: Text { text: s.value; font-size: (19px * S.t); color: Theme.text; vertical-alignment: center; overflow: elide; }
+        if s.kind == 3: Image { y: (parent.height - self.height) / 2; source: Icons.chevr; colorize: f ? Theme.text : Theme.text3; width: (22px * S.k); height: (22px * S.k); }
+        if s.kind == 4 && s.busy: Image {
+            y: (parent.height - self.height) / 2;
+            source: Icons.spinner;
+            width: (20px * S.k); height: self.width;
+            transform-rotation: animation-tick() / 1ms * 0.4deg;
+        }
+        if s.kind == 4 && s.icon != "": Image {
+            y: (parent.height - self.height) / 2;
+            source: Icons.get(s.icon);
+            colorize: s.value-kind == 1 ? Theme.ok : s.value-kind == 2 ? Theme.danger : Theme.text2;
+            width: (22px * S.k); height: self.width;
+        }
+        if (s.kind == 4 || s.kind == 7) && s.value != "": Text {
+            text: s.value;
+            font-size: (19px * S.t);
+            font-weight: s.value-kind == 3 ? 600 : 400;
+            color: s.kind == 7 && s.value-kind == 1 ? Theme.ok : s.value-kind == 2 ? Theme.danger : s.value-kind == 3 ? #7ab4ff : #dfe4ef;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+        if s.kind == 4 && s.signal > 0: Rectangle {
+            width: (22px * S.k);
+            if s.lock: Image { source: Icons.lock; colorize: Theme.text2; width: (18px * S.k); height: self.width; }
+        }
+        if s.kind == 4 && s.signal > 0: Image {
+            y: (parent.height - self.height) / 2;
+            source: Icons.signal[s.signal - 1];
+            colorize: s.signal >= 3 ? Theme.text : s.signal == 2 ? Theme.text2 : Theme.warn;
+            width: (24px * S.k); height: self.width;
+        }
+        if s.kind == 4: Image { y: (parent.height - self.height) / 2; source: Icons.chevr; colorize: #9ba6c0; width: (18px * S.k); height: self.width; }
+    }
+}
+
+// The avatar as it'll look: the letter on its colour.
+component Avatar inherits Rectangle {
+    in property <string> initial;
+    in property <color> tint;
+    in property <length> size: (160px * S.k);
+    width: size; height: size;
+    border-radius: size / 2;
+    background: @linear-gradient(135deg, tint.brighter(0.35) 0%, tint.darker(0.45) 100%);
+    animate background { duration: 260ms; }
+    border-width: (4px * S.k);
+    border-color: #f5f7fb;
+    drop-shadow-blur: (34px * S.k);
+    drop-shadow-color: tint.brighter(0.4).with-alpha(0.6);
+    Text { text: root.initial; font-size: size * 0.43; font-weight: 600; color: #ffffff; }
+}
+
+export component OnboardPage inherits Rectangle {
+    in property <OnboardData> data;
+    // One number per page: a new one makes the page again (and plays its entrance).
+    in property <[int]> page;
+    in property <int> dir: 1;
+    in property <int> zone;
+    in property <int> idx;
+    in property <bool> pad-hints;
+    in property <string> user-initial;
+    in property <color> user-color;
+    callback click(int, int);
+    callback hover(int, int);
+
+    // The first page: anywhere goes on, as any button does.
+    if data.step == 0: TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.onboard, -1); } }
+
+    // The progress line, along the top (not on the first page).
+    if data.step > 0: Rectangle {
+        x: (96px * S.k); y: (56px * S.k);
+        width: parent.width - (192px * S.k); height: (4px * S.k);
+        border-radius: self.height / 2;
+        background: #ffffff1f;
+        Rectangle {
+            x: 0; height: parent.height;
+            width: parent.width * (root.data.count > 0 ? root.data.index / root.data.count : 0);
+            border-radius: parent.border-radius;
+            background: Theme.accent.brighter(0.2);
+            animate width { duration: 520ms; easing: ease-out-expo; }
+        }
+    }
+    if data.step > 0: Text {
+        x: parent.width - self.width - (96px * S.k); y: (72px * S.k);
+        text: data.index + " / " + data.count;
+        font-size: (16px * S.k); color: Theme.text3;
+    }
+
+    for p in root.page: page-box := Rectangle {
+        property <bool> came: false;
+        init => { self.came = true; }
+        x: came ? 0 : root.dir * (48px * S.k);
+        opacity: came ? 1 : 0;
+        animate x { duration: 420ms; easing: ease-out-expo; }
+        animate opacity { duration: 320ms; easing: ease-out-quad; }
+
+        // ---- Press any button: the logo, the welcome and the button, centred.
+        if root.data.step == 0: VerticalLayout {
+            alignment: center;
+            spacing: 0;
+            HorizontalLayout {
+                alignment: center;
+                logo := Image {
+                    property <bool> grown: false;
+                    init => { self.grown = true; }
+                    source: Icons.app;
+                    width: (120px * S.k); height: self.width;
+                    image-fit: contain;
+                    transform-scale: grown ? 1 : 0.8;
+                    animate transform-scale { duration: 900ms; easing: ease-out-expo; }
+                }
+            }
+            Rectangle { height: (36px * S.k); }
+            Text { text: root.data.title; font-size: (56px * S.k); font-weight: 700; color: Theme.text; horizontal-alignment: center; }
+            Rectangle { height: (14px * S.k); }
+            Text { text: root.data.subtitle; font-size: (26px * S.k); color: Theme.text2; horizontal-alignment: center; }
+            Rectangle { height: (64px * S.k); }
+            // What to press, breathing.
+            HorizontalLayout {
+                alignment: center;
+                spacing: (12px * S.k);
+                opacity: 0.55 + 0.45 * (0.5 + 0.5 * sin(animation-tick() / 1ms * 0.18deg));
+                KeyCap { text: root.pad-hints ? "✕" : "Enter"; round: root.pad-hints; }
+                Text { text: @tr("Continue"); font-size: (20px * S.k); color: Theme.text2; vertical-alignment: center; }
+            }
+        }
+
+        // ---- A question: its title and words on the left, the rows under them, the button at the
+        // bottom right.
+        if root.data.step > 0: Rectangle {
+            property <length> column-w: min((980px * S.k), parent.width - (192px * S.k));
+            VerticalLayout {
+                x: (96px * S.k); y: (120px * S.k);
+                width: column-w;
+                height: parent.height - (120px * S.k) - (150px * S.k);
+                spacing: 0;
+                alignment: start;
+                Text { text: root.data.title; font-size: (52px * S.t); font-weight: 700; color: Theme.text; overflow: elide; }
+                Rectangle { height: (12px * S.k); }
+                Text { text: root.data.subtitle; font-size: (22px * S.t); color: Theme.text2; wrap: word-wrap; }
+                Rectangle { height: (40px * S.k); }
+                VerticalLayout {
+                    spacing: (8px * S.k);
+                    for r[i] in root.data.rows: OnboardRow {
+                        property <bool> shown: false;
+                        init => { self.shown = true; }
+                        s: r;
+                        f: root.zone == Zone.onboard && root.idx == i;
+                        opacity: shown ? 1 : 0;
+                        transform-scale: shown ? 1 : 0.96;
+                        animate opacity { duration: 260ms; delay: i * 45ms; easing: ease-out-quad; }
+                        animate transform-scale { duration: 360ms; delay: i * 45ms; easing: ease-out-expo; }
+                        clicked => { root.click(Zone.onboard, i); }
+                        hovered => { root.hover(Zone.onboard, i); }
+                    }
+                    // Nothing to choose yet (no controller, no network): the words above say what to do.
+                    if root.data.rows.length == 0 && root.data.step == 2: Text {
+                        text: @tr("No controller yet");
+                        font-size: (20px * S.t);
+                        color: Theme.text3;
+                    }
+                }
+            }
+            // Who's playing? and All set: the avatar, as it'll show.
+            if root.data.step == 4 || root.data.step == 10: Avatar {
+                x: parent.width - self.width - (180px * S.k);
+                y: (200px * S.k);
+                size: (200px * S.k);
+                initial: root.user-initial;
+                tint: root.user-color;
+            }
+            // The buttons, bottom right.
+            HorizontalLayout {
+                x: parent.width - self.width - (96px * S.k);
+                y: parent.height - (96px * S.k) - self.height;
+                width: self.preferred-width;
+                height: self.preferred-height;
+                spacing: (16px * S.k);
+                for b[k] in root.data.buttons: Btn {
+                    data: b;
+                    focused: root.zone == Zone.onboard && root.idx == root.data.rows.length + k;
+                    clicked => { root.click(Zone.onboard, root.data.rows.length + k); }
+                }
+            }
+        }
+    }
+
+    // What the buttons do, bottom left.
+    if data.step > 0: HorizontalLayout {
+        x: (96px * S.k);
+        y: parent.height - (56px * S.k) - self.height;
+        width: self.preferred-width;
+        height: self.preferred-height;
+        spacing: (22px * S.k);
+        for h in root.pad-hints
+            ? [{ key: "✕", what: @tr("Select") }, { key: "○", what: root.data.from-settings || root.data.index > 1 ? @tr("Back") : "" }, { key: "R2", what: @tr("Setup" => "Next") }]
+            : [{ key: "Enter", what: @tr("Select") }, { key: "Esc", what: root.data.from-settings || root.data.index > 1 ? @tr("Back") : "" }]: HorizontalLayout {
+            visible: h.what != "";
+            spacing: (8px * S.k);
+            KeyCap { text: h.key; round: root.pad-hints && h.key.character-count == 1; }
+            Text { text: h.what; font-size: (17px * S.k); color: Theme.hint; vertical-alignment: center; }
+        }
+    }
+}

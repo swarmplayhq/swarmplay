@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SwarmPlay\n"
-"POT-Creation-Date: 2026-11-22 03:05+0000\n"
+"POT-Creation-Date: 2026-11-22 03:25+0000\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -657,14 +657,6 @@ msgid "Downloading"
 msgstr "Fazendo download"
 
 #: src/download_ui.rs
-msgid "Files moved"
-msgstr "Arquivos movidos"
-
-#: src/download_ui.rs
-msgid "Find the files"
-msgstr "Encontrar os arquivos"
-
-#: src/download_ui.rs
 msgid "Frees {}."
 msgstr "Libera {}."
 
@@ -692,6 +684,10 @@ msgstr "Obtendo a lista de arquivos"
 #: src/download_ui.rs
 msgid "In progress"
 msgstr "Em andamento"
+
+#: src/download_ui.rs
+msgid "Install by hand"
+msgstr "Instalar manualmente"
 
 #: src/download_ui.rs
 msgid "Install cancelled"
@@ -736,14 +732,6 @@ msgstr "O download foi excluído, mas o jogo não pôde ser: {}"
 #: src/download_ui.rs
 msgid "Its download is deleted; the game was running, so it stays"
 msgstr "O download foi excluído; o jogo estava em execução, então ele fica"
-
-#: src/download_ui.rs
-msgid "Its download isn't where it was: find it to share it again"
-msgstr "O download não está mais onde estava: encontre-o para compartilhar de novo."
-
-#: src/download_ui.rs
-msgid "Its files were moved"
-msgstr "Os arquivos foram movidos"
 
 #: src/download_ui.rs
 msgid "Its folder is missing: check Game folders in Settings"
@@ -878,10 +866,6 @@ msgstr "Parar de compartilhar"
 #: src/download_ui.rs
 msgid "Stopped"
 msgstr "Interrompido"
-
-#: src/download_ui.rs
-msgid "They aren't in {} any more: find where they went"
-msgstr "Eles não estão mais em {}: encontre para onde foram."
 
 #: src/download_ui.rs
 msgid "Time left"
@@ -1126,24 +1110,8 @@ msgid "Downloads go to {shown} now"
 msgstr "Os downloads agora vão para {shown}"
 
 #: src/folder_pick.rs
-msgid "Find the downloaded files"
-msgstr "Encontrar os arquivos baixados"
-
-#: src/folder_pick.rs
-msgid "Found its files"
-msgstr "Arquivos encontrados"
-
-#: src/folder_pick.rs
 msgid "Games and downloads go in {}"
 msgstr "Jogos e downloads vão para {}"
-
-#: src/folder_pick.rs
-msgid "Games can go on any of these. A drive plugged in but not mounted is mounted when chosen."
-msgstr "Os jogos podem ficar em qualquer uma destas. Uma unidade conectada mas não montada é montada ao ser escolhida."
-
-#: src/folder_pick.rs
-msgid "Go to the folder its files were moved to. A drive plugged in but not mounted is mounted when chosen."
-msgstr "Vá até a pasta para onde os arquivos foram movidos. Uma unidade conectada mas não montada é montada ao ser escolhida."
 
 #. The first drive is always the home folder (drives()); its name is translated.
 #: src/folder_pick.rs
@@ -1159,10 +1127,6 @@ msgid "Install new games to"
 msgstr "Instalar jogos novos em"
 
 #: src/folder_pick.rs
-msgid "Its files weren't there any more"
-msgstr "Os arquivos não estavam mais lá"
-
-#: src/folder_pick.rs
 msgid "Mounting…"
 msgstr "Montando…"
 
@@ -1173,10 +1137,6 @@ msgstr "Os jogos novos agora são instalados em {shown}"
 #: src/folder_pick.rs
 msgid "Not changed: {e}"
 msgstr "Não mudou: {e}"
-
-#: src/folder_pick.rs
-msgid "Not here: its folder is named torrent-{}…, in this folder or one inside it"
-msgstr "Não está aqui: a pasta dele se chama torrent-{}…, nesta pasta ou em uma dentro dela."
 
 #: src/folder_pick.rs
 msgid "Not mounted · {} · ✕ mounts it"
@@ -1195,10 +1155,6 @@ msgid "Save downloads to"
 msgstr "Salvar downloads em"
 
 #: src/folder_pick.rs
-msgid "SwarmPlay looks for the download's folder here and in the folders inside"
-msgstr "O SwarmPlay procura a pasta do download aqui e nas pastas dentro dela"
-
-#: src/folder_pick.rs
 msgid "SwarmPlay's games and downloads"
 msgstr "Jogos e downloads do SwarmPlay"
 
@@ -1206,10 +1162,6 @@ msgstr "Jogos e downloads do SwarmPlay"
 #: src/folder_pick.rs
 msgid "That drive is already in the list · use Install new games to for a folder on it"
 msgstr "Essa unidade já está na lista · use Instalar jogos novos em para uma pasta nela"
-
-#: src/folder_pick.rs
-msgid "The files are here"
-msgstr "Os arquivos estão aqui"
 
 #: src/folder_pick.rs
 msgid "Use this drive"
@@ -1296,16 +1248,24 @@ msgid "Couldn't install: {}"
 msgstr "Não foi possível instalar: {}"
 
 #: src/install_ui.rs
-msgid "Its files aren't where they were downloaded ({}): press Find the files"
-msgstr "Os arquivos não estão onde foram baixados ({}): pressione Encontrar os arquivos."
+msgid "Folders, RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive), GOG Linux installers (.sh) and AppImages. Installing unpacks the game and finds how to start it; nothing in it runs until you press Play. Unlike console games, which run inside an emulator, PC games run with your user's access to your files: only install releases you trust."
+msgstr "Pastas, arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema), instaladores Linux da GOG (.sh) e AppImages. A instalação extrai o jogo e descobre como iniciá-lo; nada nele é executado até você pressionar Jogar. Diferente dos jogos de console, que rodam dentro de um emulador, os jogos de PC rodam com o acesso do seu usuário aos seus arquivos: só instale versões em que você confia."
+
+#: src/install_ui.rs
+msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS4 PKG packages are unpacked for shadPS4, with their update and DLC. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
+msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc) e arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema; arquivos com senha não têm suporte). Pacotes PKG de PS4 são extraídos para o shadPS4, com a atualização e os DLCs. A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."
+
+#: src/install_ui.rs
+msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS5 PKG packages can't be installed: choose a release of this game that isn't a PKG. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
+msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc) e arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema; arquivos com senha não têm suporte). Pacotes PKG de PS5 não podem ser instalados: escolha uma versão deste jogo que não seja um PKG. A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."
+
+#: src/install_ui.rs
+msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images, RAR, ZIP, 7z or TAR archives, and PS4 PKG packages (not PS5 PKG). Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
+msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc), arquivos RAR, ZIP, 7z ou TAR e pacotes PKG de PS4 (não PKG de PS5). A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."
 
 #: src/install_ui.rs
 msgid "The download isn't finished"
 msgstr "O download não terminou"
-
-#: src/install_ui.rs
-msgid "The drive for new games isn't connected ({}): connect it, or choose another in Settings → Storage"
-msgstr "A unidade para novos jogos não está conectada ({}): conecte-a ou escolha outra em Configurações → Armazenamento."
 
 #. Its row says "Waiting to install".
 #: src/install_ui.rs
@@ -1769,6 +1729,138 @@ msgstr "Falha ao procurar atualizações: {e}"
 msgid "Update failed: {e}"
 msgstr "Falha na atualização: {e}"
 
+#: src/onboard.rs
+msgid "A wallpaper and an accent colour · they show right away"
+msgstr "Um papel de parede e uma cor de destaque · aparecem na hora"
+
+#: src/onboard.rs src/theme.rs
+msgid "Accent colour"
+msgstr "Cor de destaque"
+
+#: src/onboard.rs
+msgid "All set, {}"
+msgstr "Tudo pronto, {}"
+
+#: src/onboard.rs
+msgid "Choose your language"
+msgstr "Escolha seu idioma"
+
+#: src/onboard.rs
+msgid "Choose your look"
+msgstr "Escolha seu visual"
+
+#: src/onboard.rs
+msgid "Connect a controller"
+msgstr "Conecte um controle"
+
+#: src/onboard.rs
+msgid "Connect to the internet"
+msgstr "Conecte-se à internet"
+
+#: src/onboard.rs
+msgid "Connect your controller and press any button"
+msgstr "Conecte seu controle e pressione qualquer botão"
+
+#: src/onboard.rs src/os/system_ui.rs src/welcome.rs
+msgid "Connected"
+msgstr "Conectado"
+
+#: src/onboard.rs
+msgid "Games, their pictures and updates come from the internet"
+msgstr "Os jogos, as imagens e as atualizações vêm da internet"
+
+#: src/onboard.rs
+msgid "Games, their pictures and updates come from the internet · connect in your system's settings, SwarmPlay notices"
+msgstr "Os jogos, as imagens e as atualizações vêm da internet · conecte nas configurações do sistema, o SwarmPlay percebe sozinho"
+
+#: src/onboard.rs
+msgid "Here's what you chose · everything can be changed in Settings"
+msgstr "Veja o que você escolheu · tudo pode ser mudado em Configurações"
+
+#: src/onboard.rs
+msgid "How games open, and controllers in Windows games"
+msgstr "Como os jogos abrem, e os controles nos jogos de Windows"
+
+#: src/onboard.rs
+msgid "How loud, where it plays, and the interface's own sounds"
+msgstr "O volume, onde o som sai e os sons da interface"
+
+#: src/onboard.rs src/os/system_ui.rs
+msgid "Internet"
+msgstr "Internet"
+
+#: src/onboard.rs src/settings.rs
+msgid "Language"
+msgstr "Idioma"
+
+#: src/onboard.rs
+msgid "New games and downloads go here · more places can be added in Settings → Storage"
+msgstr "Jogos novos e downloads vão para cá · dá para adicionar mais lugares em Configurações → Armazenamento"
+
+#: src/onboard.rs
+msgid "New games go to"
+msgstr "Jogos novos vão para"
+
+#: src/onboard.rs src/os/system_ui.rs src/settings.rs src/storage.rs
+msgid "Not connected"
+msgstr "Não conectado"
+
+#: src/onboard.rs
+msgid "Notifications and updates"
+msgstr "Notificações e atualizações"
+
+#: src/onboard.rs src/present.rs src/settings.rs
+msgid "Playing"
+msgstr "Jogando"
+
+#: src/onboard.rs
+msgid "Plug it in with a cable, or hold its PS and Share buttons until the light flashes and pair it here"
+msgstr "Conecte com um cabo, ou segure os botões PS e Share até a luz piscar e pareie aqui"
+
+#: src/onboard.rs
+msgid "Plug it in with a cable, or pair it in your system's Bluetooth settings. A keyboard works too."
+msgstr "Conecte com um cabo, ou pareie nas configurações de Bluetooth do sistema. Um teclado também serve."
+
+#: src/onboard.rs
+msgid "Skip"
+msgstr "Pular"
+
+#: src/onboard.rs src/overlay_ui.rs src/settings.rs
+msgid "Sound"
+msgstr "Som"
+
+#: src/onboard.rs
+msgid "Start playing"
+msgstr "Começar a jogar"
+
+#: src/onboard.rs src/theme.rs
+msgid "Wallpaper"
+msgstr "Papel de parede"
+
+#: src/onboard.rs
+msgid "Welcome to SwarmPlay"
+msgstr "Boas-vindas ao SwarmPlay"
+
+#: src/onboard.rs
+msgid "What tells you something, and keeping everything up to date"
+msgstr "O que avisa você, e manter tudo atualizado"
+
+#: src/onboard.rs
+msgid "Where games go"
+msgstr "Onde ficam os jogos"
+
+#: src/onboard.rs
+msgid "Who's playing?"
+msgstr "Quem está jogando?"
+
+#: src/onboard.rs
+msgid "You can change it any time in Settings"
+msgstr "Você pode mudar quando quiser em Configurações"
+
+#: src/onboard.rs
+msgid "Your name and colour, on your avatar and the start screen"
+msgstr "Seu nome e sua cor, no avatar e na tela de início"
+
 #: src/os/install.rs
 msgid "A game is running: close it first, then install"
 msgstr "Um jogo está aberto: feche-o antes de instalar"
@@ -2014,10 +2106,6 @@ msgstr "{program} não está instalado"
 msgid "Cable · Connected"
 msgstr "Cabo · Conectado"
 
-#: src/os/system_ui.rs src/welcome.rs
-msgid "Connected"
-msgstr "Conectado"
-
 #. With a cable in, Wi-Fi stays connected but isn't the one used.
 #: src/os/system_ui.rs
 msgid "Connected · backup"
@@ -2064,20 +2152,12 @@ msgid "Install AzrakOS on this PC"
 msgstr "Instalar o AzrakOS neste PC"
 
 #: src/os/system_ui.rs
-msgid "Internet"
-msgstr "Internet"
-
-#: src/os/system_ui.rs
 msgid "Looking for Wi-Fi…"
 msgstr "Procurando Wi-Fi…"
 
 #: src/os/system_ui.rs
 msgid "More networks…"
 msgstr "Mais redes…"
-
-#: src/os/system_ui.rs src/settings.rs src/storage.rs
-msgid "Not connected"
-msgstr "Não conectado"
 
 #: src/os/system_ui.rs
 msgid "Not connected · choose Wi-Fi"
@@ -2305,10 +2385,6 @@ msgstr "Salvas em Imagens → SwarmPlay"
 #: src/overlay_ui.rs
 msgid "Screenshot saved"
 msgstr "Captura de tela salva"
-
-#: src/overlay_ui.rs src/settings.rs
-msgid "Sound"
-msgstr "Som"
 
 #: src/overlay_ui.rs
 msgid "Steam's overlay is used"
@@ -2780,10 +2856,6 @@ msgstr "PUBLICADORA"
 msgid "Pick a game in the Library, then Download and Install."
 msgstr "Escolha um jogo na Biblioteca e depois faça o download e instale."
 
-#: src/present.rs src/settings.rs
-msgid "Playing"
-msgstr "Jogando"
-
 #: src/present.rs
 msgid "Playing now"
 msgstr "Jogando agora"
@@ -3062,6 +3134,10 @@ msgid "As your desktop's notifications, with Open to go there"
 msgstr "Como notificações da área de trabalho, com Abrir para ir até lá"
 
 #: src/settings.rs
+msgid "Avatar colour"
+msgstr "Cor do avatar"
+
+#: src/settings.rs
 msgid "Check again"
 msgstr "Verificar de novo"
 
@@ -3220,12 +3296,8 @@ msgid "KytyPS5 location and video options, the game catalog"
 msgstr "Local do KytyPS5, opções de vídeo e o catálogo de jogos"
 
 #: src/settings.rs
-msgid "Language"
-msgstr "Idioma"
-
-#: src/settings.rs
-msgid "Language, display and your game ratings"
-msgstr "Idioma, tela e suas avaliações de jogos"
+msgid "Language, you, display and your game ratings"
+msgstr "Idioma, você, tela e suas avaliações de jogos"
 
 #: src/settings.rs
 msgid "Launcher"
@@ -3254,6 +3326,10 @@ msgstr "Só as importantes aparecem; a lista guarda tudo"
 #: src/settings.rs
 msgid "Nothing runnable at this path"
 msgstr "Nada executável neste caminho"
+
+#: src/settings.rs
+msgid "On your avatar and the start screen"
+msgstr "No seu avatar e na tela de início"
 
 #: src/settings.rs
 msgid "Only for AMD processors"
@@ -3350,6 +3426,14 @@ msgid "Runs PS5 games · you use your own build{} · switching keeps your saves"
 msgstr "Roda jogos de PS5 · você usa uma versão própria{} · trocar mantém seus jogos salvos"
 
 #: src/settings.rs
+msgid "Same as accent"
+msgstr "A mesma do destaque"
+
+#: src/settings.rs
+msgid "Set up again"
+msgstr "Configurar de novo"
+
+#: src/settings.rs
 msgid "Share your game ratings"
 msgstr "Compartilhar suas avaliações de jogos"
 
@@ -3388,6 +3472,10 @@ msgstr "Usar as versões oficiais"
 #: src/settings.rs
 msgid "Tells the emulator teams which games work on Linux · needs a free GitHub account"
 msgstr "Conta às equipes dos emuladores quais jogos funcionam no Linux · precisa de uma conta gratuita do GitHub"
+
+#: src/settings.rs
+msgid "The first-run setup: language, controller, look, sound, where games go"
+msgstr "A configuração inicial: idioma, controle, visual, som, onde ficam os jogos"
 
 #: src/settings.rs
 msgid "The launcher and its emulators"
@@ -3823,10 +3911,6 @@ msgid "A PNG or JPEG file, like ~/Pictures/wallpaper.png"
 msgstr "Um arquivo PNG ou JPEG, como ~/Pictures/wallpaper.png"
 
 #: src/theme.rs
-msgid "Accent colour"
-msgstr "Cor de destaque"
-
-#: src/theme.rs
 msgid "Aurora"
 msgstr "Aurora"
 
@@ -3885,10 +3969,6 @@ msgstr "Verde-azulado"
 #: src/theme.rs
 msgid "Violet"
 msgstr "Violeta"
-
-#: src/theme.rs
-msgid "Wallpaper"
-msgstr "Papel de parede"
 
 #: src/theme.rs
 msgid "Your image"
@@ -4359,479 +4439,491 @@ msgstr "Desconhecida"
 msgid "Updating the {console} game list…"
 msgstr "Atualizando a lista de jogos de {console}…"
 
-#: ui/app.slint:302
+#: ui/app.slint:311
 msgid "Starting with KytyPS5…"
 msgstr "Iniciando com o KytyPS5…"
 
-#: ui/app.slint:626
+#: ui/app.slint:638
 msgid "Already have games on this PC? Add the folder they're in."
 msgstr "Já tem jogos neste PC? Adicione a pasta onde eles estão."
 
-#: ui/app.slint:927
+#: ui/app.slint:939
 msgid "Availability"
 msgstr "Disponibilidade"
 
-#: ui/app.slint:986
+#: ui/app.slint:998
 msgid "Search games"
 msgstr "Pesquisar jogos"
 
-#: ui/app.slint:1016
+#: ui/app.slint:1028
 msgid "Comfortable"
 msgstr "Confortável"
 
-#: ui/app.slint:1016
+#: ui/app.slint:1028
 msgid "Compact"
 msgstr "Compacto"
 
-#: ui/app.slint:1016
+#: ui/app.slint:1028
 msgid "Roomy"
 msgstr "Espaçoso"
 
-#: ui/app.slint:1057
+#: ui/app.slint:1069
 msgid "Genre"
 msgstr "Gênero"
 
-#: ui/app.slint:1102
+#: ui/app.slint:1114
 msgid "Games"
 msgstr "Jogos"
 
-#: ui/app.slint:1102 ui/app.slint:2603
+#: ui/app.slint:1114 ui/app.slint:2615
 msgid "Library"
 msgstr "Biblioteca"
 
-#: ui/app.slint:1157
+#: ui/app.slint:1169
 msgid "Resume"
 msgstr "Retomar"
 
-#: ui/app.slint:1157
+#: ui/app.slint:1169
 msgid "Stop"
 msgstr "Parar"
 
-#: ui/app.slint:1407 ui/app.slint:1410 ui/app.slint:1411 ui/app.slint:1414
-#: ui/app.slint:1417 ui/app.slint:1418 ui/app.slint:2249 ui/app.slint:2258
-#: ui/downloads.slint:384
+#: ui/app.slint:1419 ui/app.slint:1422 ui/app.slint:1423 ui/app.slint:1426
+#: ui/app.slint:1429 ui/app.slint:1430 ui/app.slint:2261 ui/app.slint:2270
+#: ui/downloads.slint:384 ui/onboard.slint:268
 msgid "Select"
 msgstr "Selecionar"
 
-#: ui/app.slint:1410 ui/app.slint:1411
+#: ui/app.slint:1422 ui/app.slint:1423
 msgid "Control Center"
 msgstr "Central de controle"
 
-#: ui/app.slint:1410 ui/app.slint:1411 ui/app.slint:1414 ui/app.slint:1415
-#: ui/app.slint:2698 ui/app.slint:4065 ui/app.slint:4082
+#: ui/app.slint:1422 ui/app.slint:1423 ui/app.slint:1426 ui/app.slint:1427
+#: ui/app.slint:2710 ui/app.slint:4118 ui/app.slint:4135
 msgid "Options"
 msgstr "Opções"
 
-#: ui/app.slint:1410 ui/app.slint:1411
+#: ui/app.slint:1422 ui/app.slint:1423
 msgid "Search"
 msgstr "Pesquisar"
 
-#: ui/app.slint:1410 ui/app.slint:1411 ui/app.slint:1414 ui/app.slint:1415
+#: ui/app.slint:1422 ui/app.slint:1423 ui/app.slint:1426 ui/app.slint:1427
 msgid "Trailer"
 msgstr "Trailer"
 
-#: ui/app.slint:1414 ui/app.slint:1415 ui/app.slint:1417 ui/app.slint:1418
-#: ui/app.slint:2256 ui/app.slint:2259 ui/app.slint:3284 ui/app.slint:4009
-#: ui/downloads.slint:385
+#: ui/app.slint:1426 ui/app.slint:1427 ui/app.slint:1429 ui/app.slint:1430
+#: ui/app.slint:2268 ui/app.slint:2271 ui/app.slint:3338 ui/app.slint:4062
+#: ui/downloads.slint:385 ui/onboard.slint:268 ui/widgets.slint:131
 msgid "Back"
 msgstr "Voltar"
 
 #. What Download gets, when the title (a store's name) doesn't say it all.
-#: ui/app.slint:1496
+#: ui/app.slint:1508
 msgid "Release: {}"
 msgstr "Versão: {}"
 
-#: ui/app.slint:1529
+#: ui/app.slint:1541
 msgid "Compatibility"
 msgstr "Compatibilidade"
 
-#: ui/app.slint:1571
+#: ui/app.slint:1583
 msgid "Versions"
 msgstr "Versões"
 
-#: ui/app.slint:1609
+#: ui/app.slint:1621
 msgid "Best for this PC"
 msgstr "Melhor para este PC"
 
-#: ui/app.slint:1612
+#: ui/app.slint:1624
 msgid "Showing"
 msgstr "Em exibição"
 
-#: ui/app.slint:1626
+#: ui/app.slint:1638
 msgid "Each version has its own saves and updates."
 msgstr "Cada versão tem seus próprios dados salvos e atualizações."
 
-#: ui/app.slint:1649
+#: ui/app.slint:1661
 msgid "Choose another release"
 msgstr "Escolher outra versão"
 
-#: ui/app.slint:1668
+#: ui/app.slint:1680
 msgid "Trailers & screenshots"
 msgstr "Trailers e capturas de tela"
 
-#: ui/app.slint:1716
+#: ui/app.slint:1728
 msgid "Details"
 msgstr "Detalhes"
 
-#: ui/app.slint:1743
+#: ui/app.slint:1755
 msgid "+  Technical details & installed game"
 msgstr "+  Detalhes técnicos e jogo instalado"
 
-#: ui/app.slint:1743
+#: ui/app.slint:1755
 msgid "−  Hide technical details"
 msgstr "−  Ocultar detalhes técnicos"
 
-#: ui/app.slint:1764
+#: ui/app.slint:1776
 msgid "About"
 msgstr "Sobre"
 
-#: ui/app.slint:1828 ui/app.slint:2603 ui/overlay.slint:161
+#: ui/app.slint:1840 ui/app.slint:2615 ui/overlay.slint:161
 msgid "Settings"
 msgstr "Configurações"
 
-#: ui/app.slint:2115
+#: ui/app.slint:2127
 msgid "Not set"
 msgstr "Não definido"
 
-#: ui/app.slint:2225
+#: ui/app.slint:2237
 msgid "Version {} · Linux"
 msgstr "Versão {} · Linux"
 
-#: ui/app.slint:2226
+#: ui/app.slint:2238
 msgid "PS5 games on KytyPS5 · PS4 games on shadPS4"
 msgstr "Jogos de PS5 no KytyPS5 · jogos de PS4 no shadPS4"
 
-#: ui/app.slint:2250 ui/app.slint:2259 ui/app.slint:3394 ui/app.slint:3395
+#: ui/app.slint:2262 ui/app.slint:2271 ui/app.slint:3448 ui/app.slint:3449
 msgid "Close"
 msgstr "Fechar"
 
-#: ui/app.slint:2255
+#: ui/app.slint:2267
 msgid "Remove"
 msgstr "Remover"
 
-#: ui/app.slint:2258 ui/downloads.slint:500
+#: ui/app.slint:2270 ui/downloads.slint:500
 msgid "Change"
 msgstr "Alterar"
 
-#: ui/app.slint:2258 ui/app.slint:3889 ui/app.slint:4009 ui/app.slint:4010
+#: ui/app.slint:2270 ui/app.slint:3943 ui/app.slint:4062 ui/app.slint:4063
 msgid "Open"
 msgstr "Abrir"
 
-#: ui/app.slint:2526
+#: ui/app.slint:2538
 msgid "NOW PLAYING · {}"
 msgstr "JOGANDO AGORA · {}"
 
-#: ui/app.slint:2532 ui/overlay.slint:97
+#: ui/app.slint:2544 ui/overlay.slint:97
 msgid "Back to game"
 msgstr "Voltar ao jogo"
 
-#: ui/app.slint:2532 ui/overlay.slint:98
+#: ui/app.slint:2544 ui/overlay.slint:98
 msgid "Close game"
 msgstr "Fechar jogo"
 
-#: ui/app.slint:2556 ui/overlay.slint:113
+#: ui/app.slint:2568 ui/overlay.slint:113
 msgid "DOWNLOADS"
 msgstr "DOWNLOADS"
 
-#: ui/app.slint:2558
+#: ui/app.slint:2570
 msgid "Nothing downloading"
 msgstr "Nenhum download"
 
-#: ui/app.slint:2565
+#: ui/app.slint:2577
 msgid "Open Downloads"
 msgstr "Abrir Downloads"
 
-#: ui/app.slint:2581
+#: ui/app.slint:2593
 msgid "NOTIFICATIONS"
 msgstr "NOTIFICAÇÕES"
 
-#: ui/app.slint:2591
+#: ui/app.slint:2603
 msgid "Open notifications"
 msgstr "Abrir notificações"
 
-#: ui/app.slint:2603
+#: ui/app.slint:2615
 msgid "Controls"
 msgstr "Controles"
 
-#: ui/app.slint:2604 ui/overlay.slint:162
+#: ui/app.slint:2616 ui/overlay.slint:162
 msgid "Power"
 msgstr "Energia"
 
-#: ui/app.slint:2604
+#: ui/app.slint:2616
 msgid "Quit"
 msgstr "Sair"
 
-#: ui/app.slint:2688
+#: ui/app.slint:2700
 msgid "No controller connected: you'll play with the keyboard."
 msgstr "Nenhum controle conectado: você vai jogar com o teclado."
 
-#: ui/app.slint:2689
+#: ui/app.slint:2701
 msgid "Games play best with a controller. Connect one before starting a game."
 msgstr "Os jogos funcionam melhor com um controle. Conecte um antes de iniciar um jogo."
 
-#: ui/app.slint:2696 ui/app.slint:2698
+#: ui/app.slint:2708 ui/app.slint:2710
 msgid "Arrows"
 msgstr "Setas"
 
-#: ui/app.slint:2696 ui/app.slint:2698 ui/app.slint:4065 ui/app.slint:4082
+#: ui/app.slint:2708 ui/app.slint:2710 ui/app.slint:4118 ui/app.slint:4135
 msgid "D-pad"
 msgstr "Botões direcionais"
 
-#: ui/app.slint:2696 ui/app.slint:2698
+#: ui/app.slint:2708 ui/app.slint:2710
 msgid "Move"
 msgstr "Mover"
 
-#: ui/app.slint:2815
+#: ui/app.slint:2827
 msgid "Welcome back"
 msgstr "Bem-vindo de volta"
 
-#: ui/app.slint:2815
+#: ui/app.slint:2827
 msgid "Welcome back, {}"
 msgstr "Bem-vindo de volta, {}"
 
-#: ui/app.slint:2823
+#: ui/app.slint:2835
 msgid "Getting AzrakOS ready"
 msgstr "Preparando o AzrakOS"
 
-#: ui/app.slint:2823
+#: ui/app.slint:2835
 msgid "Welcome"
 msgstr "Boas-vindas"
 
-#: ui/app.slint:2830
+#: ui/app.slint:2842
 msgid "Setting up SwarmPlay"
 msgstr "Configurando o SwarmPlay"
 
-#: ui/app.slint:2837
+#: ui/app.slint:2849
 msgid "You can install it later from Settings."
 msgstr "Você pode instalar depois em Configurações."
 
-#: ui/app.slint:2964
+#: ui/app.slint:2976
 msgid "Skip and continue"
 msgstr "Pular e continuar"
 
-#: ui/app.slint:2964
+#: ui/app.slint:2976
 msgid "Start"
 msgstr "Iniciar"
 
-#: ui/app.slint:3188
+#: ui/app.slint:3242
 msgid "Before you restart"
 msgstr "Antes de reiniciar"
 
-#: ui/app.slint:3191
+#: ui/app.slint:3245
 msgid "A blue screen comes up once after the restart. On it, use a keyboard's arrow keys and Enter:"
 msgstr "Uma tela azul aparece uma vez depois de reiniciar. Nela, use as setas e o Enter de um teclado:"
 
-#: ui/app.slint:3199
+#: ui/app.slint:3253
 msgid "Choose "
 msgstr "Escolha "
 
-#: ui/app.slint:3202
+#: ui/app.slint:3256
 msgid "Type the password "
 msgstr "Digite a senha "
 
-#: ui/app.slint:3221
+#: ui/app.slint:3275
 msgid "This lets NVIDIA's graphics driver start. Skipped it? AzrakOS still starts; the PC asks again later."
 msgstr "Isso permite que o driver de vídeo da NVIDIA inicie. Pulou? O AzrakOS inicia mesmo assim; o PC pergunta de novo depois."
 
-#: ui/app.slint:3337
+#: ui/app.slint:3391
 msgid "A name, initials (tlou) or a genre"
 msgstr "Um nome, iniciais (tlou) ou um gênero"
 
-#: ui/app.slint:3394 ui/app.slint:3536 ui/app.slint:3889
+#: ui/app.slint:3391
+msgid "Your name"
+msgstr "Seu nome"
+
+#: ui/app.slint:3448 ui/app.slint:3590 ui/app.slint:3943
 msgid "Delete"
 msgstr "Apagar"
 
-#: ui/app.slint:3394 ui/app.slint:3395
+#: ui/app.slint:3448 ui/app.slint:3449 ui/downloads.slint:500
+msgid "Done"
+msgstr "OK"
+
+#: ui/app.slint:3448 ui/app.slint:3449
 msgid "Show results"
 msgstr "Ver resultados"
 
-#: ui/app.slint:3394 ui/app.slint:3536 ui/app.slint:4067
+#: ui/app.slint:3448 ui/app.slint:3590 ui/app.slint:4120
 msgid "Space"
 msgstr "Espaço"
 
-#: ui/app.slint:3395 ui/app.slint:3537
+#: ui/app.slint:3449 ui/app.slint:3591
 msgid "Press the key"
 msgstr "Pressionar a tecla"
 
-#: ui/app.slint:3439
+#: ui/app.slint:3493
 msgid "Join {}"
 msgstr "Conectar-se a {}"
 
-#: ui/app.slint:3472
+#: ui/app.slint:3526
 msgid "Password"
 msgstr "Senha"
 
-#: ui/app.slint:3502
+#: ui/app.slint:3556
 msgid "Connecting to {}…"
 msgstr "Conectando a {}…"
 
-#: ui/app.slint:3503
+#: ui/app.slint:3557
 msgid "Choose the letters below"
 msgstr "Escolha as letras abaixo"
 
-#: ui/app.slint:3503
+#: ui/app.slint:3557
 msgid "Type with your keyboard, or choose the letters below"
 msgstr "Digite no teclado ou escolha as letras abaixo"
 
-#: ui/app.slint:3536 ui/app.slint:3537 ui/app.slint:3624
+#: ui/app.slint:3590 ui/app.slint:3591 ui/app.slint:3678
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: ui/app.slint:3536 ui/app.slint:3537
+#: ui/app.slint:3590 ui/app.slint:3591
 msgid "Join"
 msgstr "Conectar"
 
-#: ui/app.slint:3536
+#: ui/app.slint:3590
 msgid "Shift"
 msgstr "Shift"
 
-#: ui/app.slint:3536
+#: ui/app.slint:3590
 msgid "Symbols"
 msgstr "Símbolos"
 
-#: ui/app.slint:3537
+#: ui/app.slint:3591
 msgid "Hide password"
 msgstr "Ocultar senha"
 
-#: ui/app.slint:3537
+#: ui/app.slint:3591
 msgid "Show password"
 msgstr "Mostrar senha"
 
-#: ui/app.slint:3646
+#: ui/app.slint:3700
 msgid "Loading trailer…"
 msgstr "Carregando trailer…"
 
-#: ui/app.slint:3722
+#: ui/app.slint:3776
 msgctxt "Trailer"
 msgid "Pause"
 msgstr "Pausar"
 
-#: ui/app.slint:3722
+#: ui/app.slint:3776
 msgctxt "Trailer"
 msgid "Play"
 msgstr "Reproduzir"
 
-#: ui/app.slint:3786
+#: ui/app.slint:3840
 msgid "Click to open"
 msgstr "Clique para abrir"
 
-#: ui/app.slint:3786
+#: ui/app.slint:3840
 msgid "PS  to see it"
 msgstr "PS  para ver"
 
-#: ui/app.slint:3807
+#: ui/app.slint:3861
 msgid "Notifications"
 msgstr "Notificações"
 
-#: ui/app.slint:3815
+#: ui/app.slint:3869
 msgid "No notifications"
 msgstr "Nenhuma notificação"
 
-#: ui/app.slint:3816
+#: ui/app.slint:3870
 msgid "Downloads, games ready to play and updates show up here."
 msgstr "Downloads, jogos prontos para jogar e atualizações aparecem aqui."
 
-#: ui/app.slint:3839
+#: ui/app.slint:3893
 msgid "Earlier"
 msgstr "Anteriores"
 
-#: ui/app.slint:3839
+#: ui/app.slint:3893
 msgid "Today"
 msgstr "Hoje"
 
-#: ui/app.slint:3880
+#: ui/app.slint:3934
 msgid "Clear all"
 msgstr "Limpar tudo"
 
-#: ui/app.slint:3999
+#: ui/app.slint:3982
+msgid "Games can go on any of these. A drive plugged in but not mounted is mounted when chosen."
+msgstr "Os jogos podem ficar em qualquer uma destas. Uma unidade conectada mas não montada é montada ao ser escolhida."
+
+#: ui/app.slint:4052
 msgid "No folders in here"
 msgstr "Nenhuma pasta aqui"
 
-#: ui/app.slint:4010
+#: ui/app.slint:4063
 msgid "Up"
 msgstr "Subir"
 
-#: ui/app.slint:4010
+#: ui/app.slint:4063
 msgid "Use this folder"
 msgstr "Usar esta pasta"
 
-#: ui/app.slint:4042
+#: ui/app.slint:4095
 msgid "Keyboard controls in games"
 msgstr "Controles do teclado nos jogos"
 
-#: ui/app.slint:4049
+#: ui/app.slint:4102
 msgid "PS4 games · shadPS4"
 msgstr "Jogos de PS4 · shadPS4"
 
-#: ui/app.slint:4049
+#: ui/app.slint:4102
 msgid "PS5 games · KytyPS5"
 msgstr "Jogos de PS5 · KytyPS5"
 
-#: ui/app.slint:4058
+#: ui/app.slint:4111
 msgid "◂ ▸ to switch"
 msgstr "◂ ▸ para trocar"
 
-#: ui/app.slint:4064
+#: ui/app.slint:4117
 msgid "B  (or keypad 6)"
 msgstr "B  (ou 6 do teclado numérico)"
 
-#: ui/app.slint:4064
+#: ui/app.slint:4117
 msgid "N  (or keypad 2)"
 msgstr "N  (ou 2 do teclado numérico)"
 
-#: ui/app.slint:4064
+#: ui/app.slint:4117
 msgid "V  (or keypad 4)"
 msgstr "V  (ou 4 do teclado numérico)"
 
-#: ui/app.slint:4064 ui/app.slint:4081
+#: ui/app.slint:4117 ui/app.slint:4134
 msgid "□  Square"
 msgstr "□  Quadrado"
 
-#: ui/app.slint:4064 ui/app.slint:4081
+#: ui/app.slint:4117 ui/app.slint:4134
 msgid "○  Circle"
 msgstr "○  Bola"
 
-#: ui/app.slint:4064 ui/app.slint:4081
+#: ui/app.slint:4117 ui/app.slint:4134
 msgid "✕  Cross"
 msgstr "✕  Xis"
 
-#: ui/app.slint:4065 ui/app.slint:4082
+#: ui/app.slint:4118 ui/app.slint:4135
 msgid "Arrow keys"
 msgstr "Setas"
 
-#: ui/app.slint:4065
+#: ui/app.slint:4118
 msgid "C  (or keypad 8)"
 msgstr "C  (ou 8 do teclado numérico)"
 
-#: ui/app.slint:4065 ui/app.slint:4081
+#: ui/app.slint:4118 ui/app.slint:4134
 msgid "△  Triangle"
 msgstr "△  Triângulo"
 
-#: ui/app.slint:4066 ui/app.slint:4083
+#: ui/app.slint:4119 ui/app.slint:4136
 msgid "Left stick"
 msgstr "Analógico esquerdo"
 
-#: ui/app.slint:4066 ui/app.slint:4083
+#: ui/app.slint:4119 ui/app.slint:4136
 msgid "Right stick"
 msgstr "Analógico direito"
 
-#: ui/app.slint:4067 ui/app.slint:4084
+#: ui/app.slint:4120 ui/app.slint:4137
 msgid "Touchpad"
 msgstr "Touchpad"
 
-#: ui/app.slint:4084
+#: ui/app.slint:4137
 msgid "Left Shift  /  Left Ctrl"
 msgstr "Shift esquerdo  /  Ctrl esquerdo"
 
-#: ui/app.slint:4096
+#: ui/app.slint:4149
 msgid "F7 turns the mouse into the right stick (press it again to release the mouse)."
 msgstr "F7 transforma o mouse no analógico direito (pressione de novo para soltar o mouse)."
 
-#: ui/app.slint:4096
+#: ui/app.slint:4149
 msgid "shadPS4 keeps its key layout in its own settings file; these are its defaults."
 msgstr "O shadPS4 guarda o mapa de teclas no próprio arquivo de configurações; estes são os padrões dele."
 
-#: ui/app.slint:4098
+#: ui/app.slint:4151
 msgid ""
 "Games play best with a controller: DualSense, DualShock 4, Xbox and most others work\n"
 "over USB or Bluetooth with no setup. Connect it before starting a game."
@@ -4915,10 +5007,6 @@ msgstr "Instalar"
 msgid "Look up metadata"
 msgstr "Buscar metadados"
 
-#: ui/downloads.slint:500
-msgid "Done"
-msgstr "OK"
-
 #: ui/downloads.slint:590
 msgid "Download & install"
 msgstr "Fazer download e instalar"
@@ -4950,6 +5038,19 @@ msgstr "Só faça download de jogos que você tem permissão para baixar. O down
 #: ui/library.slint:63
 msgid "Sort by"
 msgstr "Ordenar por"
+
+#: ui/onboard.slint:195
+msgid "Continue"
+msgstr "Continuar"
+
+#: ui/onboard.slint:229
+msgid "No controller yet"
+msgstr "Nenhum controle ainda"
+
+#: ui/onboard.slint:267
+msgctxt "Setup"
+msgid "Next"
+msgstr "Avançar"
 
 #: ui/overlay.slint:90
 msgid "PLAYING"
@@ -4998,18 +5099,3 @@ msgstr "NOVO"
 #: ui/widgets.slint:269
 msgid "● PLAYING"
 msgstr "● JOGANDO"
-
-#~ msgid "Install by hand"
-#~ msgstr "Instalar manualmente"
-
-#~ msgid "Folders, RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive), GOG Linux installers (.sh) and AppImages. Installing unpacks the game and finds how to start it; nothing in it runs until you press Play. Unlike console games, which run inside an emulator, PC games run with your user's access to your files: only install releases you trust."
-#~ msgstr "Pastas, arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema), instaladores Linux da GOG (.sh) e AppImages. A instalação extrai o jogo e descobre como iniciá-lo; nada nele é executado até você pressionar Jogar. Diferente dos jogos de console, que rodam dentro de um emulador, os jogos de PC rodam com o acesso do seu usuário aos seus arquivos: só instale versões em que você confia."
-
-#~ msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS4 PKG packages are unpacked for shadPS4, with their update and DLC. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
-#~ msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc) e arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema; arquivos com senha não têm suporte). Pacotes PKG de PS4 são extraídos para o shadPS4, com a atualização e os DLCs. A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."
-
-#~ msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS5 PKG packages can't be installed: choose a release of this game that isn't a PKG. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
-#~ msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc) e arquivos RAR, ZIP, 7z ou TAR (estes dependem da libarchive do sistema; arquivos com senha não têm suporte). Pacotes PKG de PS5 não podem ser instalados: escolha uma versão deste jogo que não seja um PKG. A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."
-
-#~ msgid "Folders, exFAT or decrypted PFS (.ffpfsc) images, RAR, ZIP, 7z or TAR archives, and PS4 PKG packages (not PS5 PKG). Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."
-#~ msgstr "Pastas, imagens exFAT ou PFS descriptografadas (.ffpfsc), arquivos RAR, ZIP, 7z ou TAR e pacotes PKG de PS4 (não PKG de PS5). A instalação confere a estrutura do jogo, não se o conteúdo é autêntico, e nunca executa os arquivos baixados."

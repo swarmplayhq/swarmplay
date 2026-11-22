@@ -157,6 +157,16 @@ then translate the empty `msgstr`s in the .po. `scripts/i18n.sh check` (run by c
 text or a translation whose `{…}` differ from the English. The language switches live (Settings → Launcher →
 Language → `App::relocalize`): anything new pushed to the window must be rebuilt there too.
 
+## First-run setup (src/onboard.rs)
+
+A new install (no settings file, or one with `setup_done: false`) goes through a full-screen setup before
+the start screen; a settings file from before the setup existed counts as set up (config.rs). Each page
+shows Settings' own rows, picked by `SId` (`onboard::wants`), and changes them through
+`settings_activate`/`settings_change`, so a new Settings row is in the setup by adding its `SId` there.
+`SWARMPLAY_ONBOARD=1` shows it on any start, `=all` with every page (Controller and Internet too);
+`scripts/ui_matrix.py --onboard` shoots every page to `dist/ui-matrix/onboard/` (check.sh runs it).
+Settings → Launcher → Set up again opens it any time.
+
 ## Style
 
 Match the surrounding code: dense one-line `ensure!`/`match` arms, comments that say why in plain words,

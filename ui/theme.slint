@@ -137,6 +137,7 @@ export global Zone {
     out property <int> welcome: 29;
     out property <int> notes: 30;
     out property <int> pick: 31;
+    out property <int> onboard: 32;
 }
 
 // dot: KytyPS5 compatibility level (0 none, 1 in-game, 2 menus, 3 boots, 4 doesn't boot, 5 untested)
@@ -334,3 +335,18 @@ export struct WjKey { label: string, w: float, focused: bool, accent: bool, on: 
 export struct MenuItem { label: string, icon: string }
 // note: what Resume couldn't do, in place of the time (until it's pressed again).
 export struct RunningData { active: bool, name: string, time: string, note: string }
+
+// A page of the first-run setup (src/onboard.rs). step: 0 press a button, 1 language,
+// 2 controller, 3 internet, 4 who's playing, 5 look, 6 sound, 7 storage, 8 playing,
+// 9 notifications, 10 all set. index/count: its place on the progress line. rows are Settings'
+// own (kind 7: a line to read, never selected); the highlight goes over the rows, then buttons.
+export struct OnboardData {
+    step: int,
+    index: int,
+    count: int,
+    title: string,
+    subtitle: string,
+    rows: [SettingData],
+    buttons: [ActionData],
+    from-settings: bool,
+}

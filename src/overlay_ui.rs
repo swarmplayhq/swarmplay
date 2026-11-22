@@ -122,6 +122,7 @@ impl App {
 
     /// PS held (or `swarmplay --home`): SwarmPlay's Home, the game going on behind it.
     pub fn ov_home(&mut self) {
+        if self.in_setup() { return; }
         if overlay::desktop() == Desktop::SteamGameMode && self.in_game() { return; }
         if self.ov_open { self.ov_close(false); }
         std::thread::spawn(|| { overlay::focus_main(); });
