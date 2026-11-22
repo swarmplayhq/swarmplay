@@ -340,18 +340,18 @@ export component Particles inherits Rectangle {
     in property <color> cool: Theme.accent.brighter(0.6);
     property <float> t: running ? animation-tick() / 1ms / 1000 : 0;
     clip: true;
-    // The beam, breathing slowly: a wide glow and a brighter core.
-    Rectangle {
-        x: -parent.width * 0.25; y: -parent.height * 0.6;
-        width: parent.width * 0.8; height: parent.height * 1.3;
-        background: @radial-gradient(circle, #fff1dc40 0%, #fff1dc17 40%, #fff1dc00 70%);
-        opacity: 0.8 + 0.2 * sin(root.t * 14deg);
-    }
-    Rectangle {
-        x: parent.width * 0.04; y: -parent.height * 0.25;
-        width: parent.width * 0.2; height: parent.height * 1.0;
-        background: @radial-gradient(circle, #ffffff24 0%, #ffffff00 70%);
-        opacity: 0.6 + 0.4 * sin(root.t * 9deg + 60deg);
+    // The beam, breathing slowly: soft round glows down a diagonal from the top left. Each is
+    // square and fades out well inside its edges (a radial gradient on a long box is cut off at
+    // its sides, which drew hard vertical lines).
+    property <length> big: max(self.width, self.height);
+    for k in 4: Rectangle {
+        property <float> along: k / 3;
+        width: root.big * (0.95 - along * 0.35);
+        height: self.width;
+        x: root.width * (-0.18 + along * 0.22) - self.width / 2 + root.width * 0.12;
+        y: root.height * (-0.35 + along * 0.55) - self.height / 2 + root.height * 0.2;
+        background: @radial-gradient(circle, #fff1dc2e 0%, #fff1dc12 35%, #fff1dc00 65%);
+        opacity: (0.85 - along * 0.35) * (0.8 + 0.2 * sin(root.t * 14deg + k * 30deg));
     }
     for i in 64: Rectangle {
         // Golden-ratio steps spread the specks without any two lining up.

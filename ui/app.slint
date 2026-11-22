@@ -80,8 +80,9 @@ component Wallpaper inherits Rectangle {
     if kind == 6: Particles { running: root.visible && root.opacity > 0; }
     if kind != 5 && kind != 6: Rectangle {
         background: @radial-gradient(circle, #ffffff2e 0%, #ffffff00 60%);
-        x: parent.width * 0.42; y: -parent.height * 0.35;
-        width: parent.width * 0.9; height: parent.height * 1.1;
+        // Square, so the glow fades out inside it (on a long box it's cut at the sides).
+        width: max(parent.width, parent.height) * 1.0; height: self.width;
+        x: parent.width * 0.87 - self.width / 2; y: parent.height * 0.2 - self.height / 2;
     }
     if kind == 5: Image { source: root.image; width: parent.width; height: parent.height; image-fit: cover; }
 }
