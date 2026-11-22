@@ -1,6 +1,6 @@
 //! Choosing a drive, then a folder on it, with a controller, as a console's storage screens:
 //! no paths to type. Opened from Settings → Storage for "Add a place", "Install new games to"
-//! and "Save downloads to".
+//! and "Save downloads to", and from Downloads for "Find the files" (a download moved by hand).
 //!
 //! First the drives: the home folder, every drive mounted where removable and extra drives go
 //! (/run/media, /media, /mnt, /var/mnt), and drives plugged in but not mounted yet (lsblk),
@@ -15,19 +15,22 @@ use std::path::{Path, PathBuf};
 use tr::tr;
 
 /// What the folder chosen is for.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PickFor {
     Place,
     Install,
     Download,
+    /// Where the files of this download (its key) went.
+    Locate(String),
 }
 
 impl PickFor {
-    fn title(self) -> String {
-        match self { PickFor::Place => tr!("Add a place"), PickFor::Install => tr!("Install new games to"), PickFor::Download => tr!("Save downloads to") }
+    fn title(&self) -> String {
+        match self { PickFor::Place => tr!("Add a place"), PickFor::Install => tr!("Install new games to"), PickFor::Download => tr!("Save downloads to"), PickFor::Locate(_) => tr!("Find the downloaded files") }
     }
-    fn row(self) -> SId {
-        match self { PickFor::Place => SId::StorageAdd, PickFor::Install => SId::InstallDir, PickFor::Download => SId::DownloadDir }
+    /// The Settings row it was opened from (none: Downloads).
+    fn row(&self) -> Option<SId> {
+        match self { PickFor::Place => Some(SId::StorageAdd), PickFor::Install => Some(SId::InstallDir), PickFor::Download => Some(SId::DownloadDir), PickFor::Locate(_) => None }
     }
 }
 
@@ -66,7 +69,7 @@ pub struct Pick {
 /// Filesystems a drive for games can have.
 const FS: [&str; 9] = ["ext4", "btrfs", "xfs", "ntfs", "ntfs3", "exfat", "vfat", "f2fs", "ext3"];
 /// Where other drives get mounted.
-const MOUNTS: [&str; 4] = ["/run/media/", "/media/", "/mnt/", "/var/mnt/"];
+pub const MOUNTS: [&str; 4] = ["/run/media/", "/media/", "/mnt/", "/var/mnt/"];
 
 /// The drives mounted where extra drives go, from /proc/self/mountinfo's lines.
 pub fn mounted(mountinfo: &str) -> Vec<(PathBuf, String)> {
@@ -203,7 +206,11 @@ impl App {
                     });
                     entries.push(Entry::Drive(i));
                 }
-                (tr!("{} · choose a drive", p.purpose.title()), String::new())
+                let intro = match p.purpose {
+                    PickFor::Locate(_) => tr!("Go to the folder its files were moved to. A drive plugged in but not mounted is mounted when chosen."),
+                    _ => tr!("Games can go on any of these. A drive plugged in but not mounted is mounted when chosen."),
+                };
+                (tr!("{} · choose a drive", p.purpose.title()), intro)
             }
             Some((di, dir)) => {
                 let d = &p.drives[*di];
@@ -213,7 +220,10 @@ impl App {
                     PickFor::Place => (if top && !is_home(d) { tr!("Use this drive") } else { tr!("Use this folder") }, tr!("Games and downloads go in {}", util::display_path(&dir.join("SwarmPlay").to_string_lossy()))),
                     PickFor::Install => (tr!("Install new games here"), util::display_path(&dir.to_string_lossy())),
                     PickFor::Download => (tr!("Save downloads here"), util::display_path(&dir.to_string_lossy())),
+                    PickFor::Locate(_) => (tr!("The files are here"), tr!("SwarmPlay looks for the download's folder here and in the folders inside")),
                 };
+                // Finding files only reads: any folder will do.
+                let can = can || matches!(p.purpose, PickFor::Locate(_));
                 rows.push(PickRow {
                     label: label.into(),
                     sub: if can { sub.into() } else { tr!("Can't write here · choose a folder of yours").into() },
@@ -329,17 +339,26 @@ impl App {
             }
             Entry::Use => {
                 let Some((_, dir)) = p.at.clone() else { return };
-                if !writable(&dir) {
+                if let PickFor::Locate(key) = &p.purpose {
+                    if crate::downloads::find_moved(key, std::slice::from_ref(&dir)).is_none() {
+                        p.note = tr!("Not here: its folder is named torrent-{}…, in this folder or one inside it", &key[..key.len().min(8)]);
+                        audio::play(Sound::Back);
+                        return self.push_pick();
+                    }
+                } else if !writable(&dir) {
                     p.note = tr!("Can't write there: choose a folder of yours, or the drive's own top");
                     audio::play(Sound::Back);
                     return self.push_pick();
                 }
-                let purpose = p.purpose;
+                let purpose = p.purpose.clone();
                 self.pick = None;
                 self.back_soft();
+                let row = purpose.row();
                 self.pick_chosen(purpose, &dir);
                 // Back on Storage once the picker has gone: on the row it was opened from.
-                slint::Timer::single_shot(std::time::Duration::from_millis(220), move || with_app(move |app| app.select_setting(purpose.row())));
+                if let Some(row) = row {
+                    slint::Timer::single_shot(std::time::Duration::from_millis(220), move || with_app(move |app| app.select_setting(row)));
+                }
             }
         }
     }
@@ -370,7 +389,20 @@ impl App {
     fn pick_chosen(&mut self, purpose: PickFor, dir: &Path) {
         let shown = util::display_path(&dir.to_string_lossy());
         let path = dir.to_string_lossy().into_owned();
+        let row = purpose.row().unwrap_or(SId::StorageAdd);
         match purpose {
+            PickFor::Locate(key) => {
+                // Checked before the picker closed: found there (unless it went in between).
+                if self.downloads.relocate(&[dir.to_path_buf()]) > 0 {
+                    let (name, at) = self.downloads.job(&key).map(|j| (j.name, j.folder.parent().map(|p| util::display_path(&p.to_string_lossy())).unwrap_or_default())).unwrap_or_default();
+                    audio::play(Sound::Select);
+                    self.toast(&tr!("Found its files"), &format!("{name} · {at}"), "disk", crate::toast::DONE);
+                } else {
+                    self.note_download_quiet(&key, tr!("Its files weren't there any more"));
+                }
+                self.dl_sel = Some(key);
+                return self.push_downloads();
+            }
             PickFor::Place => {
                 let dev = |p: &Path| { use std::os::unix::fs::MetadataExt; std::fs::metadata(p).map(|m| m.dev()).unwrap_or(0) };
                 if self.storage_places().iter().any(|p| p.dev == dev(dir) && p.added.is_none()) {
@@ -381,7 +413,7 @@ impl App {
                 }
             }
             PickFor::Install => {
-                if let Err(e) = std::fs::create_dir_all(dir) { return self.note_setting(purpose.row(), &tr!("Not changed: {e}", e), 2); }
+                if let Err(e) = std::fs::create_dir_all(dir) { return self.note_setting(row, &tr!("Not changed: {e}", e), 2); }
                 {
                     let mut c = self.cfg.lock().unwrap();
                     c.install_dir = path.clone();
@@ -389,13 +421,13 @@ impl App {
                     c.save();
                 }
                 audio::play(Sound::Select);
-                self.note_setting(purpose.row(), &tr!("New games are set up in {shown} now", shown), 1);
+                self.note_setting(row, &tr!("New games are set up in {shown} now", shown), 1);
             }
             PickFor::Download => {
                 self.cfg.lock().unwrap().download_dir = path;
                 self.cfg.lock().unwrap().save();
                 audio::play(Sound::Select);
-                self.note_setting(purpose.row(), &tr!("Downloads go to {shown} now", shown), 1);
+                self.note_setting(row, &tr!("Downloads go to {shown} now", shown), 1);
             }
         }
         Self::storage_recount();

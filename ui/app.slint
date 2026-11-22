@@ -3925,7 +3925,8 @@ export component AppWindow inherits Window {
             Text {
                 x: (root.width - parent.w) / 2; y: (128px * S.k);
                 width: parent.w;
-                text: root.pick-step == 0 ? @tr("Games can go on any of these. A drive plugged in but not mounted is mounted when chosen.") : root.pick-path;
+                // The drives' intro (what they're chosen for), then where the picker is.
+                text: root.pick-path;
                 font-size: (18px * S.k); color: Theme.text2; overflow: elide;
             }
             if root.pick-note != "": Text {

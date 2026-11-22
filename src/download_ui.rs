@@ -99,7 +99,7 @@ fn spark_path(speeds: &std::collections::VecDeque<f32>) -> String {
 fn describe(job: &Job, install: Option<&Record>, failure: Option<&String>, queued_behind: Option<&str>, sharing_on: bool) -> Desc {
     let mut d = Desc { group: 0, kind: 0, status: String::new(), big: String::new(), unit: String::new(), stats: vec![], spark: false,
         note: String::new(), dl: job.progress(), inst: 0.0, ready: false, dl_label: tr!("Downloading"),
-        inst_label: if job.install_to.is_some() { tr!("Install") } else { tr!("Install by hand") }, bar: 0, actions: vec![],
+        inst_label: tr!("Install"), bar: 0, actions: vec![],
         line: String::new(), tile: job.progress(), working: matches!(job.state, State::Checking | State::Downloading) };
     let size = size_label(job.total);
     let progress = |d: &mut Desc, f: f32| { d.big = pct(f); d.unit = "%".into(); };
@@ -265,6 +265,26 @@ fn describe(job: &Job, install: Option<&Record>, failure: Option<&String>, queue
             }
         }
     }
+    // Its files aren't where it downloaded them, and weren't found where SwarmPlay looks (the
+    // places in Storage, every drive): found with the folder picker, rather than downloading it
+    // all again or a "couldn't install" that never says why.
+    let installed = install.is_some_and(|r| r.state == Install::Installed);
+    if job.done > 0 && !job.waiting_vpn && !install.is_some_and(|r| r.state.active())
+        && matches!(job.state, State::Paused | State::Failed | State::Cancelled | State::Complete) && !job.folder.is_dir() {
+        let locate = ("locate", tr!("Find the files"), "folder");
+        if installed {
+            d.note = tr!("Its download isn't where it was: find it to share it again");
+            d.actions = vec![("play_install", tr!("Play"), "play"), locate, ("delete", tr!("Delete…"), "trash")];
+        } else {
+            (d.group, d.kind, d.bar) = (1, 2, 2);
+            d.status = tr!("Its files were moved");
+            d.line = tr!("Files moved");
+            let was = job.folder.parent().unwrap_or(&job.folder);
+            d.note = tr!("They aren't in {} any more: find where they went", crate::util::display_path(&was.to_string_lossy()));
+            let keep = d.actions.iter().find(|a| matches!(a.0, "delete" | "remove" | "cancel" | "discard")).cloned();
+            d.actions = std::iter::once(locate).chain(keep).collect();
+        }
+    }
     d
 }
 
@@ -340,6 +360,7 @@ impl App {
                 if path.is_dir() { open_url(&path.to_string_lossy()); }
             }
             "install" => self.install_download(key),
+            "locate" => self.open_folder_pick(crate::folder_pick::PickFor::Locate(key.to_string())),
             "cancel_install" => {
                 if let Err(error) = self.installer.cancel(key) { self.note_download_quiet(key, tr!("Couldn't cancel it: {error}", error)); }
             }
@@ -383,7 +404,7 @@ impl App {
     }
 
     /// The same, for the page to show on its next push.
-    fn note_download_quiet(&mut self, key: &str, text: impl AsRef<str>) {
+    pub(crate) fn note_download_quiet(&mut self, key: &str, text: impl AsRef<str>) {
         self.dl_notes.insert(key.to_string(), (crate::app::one_line(text.as_ref()), true));
     }
 

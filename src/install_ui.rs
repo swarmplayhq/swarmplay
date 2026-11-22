@@ -2,17 +2,19 @@
 use crate::{app::*, downloads, installer, util};
 use anyhow::Context;
 use tr::tr;
+use std::path::{Path, PathBuf};
 
-/// What a download can be installed from: archives on both consoles; PKG packages only for PS4,
-/// whose PKG extractor unpacks the game, its update and its DLC for shadPS4.
-fn install_note(platform: Option<crate::platform::Platform>) -> String {
-    use crate::platform::Platform;
-    match platform {
-        Some(Platform::Ps4) => tr!("Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS4 PKG packages are unpacked for shadPS4, with their update and DLC. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."),
-        Some(Platform::Ps5) => tr!("Folders, exFAT or decrypted PFS (.ffpfsc) images and RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive; password-protected ones aren't supported). PS5 PKG packages can't be installed: choose a release of this game that isn't a PKG. Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."),
-        Some(Platform::Pc) => tr!("Folders, RAR, ZIP, 7z or TAR archives (these depend on the system's libarchive), GOG Linux installers (.sh) and AppImages. Installing unpacks the game and finds how to start it; nothing in it runs until you press Play. Unlike console games, which run inside an emulator, PC games run with your user's access to your files: only install releases you trust."),
-        None => tr!("Folders, exFAT or decrypted PFS (.ffpfsc) images, RAR, ZIP, 7z or TAR archives, and PS4 PKG packages (not PS5 PKG). Installing checks the game's structure, not that its content is authentic, and never runs the downloaded files."),
-    }
+/// Where a finished download installs: where it was set to go while that folder is there,
+/// otherwise where new games go now (a drive's folder is gone when the drive was unplugged, or
+/// mounted somewhere else since). Never a folder holding the download (a drive's top): its games
+/// go in its SwarmPlay/Games, as Storage puts them. A drive that isn't connected says so, rather
+/// than filling the system drive under its name.
+fn destination(wanted: Option<&Path>, default: &Path, source: &Path) -> anyhow::Result<PathBuf> {
+    let chosen = wanted.filter(|p| p.is_dir()).unwrap_or(default);
+    anyhow::ensure!(crate::storage::drive_connected(chosen),
+        tr!("The drive for new games isn't connected ({}): connect it, or choose another in Settings → Storage", util::display_path(&chosen.to_string_lossy())));
+    let real = |p: &Path| p.canonicalize().unwrap_or_else(|_| p.to_path_buf());
+    Ok(if real(source).starts_with(real(chosen)) { chosen.join("SwarmPlay").join("Games") } else { chosen.to_path_buf() })
 }
 
 impl App {
@@ -22,27 +24,10 @@ impl App {
         self.downloads.snapshot().into_iter().find(|job| job.topic == game.id || hash.as_ref() == Some(&job.key))
     }
 
-    pub fn prepare_install(&mut self, key: &str) {
-        let Some(job) = self.downloads.snapshot().into_iter().find(|job| job.key == key && job.state == downloads::State::Complete) else { return; };
-        if self.installer.snapshot().iter().any(|record| record.key == key && record.state.active()) {
-            self.open_downloads(Some(key)); return;
-        }
-        self.open_downloads(Some(key));
-        self.install_pending = Some(key.into());
-        let ui = self.ui();
-        ui.set_download_is_install(true);
-        ui.set_download_title(job.name.into());
-        ui.set_download_path(self.cfg.lock().unwrap().install_dir.clone().into());
-        ui.set_download_error("".into());
-        let platform = self.games.iter().find(|game| game.g.id == job.topic).map(|game| game.g.platform);
-        ui.set_download_install_note(install_note(platform).into());
-        ui.set_download_consent(true);
-    }
-
     pub fn confirm_install(&mut self) {
         let Some(key) = self.install_pending.clone() else { return; };
         let destination = self.ui().get_download_path().trim().to_owned();
-        match self.start_install(&key, util::expand_home(&destination)) {
+        match self.start_install(&key, Some(util::expand_home(&destination))) {
             Ok(()) => {
                 { let mut cfg = self.cfg.lock().unwrap(); cfg.install_dir = destination; cfg.save(); }
                 self.install_pending = None;
@@ -53,9 +38,14 @@ impl App {
         }
     }
 
-    /// Install a finished download into `destination` (a folder).
-    pub fn start_install(&mut self, key: &str, destination: std::path::PathBuf) -> anyhow::Result<()> {
+    /// Install a finished download into `wanted` (a folder), or where new games go (see
+    /// `destination`). A download whose files were moved is looked for first.
+    pub fn start_install(&mut self, key: &str, wanted: Option<PathBuf>) -> anyhow::Result<()> {
+        let (default, bases) = { let c = self.cfg.lock().unwrap(); (util::expand_home(&c.install_dir), crate::storage::download_bases(&c)) };
+        self.downloads.relocate(&bases);
         let job = self.downloads.job(key).filter(|job| job.state == downloads::State::Complete).with_context(|| tr!("The download isn't finished"))?;
+        anyhow::ensure!(job.folder.is_dir(), tr!("Its files aren't where they were downloaded ({}): press Find the files", util::display_path(&job.folder.to_string_lossy())));
+        let destination = destination(wanted.as_deref(), &default, &job.folder)?;
         let ids = self.games.iter().find(|game| game.g.id == job.topic).map(|game| {
             std::iter::once(game.g.title_id.clone()).chain(game.g.title_ids.clone())
                 .filter(|id| crate::psn::valid_title_id(id)).collect()
@@ -73,10 +63,10 @@ impl App {
         Ok(())
     }
 
-    /// Install pressed (Downloads or the Game Hub): where it was set to install, if it was;
-    /// otherwise ask where. One that can't start waits for Install by hand, saying why.
+    /// Install pressed (Downloads or the Game Hub): where it was set to install, or where new
+    /// games go now; no folder to type. One that can't start waits for Install again, saying why.
     pub fn install_download(&mut self, key: &str) {
-        let Some(to) = self.downloads.job(key).and_then(|job| job.install_to) else { return self.prepare_install(key) };
+        let to = self.downloads.job(key).and_then(|job| job.install_to);
         // Another one installing: this one goes next, by itself (an old record would stop that).
         // Pressed in the Game Hub: what happened is said under its buttons too.
         let game = self.downloads.job(key).and_then(|job| self.games.iter().position(|game| game.g.id == job.topic))
@@ -114,8 +104,7 @@ impl App {
             // Not while the player is choosing what to delete of it.
             && self.dl_delete.as_ref().is_none_or(|(key, _)| *key != job.key));
         let Some(job) = next else { return };
-        let destination = job.install_to.clone().unwrap();
-        if let Err(error) = self.start_install(&job.key, destination) {
+        if let Err(error) = self.start_install(&job.key, job.install_to.clone()) {
             self.install_failures.insert(job.key.clone(), format!("{error:#}"));
             // It waits for Install by hand from now on (not tried again at every start); the
             // ring and its row say so.
@@ -161,5 +150,38 @@ impl App {
         self.install_states.retain(|key, _| records.iter().any(|record| &record.key == key));
         if register { self.rescan_library(); }
         if changed && self.overlay == Overlay::Hub { self.push_hub(); }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn installs_where_it_was_set_to_while_that_folder_is_there() {
+        let temp = tempfile::tempdir().unwrap();
+        let (wanted, default, source) = (temp.path().join("ssd/Games"), temp.path().join("home/Games"), temp.path().join("dl/torrent-x"));
+        std::fs::create_dir_all(&wanted).unwrap();
+        assert_eq!(destination(Some(&wanted), &default, &source).unwrap(), wanted);
+        // Its drive mounted somewhere else since (or unplugged): where new games go now.
+        std::fs::remove_dir_all(temp.path().join("ssd")).unwrap();
+        assert_eq!(destination(Some(&wanted), &default, &source).unwrap(), default);
+        assert_eq!(destination(None, &default, &source).unwrap(), default);
+    }
+
+    #[test]
+    fn never_installs_into_a_folder_holding_the_download() {
+        let temp = tempfile::tempdir().unwrap();
+        let drive = temp.path().join("drive");
+        let source = drive.join("torrent-x");
+        std::fs::create_dir_all(&source).unwrap();
+        assert_eq!(destination(Some(&drive), &drive, &source).unwrap(), drive.join("SwarmPlay").join("Games"));
+    }
+
+    #[test]
+    fn a_drive_that_isnt_connected_is_said_not_written_under_its_name() {
+        let gone = Path::new("/run/media/nobody-here/unplugged/SwarmPlay/Games");
+        let error = destination(None, gone, Path::new("/tmp/torrent-x")).unwrap_err();
+        assert!(format!("{error}").contains("isn't connected"));
+        assert!(crate::storage::drive_connected(Path::new("/tmp/anything")), "not where drives get mounted");
     }
 }

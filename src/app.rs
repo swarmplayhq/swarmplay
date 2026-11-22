@@ -680,7 +680,7 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         library,
         art,
         sessions,
-        downloads: { let c = cfg.lock().unwrap(); crate::downloads::Manager::load(c.seed_after_download, c.download_vpn()) },
+        downloads: { let c = cfg.lock().unwrap(); crate::downloads::Manager::load(c.seed_after_download, c.download_vpn(), &crate::storage::download_bases(&c)) },
         installer: crate::installer::Manager::load(),
         install_pending: None,
         install_states: HashMap::new(),

@@ -322,8 +322,8 @@ impl App {
         self.downloads.shutdown();
         use std::os::unix::process::CommandExt;
         let err = Command::new(&exe).args(&args).env_remove("AZRAK_PRETEND_VERSION").exec();
-        let (seed, vpn) = { let c = self.cfg.lock().unwrap(); (c.seed_after_download, c.download_vpn()) };
-        self.downloads = crate::downloads::Manager::load(seed, vpn);
+        let (seed, vpn, bases) = { let c = self.cfg.lock().unwrap(); (c.seed_after_download, c.download_vpn(), crate::storage::download_bases(&c)) };
+        self.downloads = crate::downloads::Manager::load(seed, vpn, &bases);
         self.installer = crate::installer::Manager::load();
         self.push_downloads();
         self.note_setting(crate::settings::SId::AppUpdate, &tr::tr!("Couldn't restart: {err}", err), 2);
