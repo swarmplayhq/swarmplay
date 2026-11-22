@@ -141,6 +141,7 @@ export global Zone {
     out property <int> avatar: 33;
     out property <int> profiles: 34;
     out property <int> games: 35;
+    out property <int> library: 36;
 }
 
 // dot: KytyPS5 compatibility level (0 none, 1 in-game, 2 menus, 3 boots, 4 doesn't boot, 5 untested)
@@ -321,6 +322,10 @@ export struct SettingData {
 // A line of the installed games' list (src/games.rs): its art, name, platform · drive (or a move's
 // progress, `busy`, with `bar`), size, and whether it's picked (△) to delete with others.
 export struct GameRowData { image: image, loaded: bool, label: string, sub: string, size: string, picked: bool, busy: bool, bar: float }
+
+// A cover of the Game Library (src/game_library.rs): badge over it (kind 0 the platform, 1 a call
+// to act like Install, 2 under way with `bar`, 3 stopped or paused), its name and where it stands.
+export struct LibTile { image: image, loaded: bool, label: string, sub: string, badge: string, kind: int, bar: float }
 
 export struct PickRow { label: string, sub: string, icon: string, kind: int, has-bar: bool, bar: float, warn: bool }
 

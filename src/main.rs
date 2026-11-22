@@ -28,6 +28,7 @@ mod sound;
 mod storage;
 mod folder_pick;
 mod games;
+mod game_library;
 mod onboard;
 mod avatar;
 mod profiles;
