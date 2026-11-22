@@ -21,6 +21,11 @@ pub fn req_url(url: &str, w: u32, crop: f32) -> Option<ImgReq> {
     (!url.is_empty()).then(|| ImgReq { key: format!("{url}#{w}#{crop}"), src: Src::Url(sized(url, w)), w, crop })
 }
 
+/// A screenshot the viewer shows: a file of the Media gallery (an absolute path), else a URL.
+pub fn shot_req(u: &str, w: u32) -> Option<ImgReq> {
+    if u.starts_with('/') { Some(req_file(std::path::Path::new(u), w)) } else { req_url(u, w, 0.0) }
+}
+
 pub fn req_file(p: &std::path::Path, w: u32) -> ImgReq {
     ImgReq { key: format!("file:{}#{w}", p.display()), src: Src::File(p.to_path_buf()), w, crop: 0.0 }
 }
@@ -733,6 +738,8 @@ impl App {
     /// An image finished loading: update whatever shows it.
     pub fn refresh_images(&mut self, key: &str) {
         self.games_image(key);
+        // A strip thumbnail of the viewer came in (only one that did: see discover_image).
+        if self.overlay == Overlay::Viewer && self.images.get(key).is_some() && self.viewer_strip_keys.iter().any(|k| k == key) { self.push_viewer(); }
         self.lib_image(key);
         self.discover_image(key);
         if self.bg_standin.as_deref() == Some(key) && self.bg_pending.is_some() {
@@ -1510,24 +1517,36 @@ impl App {
     }
 
     pub fn push_viewer(&mut self) {
-        let Some(u) = self.hub_shots.get(self.viewer_i).cloned() else { return };
-        let r = req_url(&u, 1920, 0.0);
+        let Some(u) = self.viewer_shots.get(self.viewer_i).cloned() else { return };
+        let r = shot_req(&u, 1920);
         self.viewer_key = r.as_ref().map(|r| r.key.clone()).unwrap_or_default();
         let img = self.get_img(&r, prio::HERO);
+        let n = self.viewer_shots.len();
         // Preload the neighbours for instant browsing.
-        for d in [1, self.hub_shots.len().saturating_sub(1)] {
-            if let Some(n) = self.hub_shots.get((self.viewer_i + d) % self.hub_shots.len().max(1)).cloned() {
-                let r = req_url(&n, 1920, 0.0);
+        for d in [1, n.saturating_sub(1)] {
+            if let Some(next) = self.viewer_shots.get((self.viewer_i + d) % n.max(1)).cloned() {
+                let r = shot_req(&next, 1920);
                 self.get_img(&r, prio::PREFETCH);
             }
         }
+        // The strip, from the same list (the Hub's are its own thumbnails, already loaded).
+        let mut keys = Vec::new();
+        let mut strip = Vec::new();
+        for s in self.viewer_shots.clone() {
+            let r = shot_req(&s, 480);
+            keys.push(r.as_ref().map(|r| r.key.clone()).unwrap_or_default());
+            let img = self.get_img(&r, prio::DETAIL - 1);
+            strip.push(Shot { loaded: img.is_some(), image: img.unwrap_or_default() });
+        }
+        self.viewer_strip_keys = keys;
         let ui = self.ui();
+        ui.set_viewer_strip(model(strip));
         // Show the already-loaded thumbnail instantly while the full-size image decodes.
-        let thumb = req_url(&u, 480, 0.0).and_then(|r| self.images.get(&r.key));
+        let thumb = shot_req(&u, 480).and_then(|r| self.images.get(&r.key));
         if let Some(img) = img.or(thumb) {
             ui.set_viewer_image(img);
         }
-        ui.set_viewer_count(tr!("{0} of {1}", self.viewer_i + 1, self.hub_shots.len()).into());
+        ui.set_viewer_count(tr!("{0} of {1}", self.viewer_i + 1, n).into());
         ui.set_viewer_index(self.viewer_i as i32);
     }
 

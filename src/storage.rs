@@ -497,17 +497,30 @@ impl App {
                 self.open_games(dev, None);
             }
             1 => self.open_downloads(None),
-            2 => {
-                let dir = media_dir();
-                if dir.is_dir() {
-                    crate::audio::play(crate::audio::Sound::Select);
-                    let _ = std::process::Command::new("xdg-open").arg(&dir).spawn();
-                } else {
-                    self.note_setting(id, &tr!("No screenshots yet · Share takes one in a game"), 0);
-                }
-            }
+            // Your screenshots, in SwarmPlay's own viewer (no file manager).
+            2 => if !self.open_gallery() {
+                self.note_setting(id, &tr!("No screenshots yet · Share takes one in a game"), 0);
+            },
             _ => self.note_setting(id, &tr!("Everything else on this drive: the system, apps, your own files"), 0),
         }
+    }
+
+    /// The Media gallery: every screenshot taken in a game (src/overlay_ui.rs), newest first, in
+    /// the screenshot viewer. False when there's none yet.
+    pub fn open_gallery(&mut self) -> bool {
+        let pictures = ["png", "jpg", "jpeg", "webp"];
+        let mut shots: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(media_dir()).into_iter().flatten().flatten()
+            .map(|e| e.path())
+            .filter(|p| p.extension().and_then(|x| x.to_str()).is_some_and(|x| pictures.contains(&x.to_ascii_lowercase().as_str())))
+            .filter_map(|p| Some((std::fs::metadata(&p).ok()?.modified().ok()?, p))).collect();
+        if shots.is_empty() { return false; }
+        shots.sort_by(|a, b| b.0.cmp(&a.0));
+        self.viewer_shots = shots.into_iter().take(300).map(|(_, p)| p.to_string_lossy().into_owned()).collect();
+        self.viewer_i = 0;
+        crate::audio::play(crate::audio::Sound::Select);
+        self.push_overlay(Overlay::Viewer, Z_SHOTS, 0);
+        self.push_viewer();
+        true
     }
 
     /// □ on a place that was added: off the list (nothing on it is deleted).
