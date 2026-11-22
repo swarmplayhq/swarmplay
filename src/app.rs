@@ -368,6 +368,10 @@ pub struct App {
     pub hub: Option<Target>,
     pub hub_actions: Vec<ActionDef>,
     pub hub_shots: Vec<String>,
+    /// What the screenshot viewer pages through: the Game Hub's screenshots (URLs) or the Media
+    /// gallery's (files, src/storage.rs), and the strip's picture keys.
+    pub viewer_shots: Vec<String>,
+    pub viewer_strip_keys: Vec<String>,
     pub viewer_i: usize,
     pub menu_target: Option<Target>,
     pub menu_actions: Vec<ActionDef>,
@@ -786,6 +790,8 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         hub: None,
         hub_actions: Vec::new(),
         hub_shots: Vec::new(),
+        viewer_shots: Vec::new(),
+        viewer_strip_keys: Vec::new(),
         viewer_i: 0,
         menu_target: None,
         menu_actions: Vec::new(),
@@ -1106,7 +1112,7 @@ fn wire_callbacks(ui: &AppWindow) {
     // The gallery's arrows and thumbnails (a thumbnail: how far from the one shown).
     ui.on_viewer_step(|d| with_app(move |app| {
         if app.overlay != Overlay::Viewer { return; }
-        let n = app.hub_shots.len().max(1) as i32;
+        let n = app.viewer_shots.len().max(1) as i32;
         app.viewer_i = (app.viewer_i as i32 + d).rem_euclid(n) as usize;
         app.push_viewer();
         audio::play(Sound::Move);
@@ -3009,7 +3015,7 @@ impl App {
     }
 
     fn act_viewer(&mut self, a: Act) {
-        let n = self.hub_shots.len().max(1);
+        let n = self.viewer_shots.len().max(1);
         match a {
             Act::Left => {
                 self.viewer_i = (self.viewer_i + n - 1) % n;
@@ -3719,6 +3725,7 @@ impl App {
         if self.hub_shots.is_empty() {
             return;
         }
+        self.viewer_shots = self.hub_shots.clone();
         self.viewer_i = i;
         audio::play(Sound::Select);
         self.push_overlay(Overlay::Viewer, Z_SHOTS, i as i32);

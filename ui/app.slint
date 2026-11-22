@@ -382,6 +382,8 @@ export component AppWindow inherits Window {
     in property <string> menu-title;
     // The gallery's picture shown, by its place among the Hub's screenshots.
     in property <int> viewer-index;
+    // The viewer's strip: the Game Hub's screenshots or the Media gallery's.
+    in property <[Shot]> viewer-strip;
     callback viewer-step(int);
     in property <[MenuItem]> menu-items;
     // Where the Options menu opens: 0 the middle, 1 beside Home's ··· button, 2 the bottom right
@@ -2563,7 +2565,7 @@ export component AppWindow inherits Window {
                 Rectangle {
                     x: root.width / 2 - strip.tw / 2 - root.viewer-index * (strip.tw + strip.gap);
                     animate x { duration: 320ms; easing: ease-out-quart; }
-                    for s[i] in root.hub.shots: Rectangle {
+                    for s[i] in root.viewer-strip: Rectangle {
                         property <bool> cur: i == root.viewer-index;
                         x: i * (strip.tw + strip.gap);
                         y: (4px * S.k);

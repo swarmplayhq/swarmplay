@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SwarmPlay\n"
-"POT-Creation-Date: 2026-11-22 17:14+0000\n"
+"POT-Creation-Date: 2026-11-22 17:48+0000\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -4769,546 +4769,546 @@ msgstr "Atualizando a lista de jogos de {console}…"
 msgid "Starting with KytyPS5…"
 msgstr "Iniciando com o KytyPS5…"
 
-#: ui/app.slint:673
+#: ui/app.slint:675
 msgid "Already have games on this PC? Add the folder they're in."
 msgstr "Já tem jogos neste PC? Adicione a pasta onde eles estão."
 
-#: ui/app.slint:975
+#: ui/app.slint:977
 msgid "Availability"
 msgstr "Disponibilidade"
 
-#: ui/app.slint:1040
+#: ui/app.slint:1042
 msgid "View in the Game Hub"
 msgstr "Ver no Hub do jogo"
 
-#: ui/app.slint:1127
+#: ui/app.slint:1129
 msgid "Search games"
 msgstr "Pesquisar jogos"
 
-#: ui/app.slint:1148 ui/app.slint:2847
+#: ui/app.slint:1150 ui/app.slint:2849
 msgid "Sort and filter"
 msgstr "Ordenar e filtrar"
 
-#: ui/app.slint:1160
+#: ui/app.slint:1162
 msgid "Comfortable"
 msgstr "Confortável"
 
-#: ui/app.slint:1160
+#: ui/app.slint:1162
 msgid "Compact"
 msgstr "Compacto"
 
-#: ui/app.slint:1160
+#: ui/app.slint:1162
 msgid "Roomy"
 msgstr "Espaçoso"
 
-#: ui/app.slint:1212
+#: ui/app.slint:1214
 msgid "Genre"
 msgstr "Gênero"
 
-#: ui/app.slint:1250
+#: ui/app.slint:1252
 msgid "Browse"
 msgstr "Navegar"
 
-#: ui/app.slint:1250
+#: ui/app.slint:1252
 msgid "Discover"
 msgstr "Descobrir"
 
-#: ui/app.slint:1272
+#: ui/app.slint:1274
 msgid "Games"
 msgstr "Jogos"
 
-#: ui/app.slint:1272 ui/app.slint:3071
+#: ui/app.slint:1274 ui/app.slint:3073
 msgid "Store"
 msgstr "Loja"
 
-#: ui/app.slint:1327
+#: ui/app.slint:1329
 msgid "Resume"
 msgstr "Retomar"
 
-#: ui/app.slint:1327
+#: ui/app.slint:1329
 msgid "Stop"
 msgstr "Parar"
 
-#: ui/app.slint:1578 ui/app.slint:1581 ui/app.slint:1582 ui/app.slint:1585
-#: ui/app.slint:1588 ui/app.slint:1589 ui/app.slint:2420 ui/app.slint:2429
-#: ui/app.slint:3302 ui/app.slint:3598 ui/onboard.slint:258
+#: ui/app.slint:1580 ui/app.slint:1583 ui/app.slint:1584 ui/app.slint:1587
+#: ui/app.slint:1590 ui/app.slint:1591 ui/app.slint:2422 ui/app.slint:2431
+#: ui/app.slint:3304 ui/app.slint:3600 ui/onboard.slint:258
 #: ui/onboard.slint:259
 msgid "Select"
 msgstr "Selecionar"
 
-#: ui/app.slint:1581 ui/app.slint:1582
+#: ui/app.slint:1583 ui/app.slint:1584
 msgid "Control Center"
 msgstr "Central de controle"
 
-#: ui/app.slint:1581 ui/app.slint:1582 ui/app.slint:1585 ui/app.slint:1586
-#: ui/app.slint:2700 ui/app.slint:2818 ui/app.slint:3164 ui/app.slint:4694
-#: ui/app.slint:4711
+#: ui/app.slint:1583 ui/app.slint:1584 ui/app.slint:1587 ui/app.slint:1588
+#: ui/app.slint:2702 ui/app.slint:2820 ui/app.slint:3166 ui/app.slint:4696
+#: ui/app.slint:4713
 msgid "Options"
 msgstr "Opções"
 
-#: ui/app.slint:1581 ui/app.slint:1582
+#: ui/app.slint:1583 ui/app.slint:1584
 msgid "Search"
 msgstr "Pesquisar"
 
-#: ui/app.slint:1581 ui/app.slint:1582 ui/app.slint:1585 ui/app.slint:1586
+#: ui/app.slint:1583 ui/app.slint:1584 ui/app.slint:1587 ui/app.slint:1588
 msgid "Trailer"
 msgstr "Trailer"
 
-#: ui/app.slint:1585 ui/app.slint:1586 ui/app.slint:1588 ui/app.slint:1589
-#: ui/app.slint:2427 ui/app.slint:2430 ui/app.slint:2699 ui/app.slint:2818
-#: ui/app.slint:3598 ui/app.slint:3913 ui/app.slint:4638 ui/downloads.slint:385
+#: ui/app.slint:1587 ui/app.slint:1588 ui/app.slint:1590 ui/app.slint:1591
+#: ui/app.slint:2429 ui/app.slint:2432 ui/app.slint:2701 ui/app.slint:2820
+#: ui/app.slint:3600 ui/app.slint:3915 ui/app.slint:4640 ui/downloads.slint:385
 #: ui/onboard.slint:259 ui/widgets.slint:131
 msgid "Back"
 msgstr "Voltar"
 
 #. What Download gets, when the title (a store's name) doesn't say it all.
-#: ui/app.slint:1667
+#: ui/app.slint:1669
 msgid "Release: {}"
 msgstr "Versão: {}"
 
-#: ui/app.slint:1700
+#: ui/app.slint:1702
 msgid "Compatibility"
 msgstr "Compatibilidade"
 
-#: ui/app.slint:1742
+#: ui/app.slint:1744
 msgid "Versions"
 msgstr "Versões"
 
-#: ui/app.slint:1780
+#: ui/app.slint:1782
 msgid "Best for this PC"
 msgstr "Melhor para este PC"
 
-#: ui/app.slint:1783
+#: ui/app.slint:1785
 msgid "Showing"
 msgstr "Em exibição"
 
-#: ui/app.slint:1797
+#: ui/app.slint:1799
 msgid "Each version has its own saves and updates."
 msgstr "Cada versão tem seus próprios dados salvos e atualizações."
 
-#: ui/app.slint:1820
+#: ui/app.slint:1822
 msgid "Choose another release"
 msgstr "Escolher outra versão"
 
-#: ui/app.slint:1839
+#: ui/app.slint:1841
 msgid "Trailers & screenshots"
 msgstr "Trailers e capturas de tela"
 
-#: ui/app.slint:1887
+#: ui/app.slint:1889
 msgid "Details"
 msgstr "Detalhes"
 
-#: ui/app.slint:1914
+#: ui/app.slint:1916
 msgid "+  Technical details & installed game"
 msgstr "+  Detalhes técnicos e jogo instalado"
 
-#: ui/app.slint:1914
+#: ui/app.slint:1916
 msgid "−  Hide technical details"
 msgstr "−  Ocultar detalhes técnicos"
 
-#: ui/app.slint:1935
+#: ui/app.slint:1937
 msgid "About"
 msgstr "Sobre"
 
-#: ui/app.slint:1999 ui/app.slint:3071 ui/overlay.slint:161
+#: ui/app.slint:2001 ui/app.slint:3073 ui/overlay.slint:161
 msgid "Settings"
 msgstr "Configurações"
 
-#: ui/app.slint:2286
+#: ui/app.slint:2288
 msgid "Not set"
 msgstr "Não definido"
 
-#: ui/app.slint:2396
+#: ui/app.slint:2398
 msgid "Version {} · Linux"
 msgstr "Versão {} · Linux"
 
-#: ui/app.slint:2397
+#: ui/app.slint:2399
 msgid "PS5 games on KytyPS5 · PS4 games on shadPS4"
 msgstr "Jogos de PS5 no KytyPS5 · jogos de PS4 no shadPS4"
 
-#: ui/app.slint:2421 ui/app.slint:2430 ui/app.slint:4023 ui/app.slint:4024
+#: ui/app.slint:2423 ui/app.slint:2432 ui/app.slint:4025 ui/app.slint:4026
 msgid "Close"
 msgstr "Fechar"
 
-#: ui/app.slint:2426
+#: ui/app.slint:2428
 msgid "Remove"
 msgstr "Remover"
 
-#: ui/app.slint:2429 ui/app.slint:2874 ui/app.slint:2875
+#: ui/app.slint:2431 ui/app.slint:2876 ui/app.slint:2877
 msgid "Change"
 msgstr "Alterar"
 
-#: ui/app.slint:2429 ui/app.slint:4518 ui/app.slint:4638 ui/app.slint:4639
+#: ui/app.slint:2431 ui/app.slint:4520 ui/app.slint:4640 ui/app.slint:4641
 msgid "Open"
 msgstr "Abrir"
 
-#: ui/app.slint:2610
+#: ui/app.slint:2612
 msgid "Game Library"
 msgstr "Biblioteca de jogos"
 
-#: ui/app.slint:2634
+#: ui/app.slint:2636
 msgid "No games installed yet · download one from the Store"
 msgstr "Nenhum jogo instalado ainda · faça o download de um na Loja"
 
-#: ui/app.slint:2634
+#: ui/app.slint:2636
 msgid "Nothing here yet · download a game from the Store"
 msgstr "Nada aqui ainda · faça o download de um jogo na Loja"
 
-#: ui/app.slint:2699 ui/app.slint:2700 ui/downloads.slint:230
+#: ui/app.slint:2701 ui/app.slint:2702 ui/downloads.slint:230
 msgid "Play"
 msgstr "Jogar"
 
-#: ui/app.slint:2699 ui/app.slint:2700
+#: ui/app.slint:2701 ui/app.slint:2702
 msgid "Tabs"
 msgstr "Abas"
 
-#: ui/app.slint:2743
+#: ui/app.slint:2745
 msgid "No games installed here"
 msgstr "Nenhum jogo instalado aqui"
 
-#: ui/app.slint:2817 ui/app.slint:2818 ui/app.slint:4023 ui/app.slint:4165
+#: ui/app.slint:2819 ui/app.slint:2820 ui/app.slint:4025 ui/app.slint:4167
 msgid "Delete"
 msgstr "Apagar"
 
-#: ui/app.slint:2817
+#: ui/app.slint:2819
 msgid "Let go"
 msgstr "Soltar"
 
-#: ui/app.slint:2817 ui/app.slint:2818
+#: ui/app.slint:2819 ui/app.slint:2820
 msgid "Pick"
 msgstr "Selecionar"
 
-#: ui/app.slint:2874 ui/app.slint:2875 ui/app.slint:4023 ui/app.slint:4024
+#: ui/app.slint:2876 ui/app.slint:2877 ui/app.slint:4025 ui/app.slint:4026
 msgid "Done"
 msgstr "OK"
 
-#: ui/app.slint:2994
+#: ui/app.slint:2996
 msgid "NOW PLAYING · {}"
 msgstr "JOGANDO AGORA · {}"
 
-#: ui/app.slint:3000 ui/overlay.slint:97
+#: ui/app.slint:3002 ui/overlay.slint:97
 msgid "Back to game"
 msgstr "Voltar ao jogo"
 
-#: ui/app.slint:3000 ui/overlay.slint:98
+#: ui/app.slint:3002 ui/overlay.slint:98
 msgid "Close game"
 msgstr "Fechar jogo"
 
-#: ui/app.slint:3024 ui/overlay.slint:113
+#: ui/app.slint:3026 ui/overlay.slint:113
 msgid "DOWNLOADS"
 msgstr "DOWNLOADS"
 
-#: ui/app.slint:3026
+#: ui/app.slint:3028
 msgid "Nothing downloading"
 msgstr "Nenhum download"
 
-#: ui/app.slint:3033
+#: ui/app.slint:3035
 msgid "Open Downloads"
 msgstr "Abrir Downloads"
 
-#: ui/app.slint:3049
+#: ui/app.slint:3051
 msgid "NOTIFICATIONS"
 msgstr "NOTIFICAÇÕES"
 
-#: ui/app.slint:3059
+#: ui/app.slint:3061
 msgid "Open notifications"
 msgstr "Abrir notificações"
 
-#: ui/app.slint:3071
+#: ui/app.slint:3073
 msgid "Controls"
 msgstr "Controles"
 
-#: ui/app.slint:3072 ui/overlay.slint:162
+#: ui/app.slint:3074 ui/overlay.slint:162
 msgid "Power"
 msgstr "Energia"
 
-#: ui/app.slint:3072
+#: ui/app.slint:3074
 msgid "Quit"
 msgstr "Sair"
 
-#: ui/app.slint:3156
+#: ui/app.slint:3158
 msgid "No controller connected: you'll play with the keyboard."
 msgstr "Nenhum controle conectado: você vai jogar com o teclado."
 
-#: ui/app.slint:3157
+#: ui/app.slint:3159
 msgid "Games play best with a controller. Connect one before starting a game."
 msgstr "Os jogos funcionam melhor com um controle. Conecte um antes de iniciar um jogo."
 
-#: ui/app.slint:3164 ui/app.slint:3166
+#: ui/app.slint:3166 ui/app.slint:3168
 msgid "Arrows"
 msgstr "Setas"
 
-#: ui/app.slint:3164 ui/app.slint:3166 ui/app.slint:4694 ui/app.slint:4711
+#: ui/app.slint:3166 ui/app.slint:3168 ui/app.slint:4696 ui/app.slint:4713
 msgid "D-pad"
 msgstr "Botões direcionais"
 
-#: ui/app.slint:3164 ui/app.slint:3166
+#: ui/app.slint:3166 ui/app.slint:3168
 msgid "Move"
 msgstr "Mover"
 
-#: ui/app.slint:3204
+#: ui/app.slint:3206
 msgid "Welcome back to SwarmPlay"
 msgstr "Boas-vindas de volta ao SwarmPlay"
 
-#: ui/app.slint:3211
+#: ui/app.slint:3213
 msgid "Who's using this controller?"
 msgstr "Quem está usando este controle?"
 
-#: ui/app.slint:3242
+#: ui/app.slint:3244
 msgid "Add user"
 msgstr "Adicionar usuário"
 
-#: ui/app.slint:3295
+#: ui/app.slint:3297
 msgid "Getting ready…"
 msgstr "Preparando…"
 
-#: ui/app.slint:3329
+#: ui/app.slint:3331
 msgid "Getting AzrakOS ready"
 msgstr "Preparando o AzrakOS"
 
-#: ui/app.slint:3329
+#: ui/app.slint:3331
 msgid "Welcome"
 msgstr "Boas-vindas"
 
-#: ui/app.slint:3336
+#: ui/app.slint:3338
 msgid "Setting up SwarmPlay"
 msgstr "Configurando o SwarmPlay"
 
-#: ui/app.slint:3343
+#: ui/app.slint:3345
 msgid "You can install it later from Settings."
 msgstr "Você pode instalar depois em Configurações."
 
-#: ui/app.slint:3470
+#: ui/app.slint:3472
 msgid "Skip and continue"
 msgstr "Pular e continuar"
 
-#: ui/app.slint:3470
+#: ui/app.slint:3472
 msgid "Start"
 msgstr "Iniciar"
 
-#: ui/app.slint:3543
+#: ui/app.slint:3545
 msgid "Choose an avatar"
 msgstr "Escolha um avatar"
 
-#: ui/app.slint:3817
+#: ui/app.slint:3819
 msgid "Before you restart"
 msgstr "Antes de reiniciar"
 
-#: ui/app.slint:3820
+#: ui/app.slint:3822
 msgid "A blue screen comes up once after the restart. On it, use a keyboard's arrow keys and Enter:"
 msgstr "Uma tela azul aparece uma vez depois de reiniciar. Nela, use as setas e o Enter de um teclado:"
 
-#: ui/app.slint:3828
+#: ui/app.slint:3830
 msgid "Choose "
 msgstr "Escolha "
 
-#: ui/app.slint:3831
+#: ui/app.slint:3833
 msgid "Type the password "
 msgstr "Digite a senha "
 
-#: ui/app.slint:3850
+#: ui/app.slint:3852
 msgid "This lets NVIDIA's graphics driver start. Skipped it? AzrakOS still starts; the PC asks again later."
 msgstr "Isso permite que o driver de vídeo da NVIDIA inicie. Pulou? O AzrakOS inicia mesmo assim; o PC pergunta de novo depois."
 
-#: ui/app.slint:3966
+#: ui/app.slint:3968
 msgid "A name, initials (tlou) or a genre"
 msgstr "Um nome, iniciais (tlou) ou um gênero"
 
-#: ui/app.slint:3966
+#: ui/app.slint:3968
 msgid "Your name"
 msgstr "Seu nome"
 
-#: ui/app.slint:4023 ui/app.slint:4024
+#: ui/app.slint:4025 ui/app.slint:4026
 msgid "Show results"
 msgstr "Ver resultados"
 
-#: ui/app.slint:4023 ui/app.slint:4165 ui/app.slint:4696
+#: ui/app.slint:4025 ui/app.slint:4167 ui/app.slint:4698
 msgid "Space"
 msgstr "Espaço"
 
-#: ui/app.slint:4024 ui/app.slint:4166
+#: ui/app.slint:4026 ui/app.slint:4168
 msgid "Press the key"
 msgstr "Pressionar a tecla"
 
-#: ui/app.slint:4068
+#: ui/app.slint:4070
 msgid "Join {}"
 msgstr "Conectar-se a {}"
 
-#: ui/app.slint:4101
+#: ui/app.slint:4103
 msgid "Password"
 msgstr "Senha"
 
-#: ui/app.slint:4131
+#: ui/app.slint:4133
 msgid "Connecting to {}…"
 msgstr "Conectando a {}…"
 
-#: ui/app.slint:4132
+#: ui/app.slint:4134
 msgid "Choose the letters below"
 msgstr "Escolha as letras abaixo"
 
-#: ui/app.slint:4132
+#: ui/app.slint:4134
 msgid "Type with your keyboard, or choose the letters below"
 msgstr "Digite no teclado ou escolha as letras abaixo"
 
-#: ui/app.slint:4165 ui/app.slint:4166 ui/app.slint:4253
+#: ui/app.slint:4167 ui/app.slint:4168 ui/app.slint:4255
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: ui/app.slint:4165 ui/app.slint:4166
+#: ui/app.slint:4167 ui/app.slint:4168
 msgid "Join"
 msgstr "Conectar"
 
-#: ui/app.slint:4165
+#: ui/app.slint:4167
 msgid "Shift"
 msgstr "Shift"
 
-#: ui/app.slint:4165
+#: ui/app.slint:4167
 msgid "Symbols"
 msgstr "Símbolos"
 
-#: ui/app.slint:4166
+#: ui/app.slint:4168
 msgid "Hide password"
 msgstr "Ocultar senha"
 
-#: ui/app.slint:4166
+#: ui/app.slint:4168
 msgid "Show password"
 msgstr "Mostrar senha"
 
-#: ui/app.slint:4275
+#: ui/app.slint:4277
 msgid "Loading trailer…"
 msgstr "Carregando trailer…"
 
-#: ui/app.slint:4351
+#: ui/app.slint:4353
 msgctxt "Trailer"
 msgid "Pause"
 msgstr "Pausar"
 
-#: ui/app.slint:4351
+#: ui/app.slint:4353
 msgctxt "Trailer"
 msgid "Play"
 msgstr "Reproduzir"
 
-#: ui/app.slint:4415
+#: ui/app.slint:4417
 msgid "Click to open"
 msgstr "Clique para abrir"
 
-#: ui/app.slint:4415
+#: ui/app.slint:4417
 msgid "PS  to see it"
 msgstr "PS  para ver"
 
-#: ui/app.slint:4436
+#: ui/app.slint:4438
 msgid "Notifications"
 msgstr "Notificações"
 
-#: ui/app.slint:4444
+#: ui/app.slint:4446
 msgid "No notifications"
 msgstr "Nenhuma notificação"
 
-#: ui/app.slint:4445
+#: ui/app.slint:4447
 msgid "Downloads, games ready to play and updates show up here."
 msgstr "Downloads, jogos prontos para jogar e atualizações aparecem aqui."
 
-#: ui/app.slint:4468
+#: ui/app.slint:4470
 msgid "Earlier"
 msgstr "Anteriores"
 
-#: ui/app.slint:4468
+#: ui/app.slint:4470
 msgid "Today"
 msgstr "Hoje"
 
-#: ui/app.slint:4509
+#: ui/app.slint:4511
 msgid "Clear all"
 msgstr "Limpar tudo"
 
-#: ui/app.slint:4628
+#: ui/app.slint:4630
 msgid "No folders in here"
 msgstr "Nenhuma pasta aqui"
 
-#: ui/app.slint:4639
+#: ui/app.slint:4641
 msgid "Up"
 msgstr "Subir"
 
-#: ui/app.slint:4639
+#: ui/app.slint:4641
 msgid "Use this folder"
 msgstr "Usar esta pasta"
 
-#: ui/app.slint:4671
+#: ui/app.slint:4673
 msgid "Keyboard controls in games"
 msgstr "Controles do teclado nos jogos"
 
-#: ui/app.slint:4678
+#: ui/app.slint:4680
 msgid "PS4 games · shadPS4"
 msgstr "Jogos de PS4 · shadPS4"
 
-#: ui/app.slint:4678
+#: ui/app.slint:4680
 msgid "PS5 games · KytyPS5"
 msgstr "Jogos de PS5 · KytyPS5"
 
-#: ui/app.slint:4687
+#: ui/app.slint:4689
 msgid "◂ ▸ to switch"
 msgstr "◂ ▸ para trocar"
 
-#: ui/app.slint:4693
+#: ui/app.slint:4695
 msgid "B  (or keypad 6)"
 msgstr "B  (ou 6 do teclado numérico)"
 
-#: ui/app.slint:4693
+#: ui/app.slint:4695
 msgid "N  (or keypad 2)"
 msgstr "N  (ou 2 do teclado numérico)"
 
-#: ui/app.slint:4693
+#: ui/app.slint:4695
 msgid "V  (or keypad 4)"
 msgstr "V  (ou 4 do teclado numérico)"
 
-#: ui/app.slint:4693 ui/app.slint:4710
+#: ui/app.slint:4695 ui/app.slint:4712
 msgid "□  Square"
 msgstr "□  Quadrado"
 
-#: ui/app.slint:4693 ui/app.slint:4710
+#: ui/app.slint:4695 ui/app.slint:4712
 msgid "○  Circle"
 msgstr "○  Bola"
 
-#: ui/app.slint:4693 ui/app.slint:4710
+#: ui/app.slint:4695 ui/app.slint:4712
 msgid "✕  Cross"
 msgstr "✕  Xis"
 
-#: ui/app.slint:4694 ui/app.slint:4711
+#: ui/app.slint:4696 ui/app.slint:4713
 msgid "Arrow keys"
 msgstr "Setas"
 
-#: ui/app.slint:4694
+#: ui/app.slint:4696
 msgid "C  (or keypad 8)"
 msgstr "C  (ou 8 do teclado numérico)"
 
-#: ui/app.slint:4694 ui/app.slint:4710
+#: ui/app.slint:4696 ui/app.slint:4712
 msgid "△  Triangle"
 msgstr "△  Triângulo"
 
-#: ui/app.slint:4695 ui/app.slint:4712
+#: ui/app.slint:4697 ui/app.slint:4714
 msgid "Left stick"
 msgstr "Analógico esquerdo"
 
-#: ui/app.slint:4695 ui/app.slint:4712
+#: ui/app.slint:4697 ui/app.slint:4714
 msgid "Right stick"
 msgstr "Analógico direito"
 
-#: ui/app.slint:4696 ui/app.slint:4713
+#: ui/app.slint:4698 ui/app.slint:4715
 msgid "Touchpad"
 msgstr "Touchpad"
 
-#: ui/app.slint:4713
+#: ui/app.slint:4715
 msgid "Left Shift  /  Left Ctrl"
 msgstr "Shift esquerdo  /  Ctrl esquerdo"
 
-#: ui/app.slint:4725
+#: ui/app.slint:4727
 msgid "F7 turns the mouse into the right stick (press it again to release the mouse)."
 msgstr "F7 transforma o mouse no analógico direito (pressione de novo para soltar o mouse)."
 
-#: ui/app.slint:4725
+#: ui/app.slint:4727
 msgid "shadPS4 keeps its key layout in its own settings file; these are its defaults."
 msgstr "O shadPS4 guarda o mapa de teclas no próprio arquivo de configurações; estes são os padrões dele."
 
-#: ui/app.slint:4727
+#: ui/app.slint:4729
 msgid ""
 "Games play best with a controller: DualSense, DualShock 4, Xbox and most others work\n"
 "over USB or Bluetooth with no setup. Connect it before starting a game."
