@@ -1,4 +1,4 @@
-import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData, GameRowData, LibTile } from "theme.slint";
+import { S, Theme, Icons, Zone, DownloadData, DlTab, DlChoice, SetupFile, BootStep, OsiDisk, WjKey, ChipData, ActionData, TileData, HeroData, CardData, CardRow, GenreChip, Fact, FactRow, Shot, HubData, WidgetData, ToastData, NoteRow, PickRow, StorageColors, SettingData, OnboardData, AvatarChoice, ProfileData, SettingSection, MenuItem, RunningData, GameRowData, LibTile, DiscoverTile, DiscoverRow, DiscoverHero } from "theme.slint";
 import { FocusRing, Chip, Btn, Kicker, Badge, Switch, KeyCap, KeyboardKey, BackButton, Shimmer, Cover, Particles, AvatarCircle } from "widgets.slint";
 import { DownloadsPage, DownloadConsent, DownloadPanel, Capsule } from "downloads.slint";
 import { LibraryFilter, LibrarySortPicker } from "library.slint";
@@ -407,6 +407,10 @@ export component AppWindow inherits Window {
     in property <bool> games-open;
     // The Game Library (src/game_library.rs): open (perhaps under its Options menu), its tab, covers.
     in property <bool> lib-open;
+    // The Store (src/store.rs): 0 Discover, 1 Browse; Discover's featured game and rows.
+    in property <int> store-tab;
+    in property <DiscoverHero> discover-hero;
+    in property <[DiscoverRow]> discover-rows;
     in property <int> lib-tab;
     in property <[string]> lib-tabs;
     in property <[LibTile]> lib-tiles;
@@ -815,6 +819,7 @@ export component AppWindow inherits Window {
             // Scrolling is driven from Rust (wheel, touchpad, keyboard, controller) so each input
             // gets the right step and a short glide; only rows near the viewport exist.
             grid := Rectangle {
+                visible: root.store-tab == 1;
                 y: root.library-top;
                 height: root.height - root.library-top;
                 width: root.width;
@@ -989,15 +994,108 @@ export component AppWindow inherits Window {
                 color: Theme.text3;
             }
 
-            // Header: search, sort, count, genre chips.
+                        // ---- The Store's tabs (both modes, same place) and Discover.
+            if root.store-tab == 0: Flickable {
+                y: (180px * S.k);
+                width: root.width;
+                height: root.height - self.y;
+                interactive: false;
+                property <int> drow: floor(root.zone == Zone.discover ? root.idx / 100 : 0);
+                content-height: (470px * S.k) + root.discover-rows.length * (300px * S.k);
+                content-y: -max(0px, min(drow == 0 ? 0px : (430px * S.k) + (drow - 1) * (300px * S.k) - (160px * S.k), self.content-height - self.height));
+                animate content-y { duration: 320ms; easing: ease-out-quart; }
+                // The featured game: its art, name, facts and one button.
+                Rectangle {
+                    x: (96px * S.k); y: 0;
+                    width: root.width - (192px * S.k); height: (400px * S.k);
+                    border-radius: (24px * S.k);
+                    clip: true;
+                    background: #0c1838;
+                    Image { source: root.discover-hero.image; width: parent.width; height: parent.height; image-fit: cover; opacity: root.discover-hero.loaded ? 1 : 0; animate opacity { duration: 300ms; } }
+                    Rectangle { background: @linear-gradient(90deg, #050a1cf0 0%, #050a1c99 45%, #050a1c00 80%); }
+                    VerticalLayout {
+                        x: (48px * S.k); y: (36px * S.k);
+                        width: parent.width * 0.55;
+                        height: parent.height - (72px * S.k);
+                        alignment: end;
+                        spacing: (10px * S.k);
+                        Text { text: root.discover-hero.kicker; font-size: (14px * S.k); font-weight: 700; letter-spacing: (1.6px * S.k); color: Theme.accent.brighter(0.5); }
+                        Text { text: root.discover-hero.title; font-size: (44px * S.k); font-weight: 800; color: Theme.text; overflow: elide; }
+                        Text { text: root.discover-hero.sub; font-size: (18px * S.k); color: Theme.text2; }
+                        Rectangle { height: (8px * S.k); }
+                        HorizontalLayout {
+                            alignment: start;
+                            Rectangle {
+                                property <bool> f: root.zone == Zone.discover && root.idx == 0 && root.overlay == 0;
+                                width: hb.preferred-width + (48px * S.k); height: (56px * S.k);
+                                border-radius: self.height / 2;
+                                background: f ? #ffffff : #ffffff26;
+                                drop-shadow-blur: f ? (24px * S.k) : 0;
+                                drop-shadow-color: #8cb9ffaa;
+                                animate background { duration: 180ms; }
+                                hb := Text { text: @tr("View in the Game Hub"); font-size: (19px * S.k); font-weight: 700; color: parent.f ? #0a0f22 : Theme.text; vertical-alignment: center; horizontal-alignment: center; }
+                                TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.discover, 0); } }
+                            }
+                        }
+                    }
+                }
+                for row[r] in root.discover-rows: drow-r := Rectangle {
+                    x: (96px * S.k);
+                    y: (440px * S.k) + r * (300px * S.k);
+                    width: root.width - (192px * S.k);
+                    height: (290px * S.k);
+                    Text { x: 0; y: 0; width: parent.width; height: (32px * S.k); horizontal-alignment: left; text: row.title; font-size: (22px * S.k); font-weight: 700; color: Theme.text; vertical-alignment: top; }
+                    property <int> fcol: root.zone == Zone.discover && floor(root.idx / 100) == r + 1 ? mod(root.idx, 100) : -1;
+                    property <length> tw: (196px * S.k);
+                    property <length> gap: (18px * S.k);
+                    property <length> shift: max(0px, min(max(0, self.fcol) * (self.tw + self.gap) - (self.width - self.tw) / 2, row.tiles.length * (self.tw + self.gap) - self.gap - self.width));
+                    Rectangle {
+                        y: (44px * S.k);
+                        width: parent.width; height: (240px * S.k);
+                        clip: true;
+                        for t[c] in row.tiles: Rectangle {
+                            property <bool> f: c == drow-r.fcol && root.overlay == 0;
+                            x: c * (drow-r.tw + drow-r.gap) - drow-r.shift;
+                            animate x { duration: 280ms; easing: ease-out-quart; }
+                            y: (8px * S.k);
+                            width: drow-r.tw; height: (180px * S.k);
+                            Rectangle {
+                                width: parent.width; height: parent.height;
+                                border-radius: (14px * S.k);
+                                clip: true;
+                                background: #ffffff12;
+                                Image { source: t.image; width: parent.width; height: parent.height; image-fit: cover; opacity: t.loaded ? 1 : 0; animate opacity { duration: 260ms; } }
+                                if t.badge != "": Rectangle {
+                                    x: (8px * S.k); y: (8px * S.k);
+                                    width: dbt.preferred-width + (14px * S.k); height: (24px * S.k);
+                                    border-radius: (6px * S.k);
+                                    background: t.kind == 1 ? #0e6b4bd9 : #1e4fc8e6;
+                                    dbt := Text { text: t.badge; font-size: (12px * S.k); font-weight: 700; color: #ffffff; vertical-alignment: center; horizontal-alignment: center; }
+                                }
+                            }
+                            if f: Rectangle {
+                                x: -(6px * S.k); y: -(6px * S.k);
+                                width: parent.width + (12px * S.k); height: parent.height + (12px * S.k);
+                                border-radius: (19px * S.k);
+                                border-width: (3px * S.k);
+                                border-color: #f5f7fb;
+                            }
+                            Text { x: 0; y: parent.height + (10px * S.k); width: parent.width; height: (22px * S.k); vertical-alignment: top; text: t.label; font-size: (16px * S.k); font-weight: 600; color: f ? Theme.text : Theme.text2; overflow: elide; }
+                            TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.discover, (r + 1) * 100 + c); } }
+                        }
+                    }
+                }
+            }
+            // Header: search, sort, count, genre chips (Browse only).
             Rectangle {
+                visible: root.store-tab == 1;
                 y: 0;
                 height: root.library-top;
                 background: @linear-gradient(180deg, #070a14 0%, #070a14 88%, #070a1400 100%);
                 HorizontalLayout {
-                    x: (96px * S.k);
+                    x: (96px * S.k) + (312px * S.k);
                     y: (112px * S.k);
-                    width: root.width - (192px * S.k);
+                    width: root.width - (192px * S.k) - (312px * S.k);
                     height: (62px * S.k);
                     spacing: (18px * S.k);
                     library-search := Rectangle {
@@ -1126,6 +1224,21 @@ export component AppWindow inherits Window {
                     }
                 }
             }
+            // Discover · Browse, where Browse's search starts (it moves right to make room).
+            HorizontalLayout {
+                x: (96px * S.k); y: (112px * S.k); height: (56px * S.k);
+                width: (300px * S.k);
+                spacing: (10px * S.k); alignment: start;
+                for t[i] in [@tr("Discover"), @tr("Browse")]: Rectangle {
+                    property <bool> cur: i == root.store-tab;
+                    width: sdt.preferred-width + (40px * S.k);
+                    border-radius: self.height / 2;
+                    background: cur ? #f2f5fb : ta-dt.has-hover ? #ffffff24 : #ffffff12;
+                    animate background { duration: 180ms; }
+                    sdt := Text { text: t; font-size: (18px * S.k); font-weight: 600; color: cur ? #0a0f22 : Theme.text2; vertical-alignment: center; horizontal-alignment: center; }
+                    ta-dt := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.discover, -2 - i); } }
+                }
+            }
         }
 
         // ------------------------------------------------------------ TOP BAR
@@ -1138,7 +1251,7 @@ export component AppWindow inherits Window {
                 height: (104px * S.k);
                 spacing: (44px * S.k);
                 alignment: start;
-                for tab[i] in [@tr("Games"), @tr("Library")]: Rectangle {
+                for tab[i] in [@tr("Games"), @tr("Store")]: Rectangle {
                     width: tt.preferred-width + (8px * S.k);
                     property <bool> active: root.view == i;
                     property <bool> f: root.zone == Zone.tabs && root.idx == i && root.overlay == 0;
@@ -2500,7 +2613,7 @@ export component AppWindow inherits Window {
             property <length> th: tw + (66px * S.k);
             if root.lib-tiles.length == 0: Text {
                 x: (96px * S.k); y: (210px * S.k);
-                text: root.lib-tab == 0 ? @tr("No games installed yet · download one from the Library") : @tr("Nothing here yet · download a game from the Library");
+                text: root.lib-tab == 0 ? @tr("No games installed yet · download one from the Store") : @tr("Nothing here yet · download a game from the Store");
                 font-size: (20px * S.k); color: Theme.hint;
             }
             Flickable {
@@ -2879,7 +2992,7 @@ export component AppWindow inherits Window {
                     height: (128px * S.k);
                     spacing: (18px * S.k);
                     alignment: start;
-                    for t[i] in [{ label: @tr("Library"), icon: "grid" }, { label: @tr("Settings"), icon: "gear" }, { label: @tr("Controls"), icon: "info" },
+                    for t[i] in [{ label: @tr("Store"), icon: "grid" }, { label: @tr("Settings"), icon: "gear" }, { label: @tr("Controls"), icon: "info" },
                                  { label: root.on-os ? @tr("Power") : @tr("Quit"), icon: "power" }]: Rectangle {
                         property <bool> f: root.zone == Zone.control-center && root.idx == o + 2 + i;
                         width: (128px * S.k);

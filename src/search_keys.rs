@@ -136,6 +136,8 @@ impl App {
         if !self.pad_hints {
             return self.start_search_edit();
         }
+        // Searching is Browse's (src/store.rs).
+        if self.store_tab != 1 { self.store_tab = 1; self.ui().set_store_tab(1); }
         if self.view != 1 {
             self.switch_view(1, false);
         }

@@ -139,7 +139,7 @@ impl App {
         };
         let n = self.locals.len();
         let detail = if b.ready && n == 0 {
-            tr!("All set · pick a game in the Library to play")
+            tr!("All set · pick a game in the Store to play")
         } else if b.ready {
             tr!("All set · {n} installed game found" | "All set · {n} installed games found" % n)
         } else {

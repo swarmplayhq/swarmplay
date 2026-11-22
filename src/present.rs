@@ -484,7 +484,7 @@ impl App {
                 // already on this PC is the other way in.
                 let mk = |id, label: &str, icon, primary| ActionDef { id, label: label.into(), icon, primary, danger: false, round: false };
                 h.title = tr!("No games yet").into();
-                h.desc = tr!("Pick a game in the Library, then Download and Install.").into();
+                h.desc = tr!("Pick a game in the Store, then Download and Install.").into();
                 self.hero_actions = vec![mk("library", &tr!("Browse games"), "grid", true), mk("add_folder", &tr!("Add game folder"), "folder", false)];
             }
             Some(RowItem::All) => {
@@ -492,8 +492,8 @@ impl App {
                 if self.locals.is_empty() {
                     h.kicker = tr!("GET STARTED").into();
                     h.title = tr!("No games yet").into();
-                    h.chips = model(vec![chip("grid", tr!("{n} game in the Library" | "{n} games in the Library" % self.groups.members.len()), false)]);
-                    h.desc = tr!("Pick a game in the Library, then Download and Install.").into();
+                    h.chips = model(vec![chip("grid", tr!("{n} game in the Store" | "{n} games in the Store" % self.groups.members.len()), false)]);
+                    h.desc = tr!("Pick a game in the Store, then Download and Install.").into();
                     self.hero_actions = vec![mk("library", &tr!("Browse games"), "grid", true), mk("add_folder", &tr!("Add game folder"), "folder", false)];
                 } else {
                     h.kicker = tr!("COLLECTION").into();
@@ -734,6 +734,7 @@ impl App {
     pub fn refresh_images(&mut self, key: &str) {
         self.games_image(key);
         self.lib_image(key);
+        self.discover_image(key);
         if self.bg_standin.as_deref() == Some(key) && self.bg_pending.is_some() {
             if let Some(img) = self.images.get(key) {
                 self.apply_bg_standin(img);

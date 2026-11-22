@@ -142,6 +142,7 @@ export global Zone {
     out property <int> profiles: 34;
     out property <int> games: 35;
     out property <int> library: 36;
+    out property <int> discover: 37;
 }
 
 // dot: KytyPS5 compatibility level (0 none, 1 in-game, 2 menus, 3 boots, 4 doesn't boot, 5 untested)
@@ -326,6 +327,12 @@ export struct GameRowData { image: image, loaded: bool, label: string, sub: stri
 // A cover of the Game Library (src/game_library.rs): badge over it (kind 0 the platform, 1 a call
 // to act like Install, 2 under way with `bar`, 3 stopped or paused), its name and where it stands.
 export struct LibTile { image: image, loaded: bool, label: string, sub: string, badge: string, kind: int, bar: float }
+
+// The Store's Discover (src/store.rs): a cover in a row (badge kind 1 Installed/Install, 2 a
+// download's %), a row, and the featured game.
+export struct DiscoverTile { image: image, loaded: bool, label: string, badge: string, kind: int }
+export struct DiscoverRow { title: string, tiles: [DiscoverTile] }
+export struct DiscoverHero { image: image, loaded: bool, kicker: string, title: string, sub: string }
 
 export struct PickRow { label: string, sub: string, icon: string, kind: int, has-bar: bool, bar: float, warn: bool }
 

@@ -98,7 +98,7 @@ impl App {
         let active: Vec<_> = jobs.iter().filter(|j| j.state.active()).collect();
         if active.is_empty() {
             let paused = jobs.iter().filter(|j| j.state == crate::downloads::State::Paused).count();
-            let sub = if paused > 0 { tr!("{n} paused" | "{n} paused" % paused) } else { tr!("Get games in the Library") };
+            let sub = if paused > 0 { tr!("{n} paused" | "{n} paused" % paused) } else { tr!("Get games in the Store") };
             return widget(Icons::Download, &tr!("Downloads"), &tr!("Nothing downloading"), &sub, -1.0, 0);
         }
         let (done, total) = active.iter().fold((0u64, 0u64), |(d, t), j| (d + j.done, t + j.total));
@@ -117,7 +117,7 @@ impl App {
             if !names.contains(&g.name.as_str()) { names.push(&g.name); }
         }
         if names.is_empty() {
-            return widget(Icons::Sparkle, &tr!("New in the catalog"), &tr!("Nothing this fortnight"), &tr!("Browse the whole Library"), -1.0, 0);
+            return widget(Icons::Sparkle, &tr!("New in the catalog"), &tr!("Nothing this fortnight"), &tr!("Browse the whole Store"), -1.0, 0);
         }
         let value = tr!("{n} new game" | "{n} new games" % names.len());
         widget(Icons::Sparkle, &tr!("New in the catalog"), &value, &names.iter().take(2).copied().collect::<Vec<_>>().join(" · "), -1.0, 0)
