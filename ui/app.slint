@@ -1198,13 +1198,24 @@ export component AppWindow inherits Window {
                         }
                     }
                 }
+                // The two ways out of a long grid: search from anywhere, back to its top.
+                HorizontalLayout {
+                    x: (root.width - self.width) / 2; y: (191px * S.k); height: (26px * S.k);
+                    width: self.preferred-width;
+                    spacing: (10px * S.k);
+                    KeyCap { text: root.pad-hints ? "△" : "/"; round: root.pad-hints; }
+                    Text { text: @tr("Search"); font-size: (15px * S.k); color: Theme.hint; vertical-alignment: center; }
+                    Rectangle { width: (8px * S.k); }
+                    KeyCap { text: root.pad-hints ? "○" : "Esc"; round: root.pad-hints; }
+                    Text { text: @tr("Top"); font-size: (15px * S.k); color: Theme.hint; vertical-alignment: center; }
+                }
                 // What's chosen on Sort and filter, and how many games that leaves.
                 Text {
-                    x: (96px * S.k); y: (188px * S.k); width: (root.width - (192px * S.k)) * 0.65; height: (32px * S.k);
+                    x: (96px * S.k); y: (188px * S.k); width: (root.width - (192px * S.k)) * 0.36; height: (32px * S.k);
                     text: root.filter-summary; font-size: (18px * root.library-type-scale); color: Theme.text2; overflow: elide; vertical-alignment: center;
                 }
                 Text {
-                    x: root.width - (96px * S.k) - self.width; y: (188px * S.k); width: (root.width - (192px * S.k)) * 0.34; height: (32px * S.k);
+                    x: root.width - (96px * S.k) - self.width; y: (188px * S.k); width: (root.width - (192px * S.k)) * 0.3; height: (32px * S.k);
                     text: root.count-label; font-size: (18px * root.library-type-scale); color: Theme.hint; horizontal-alignment: right; overflow: elide; vertical-alignment: center;
                 }
                 Rectangle {

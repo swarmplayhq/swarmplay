@@ -1082,6 +1082,9 @@ impl App {
 
     fn build_card_row(&mut self, r: usize) -> CardRow {
         let mut cards = Vec::new();
+        // Where each game's download stands, for the covers' badges (one look per row).
+        let jobs = self.downloads.snapshot();
+        let installs = self.installer.snapshot();
         for c in 0..self.cols {
             let k = r * self.cols + c;
             let Some(&gi) = self.filtered.get(k) else { break };
@@ -1111,7 +1114,24 @@ impl App {
                 availability: crate::words::Availability::of(g.g.seeders).label().into(),
                 availability_kind: crate::words::Availability::of(g.g.seeders).kind(),
                 rating: g.info.as_ref().and_then(|i| i.rating.as_ref()).map(|r| crate::i18n::num(r.score as f64, 1)).unwrap_or_default().into(),
-                badge: if g.local.is_some() { tr!("Installed").into() } else if g.is_new { tr!("New").into() } else { "".into() },
+                // As a console's store: installed, or where its download stands, else new.
+                badge: if g.local.is_some() { tr!("Installed").into() } else {
+                    let pct = |f: f32| (f * 100.0).floor() as u32;
+                    match jobs.iter().find(|j| j.topic == g.g.id) {
+                        Some(j) => match installs.iter().find(|i| i.key == j.key && i.state.active()) {
+                            Some(i) => tr!("Installing {}%", pct(i.progress())),
+                            None => match j.state {
+                                crate::downloads::State::Complete => tr!("Ready to install"),
+                                crate::downloads::State::Downloading | crate::downloads::State::Checking => tr!("Downloading {}%", pct(j.progress())),
+                                crate::downloads::State::Paused => tr!("Paused {}%", pct(j.progress())),
+                                _ if g.is_new => tr!("New"),
+                                _ => String::new(),
+                            },
+                        },
+                        None if g.is_new => tr!("New"),
+                        None => String::new(),
+                    }.into()
+                },
                 console: if self.mixed_consoles { g.g.platform.label().into() } else { "".into() },
                 // Every platform the game is on, in the usual order.
                 consoles: model(self.game_platforms(gi).into_iter().filter(|_| self.mixed_consoles)
