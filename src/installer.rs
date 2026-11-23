@@ -18,7 +18,9 @@ use std::{
 
 const OWNED: &str = crate::downloads::MARKER;
 const STAGE_MARKER: &str = ".azrak-install-stage";
-const MAX_ENTRIES: usize = 100_000;
+/// Files in one game. Big PC repacks carry a Wine build and a game of 100k+ files; each entry costs a
+/// few hundred bytes while the archive is checked, so a million stays well within memory.
+const MAX_ENTRIES: usize = 1_000_000;
 const MAX_PATH: usize = 4096;
 const MAX_DEPTH: usize = 128;
 const MAX_PARAM: u64 = 1024 * 1024;

@@ -362,6 +362,7 @@ impl Sessions {
                 crate::wine_pads::prefer_sdl(&crate::util::data_dir().join("prefixes").join(&game.id));
                 command.env("PROTON_PREFER_SDL", "1");
             }
+            crate::pc_pads::prepare(&game.path, &cfg.pc_pad);
             return self.spawn(&mut inner, game, command, true);
         }
         let ps4 = game.platform == crate::platform::Platform::Ps4;
