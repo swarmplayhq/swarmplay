@@ -32,6 +32,38 @@ const LOOKUP_TRACKERS: [&str; 5] = [
     "udp://open.demonii.com:1337/announce",
 ];
 
+/// Peers per torrent at once.
+const PEER_LIMIT: usize = 150;
+/// Upload while downloading and sharing (peers favour those that send back), bytes/s.
+const UPLOAD_BPS: u32 = 1024 * 1024;
+
+/// The port peers reach this PC on: chosen once, then kept (in the transfers folder).
+fn listen_port(store: &Path) -> u16 {
+    let file = store.join("listen-port");
+    if let Some(port) = std::fs::read_to_string(&file).ok().and_then(|t| t.trim().parse::<u16>().ok()).filter(|p| *p >= 1025) {
+        return port;
+    }
+    use std::hash::{BuildHasher, Hasher};
+    let mut hasher = std::collections::hash_map::RandomState::new().build_hasher();
+    hasher.write_u128(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos());
+    let port = 20_000 + (hasher.finish() % 40_000) as u16;
+    let _ = secure_write(&file, port.to_string().as_bytes());
+    port
+}
+
+/// The trackers a torrent is downloaded and shared with: its magnet's, and for a public one the
+/// big public trackers too (more people to download from); a private torrent keeps to its own.
+fn trackers_for(bytes: &[u8], magnet: Vec<String>, local_only: bool) -> Vec<String> {
+    let private = librqbit::torrent_from_bytes(bytes).map_or(true, |meta| meta.info.data.private);
+    let mut trackers = magnet;
+    if !private && !local_only {
+        for tracker in LOOKUP_TRACKERS {
+            if !trackers.iter().any(|t| t == tracker) { trackers.push(tracker.to_string()); }
+        }
+    }
+    trackers
+}
+
 /// A public cache of torrent files by info hash, asked alongside the peers (a popular game's file
 /// list is usually there at once, while peers that send it can take minutes).
 const METADATA_CACHE: &str = "https://itorrents.org/torrent/{}.torrent";
@@ -957,28 +989,49 @@ impl Worker {
     }
     async fn session(&mut self) -> Result<Arc<Session>> {
         if let Some(session) = &self.session { return Ok(session.clone()); }
-        let mut opts = SessionOptions {
-            persistence: None, fastresume: false, disable_local_service_discovery: true,
-            peer_limit: Some(50), concurrent_init_limit: Some(2),
-            ratelimits: librqbit::limits::LimitsConfig { upload_bps: NonZeroU32::new(128 * 1024), download_bps: self.policy.download_bps },
-            ..Default::default()
-        };
-        if self.policy.local_only { opts.dht = None; opts.disable_trackers = true; opts.listen = None; }
         // Every connection, listener, tracker and DHT socket is bound to the VPN's interface, so
         // nothing can leave by another route; without a connected VPN nothing starts.
         let bound = match &self.policy.vpn {
             Some(preferred) => Some((self.policy.vpn_probe)(preferred).context(VPN_WAIT)?),
             None => None,
         };
-        opts.bind_device_name = bound.clone();
-        #[cfg(test)]
-        if self.policy.local_only && self.policy.loopback_listener {
-            opts.listen = Some(librqbit::ListenerOptions {
-                mode: librqbit::ListenerMode::TcpOnly, listen_addr: "127.0.0.1:0".parse().unwrap(),
-                enable_upnp_port_forwarding: false, ..Default::default()
-            });
-        }
-        let session = Session::new_with_opts(self.store.join("unused-default-output"), opts).await?;
+        let options = |port: u16| {
+            let mut opts = SessionOptions {
+                persistence: None, fastresume: false, disable_local_service_discovery: true,
+                peer_limit: Some(PEER_LIMIT), concurrent_init_limit: Some(2),
+                ratelimits: librqbit::limits::LimitsConfig { upload_bps: NonZeroU32::new(UPLOAD_BPS), download_bps: self.policy.download_bps },
+                // Peers can reach this PC too (most of a swarm is behind a router and can't be
+                // reached otherwise); the router is asked to forward the port, except through a
+                // VPN, whose own address is the one peers see.
+                listen: Some(librqbit::ListenerOptions {
+                    mode: librqbit::ListenerMode::TcpOnly, listen_addr: (std::net::Ipv6Addr::UNSPECIFIED, port).into(),
+                    enable_upnp_port_forwarding: bound.is_none(), ..Default::default()
+                }),
+                ..Default::default()
+            };
+            if self.policy.local_only { opts.dht = None; opts.disable_trackers = true; opts.listen = None; }
+            opts.bind_device_name = bound.clone();
+            #[cfg(test)]
+            if self.policy.local_only && self.policy.loopback_listener {
+                opts.listen = Some(librqbit::ListenerOptions {
+                    mode: librqbit::ListenerMode::TcpOnly, listen_addr: "127.0.0.1:0".parse().unwrap(),
+                    enable_upnp_port_forwarding: false, ..Default::default()
+                });
+            }
+            opts
+        };
+        let output = self.store.join("unused-default-output");
+        // The same port every time (peers that learned it can come back); if something else has
+        // it now, any free one.
+        let port = listen_port(&self.store);
+        let session = match Session::new_with_opts(output.clone(), options(port)).await {
+            Ok(session) => session,
+            Err(error) if !self.policy.local_only => {
+                crate::log!("downloads: port {port} isn't free ({error:#}), using another");
+                Session::new_with_opts(output, options(0)).await?
+            }
+            Err(error) => return Err(error),
+        };
         self.session = Some(session.clone());
         self.bound = bound;
         Ok(session)
@@ -1165,10 +1218,11 @@ impl Worker {
             let session = self.session().await?;
             let magnet = librqbit::Magnet::parse(&job.magnet)?;
             let peers = self.peers.get(key).cloned().unwrap_or_else(|| self.policy.initial_peers.clone());
+            let trackers = trackers_for(&bytes, magnet.trackers, self.policy.local_only);
             let response = session.add_torrent(AddTorrent::from_bytes(bytes), Some(AddTorrentOptions {
                 paused: false, overwrite: true, output_folder: Some(folder.to_string_lossy().into_owned()),
                 storage_factory: Some(KeepTimes::new(&folder)),
-                trackers: Some(magnet.trackers), initial_peers: Some(peers), only_files: wanted.clone(), ..Default::default()
+                trackers: Some(trackers), initial_peers: Some(peers), only_files: wanted.clone(), ..Default::default()
             })).await?;
             let handle = response.into_handle().context("No transfer handle")?;
             self.handles.insert(key.into(), handle);
@@ -1281,11 +1335,12 @@ impl Worker {
         let session = self.session().await?;
         let magnet = librqbit::Magnet::parse(&job.magnet)?;
         let peers = self.peers.get(key).cloned().unwrap_or_else(|| self.policy.initial_peers.clone());
+        let trackers = trackers_for(&bytes, magnet.trackers, self.policy.local_only);
         // Only the files that were downloaded: sharing must never fetch the ones left out.
         let response = session.add_torrent(AddTorrent::from_bytes(bytes), Some(AddTorrentOptions {
             paused: true, overwrite: true, output_folder: Some(folder.to_string_lossy().into_owned()),
             storage_factory: Some(KeepTimes::new(&folder)),
-            trackers: Some(magnet.trackers), initial_peers: Some(peers), only_files: job.selected.clone(), ..Default::default()
+            trackers: Some(trackers), initial_peers: Some(peers), only_files: job.selected.clone(), ..Default::default()
         })).await?;
         let handle = response.into_handle().context("No transfer handle")?;
         self.handles.insert(key.into(), handle);
@@ -1671,6 +1726,31 @@ mod tests {
         let key = sha1_smol::Sha1::from(&info).digest().to_string();
         let mut bytes = b"d4:info".to_vec(); bytes.extend(info); bytes.push(b'e');
         (key, bytes)
+    }
+
+    #[test]
+    fn public_torrents_get_the_public_trackers_and_private_ones_keep_their_own() {
+        let own = vec!["udp://own.example:1/announce".to_string()];
+        let (_, public) = metadata(&[&["a.bin"]], None, false);
+        let (_, private) = metadata(&[&["a.bin"]], None, true);
+        let trackers = trackers_for(&public, own.clone(), false);
+        assert_eq!(trackers[0], own[0]);
+        assert_eq!(trackers.len(), 1 + LOOKUP_TRACKERS.len());
+        assert_eq!(trackers_for(&private, own.clone(), false), own, "a private torrent keeps to its own trackers");
+        assert_eq!(trackers_for(&public, own.clone(), true), own, "nothing public when nothing may leave this PC");
+        assert_eq!(trackers_for(b"not a torrent", own.clone(), false), own);
+        let again = trackers_for(&public, vec![LOOKUP_TRACKERS[0].to_string()], false);
+        assert_eq!(again.len(), LOOKUP_TRACKERS.len(), "no tracker twice");
+    }
+
+    #[test]
+    fn the_listen_port_is_chosen_once_and_kept() {
+        let temp = tempfile::tempdir().unwrap();
+        let port = listen_port(temp.path());
+        assert!((20_000..60_000).contains(&port));
+        assert_eq!(listen_port(temp.path()), port);
+        std::fs::write(temp.path().join("listen-port"), "80").unwrap();
+        assert!(listen_port(temp.path()) >= 20_000, "a privileged port isn't used");
     }
 
     async fn wait_job(manager: &Manager, key: &str, predicate: impl Fn(&Job) -> bool) -> Job {
