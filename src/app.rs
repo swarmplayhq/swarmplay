@@ -2622,6 +2622,16 @@ impl App {
 
     fn act_main(&mut self, a: Act) {
         match a {
+            // ○ deep in Browse's grid: back to its top at once, then to the search (no climbing
+            // every row to get there), as a console's long lists do.
+            Act::Back if self.view == 1 && self.zone == Z_GRID && self.idx as usize >= self.cols => {
+                audio::play(Sound::Back);
+                self.move_focus(Z_GRID, 0);
+                self.set_grid_scroll(0.0, 260);
+                self.focus_card_changed();
+                return;
+            }
+            Act::Back if self.view == 1 && self.zone == Z_GRID => { audio::play(Sound::Back); return self.move_focus(Z_SEARCH, 0); }
             Act::Back => return self.back(),
             Act::Search => return self.open_search(),
             Act::Settings => return self.open_settings(),
