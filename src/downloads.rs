@@ -21,6 +21,35 @@ use tr::tr;
 
 const MAX_JOBS: usize = 32;
 const MAX_METADATA: u64 = 16 * 1024 * 1024;
+
+/// Big public trackers asked too while a torrent's file list is looked for (only then: once it's
+/// known, a private torrent keeps to its own trackers).
+const LOOKUP_TRACKERS: [&str; 5] = [
+    "udp://tracker.opentrackr.org:1337/announce",
+    "udp://open.stealth.si:80/announce",
+    "udp://tracker.torrent.eu.org:451/announce",
+    "udp://exodus.desync.com:6969/announce",
+    "udp://open.demonii.com:1337/announce",
+];
+
+/// A public cache of torrent files by info hash, asked alongside the peers (a popular game's file
+/// list is usually there at once, while peers that send it can take minutes).
+const METADATA_CACHE: &str = "https://itorrents.org/torrent/{}.torrent";
+
+/// The torrent file for `key` from the public cache, only if it really is that torrent: its info
+/// hash must be the magnet's, and it must pass the same checks as one from a peer.
+fn cached_metadata(key: &str) -> Option<Vec<u8>> {
+    use std::io::Read;
+    let url = METADATA_CACHE.replace("{}", &key.to_ascii_uppercase());
+    let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(25)).redirects(3).build();
+    let response = agent.get(&url).set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) SwarmPlay").call().ok()?;
+    let mut bytes = Vec::new();
+    response.into_reader().take(MAX_METADATA + 1).read_to_end(&mut bytes).ok()?;
+    if bytes.len() as u64 > MAX_METADATA || bytes.first() != Some(&b'd') { return None; }
+    inspect_metadata(&bytes, key, None).ok()?;
+    crate::log!("file list of {key} from the metadata cache");
+    Some(bytes)
+}
 pub const MARKER: &str = ".azrak-owned";
 
 /// Why a lookup stopped, for the Download & install panel.
@@ -1022,13 +1051,36 @@ impl Worker {
         let session = self.session().await?;
         let initial_peers = self.policy.initial_peers.clone();
         let key = key.to_string();
+        // The public metadata cache is asked at the same time, unless downloads go only through a
+        // VPN (that request wouldn't go through it) or nothing may leave this PC.
+        let use_cache = self.policy.vpn.is_none() && !self.policy.local_only;
+        // The magnet's own trackers, and a few big public ones while the file list is looked for
+        // (before it, as with the DHT, nothing says the torrent is private).
+        let trackers: Vec<String> = librqbit::Magnet::parse(&job.magnet).map(|m| m.trackers).unwrap_or_default().into_iter()
+            .chain(if self.policy.local_only { vec![] } else { LOOKUP_TRACKERS.iter().map(|t| t.to_string()).collect() }).collect();
         let abort = self.tasks.spawn(async move {
-                let response = tokio::time::timeout(Duration::from_secs(180), session.add_torrent(
+                let lookup = tokio::time::timeout(Duration::from_secs(180), session.add_torrent(
                     AddTorrent::from_url(job.magnet), Some(AddTorrentOptions {
                         list_only: true, output_folder: Some(folder.to_string_lossy().into_owned()),
-                        initial_peers: Some(initial_peers), ..Default::default()
+                        initial_peers: Some(initial_peers), trackers: Some(trackers), ..Default::default()
                     }),
-                )).await.map_err(|_| LookupError(Problem::NoAnswer, anyhow::anyhow!(tr!("Metadata lookup timed out; no reachable peers. Retry later."))))??;
+                ));
+                tokio::pin!(lookup);
+                let cache_key = key.clone();
+                let cached = async move {
+                    if !use_cache { return std::future::pending::<Option<Vec<u8>>>().await; }
+                    tokio::task::spawn_blocking(move || cached_metadata(&cache_key)).await.ok().flatten()
+                };
+                tokio::pin!(cached);
+                // Whichever answers first: a peer, or the cache (checked against the magnet's hash).
+                let response = tokio::select! {
+                    bytes = &mut cached => match bytes {
+                        Some(bytes) => return Ok(Resolved { key: key.clone(), bytes, peers: vec![] }),
+                        None => (&mut lookup).await,
+                    },
+                    response = &mut lookup => response,
+                };
+                let response = response.map_err(|_| LookupError(Problem::NoAnswer, anyhow::anyhow!(tr!("Metadata lookup timed out; no reachable peers. Retry later."))))??;
                 let AddTorrentResponse::ListOnly(response) = response else { bail!("Unexpected metadata response"); };
                 Ok(Resolved { key: key.clone(), bytes: response.torrent_bytes.to_vec(), peers: response.seen_peers })
         });
@@ -2248,6 +2300,18 @@ mod tests {
         assert!(!store.join(format!("{key}.torrent")).exists());
         assert!(load_manifest(&store).is_empty(), "Remove clears persisted history only");
         rt.block_on(seeder.stop());
+    }
+
+    #[test]
+    #[ignore = "asks the public metadata cache over the internet"]
+    fn the_metadata_cache_gives_a_popular_torrent_only_when_it_is_that_torrent() {
+        // Shadow of the Tomb Raider: Definitive Edition (PC), from the catalog.
+        let key = "ee892718e1e01c4d0a4e32748503149c3ba40b5e";
+        let bytes = cached_metadata(key).expect("in the cache");
+        assert!(inspect_metadata(&bytes, key, None).is_ok());
+        // The same file asked for under another hash is refused (it isn't that torrent).
+        let other = "9f7857dd2f2e510cc198e71f90967b0c91234c9e";
+        assert!(inspect_metadata(&bytes, other, None).is_err());
     }
 
     #[test]
