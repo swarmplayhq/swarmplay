@@ -60,6 +60,9 @@ pub struct Config {
     pub overlay_pause: bool,
     /// Windows games get controllers through SDL, as XInput ones (src/wine_pads.rs).
     pub wine_sdl_pads: bool,
+    /// The controller native PC games see when they could see it twice (src/pc_pads.rs):
+    /// "Automatic", "PlayStation" or "Xbox".
+    pub pc_pad: String,
     /// Settings → Notifications (src/toast.rs): pop-ups at all, how long they stay, their sound,
     /// during games ("All", "Important only", "None"), desktop notifications in the background,
     /// Do not disturb until (Unix seconds), kinds turned off (by name), the catalog digest's day.
@@ -146,6 +149,7 @@ impl Default for Config {
             overlay_toasts: true,
             overlay_pause: false,
             wine_sdl_pads: true,
+            pc_pad: "Automatic".into(),
             notify_popups: true,
             notify_secs: 6,
             notify_sound: true,

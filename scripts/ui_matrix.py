@@ -60,6 +60,7 @@ STEPS = [
     ("09f3-storage-folders", ["Return", "sleep:0.8", "Down", "sleep:0.4"]),            # Home folder: its folders
     ("09f4-storage-back", ["Escape", "sleep:0.4", "Escape", "sleep:0.8"]),              # Up, closed: Storage again
     ("09g-settings-notifications", ["Escape", "sleep:0.5", "Down", "Down", "Down", "Return", "sleep:0.8"]),
+    ("09h-settings-playing", ["Escape", "sleep:0.5", "Up", "Up", "Return", "sleep:0.8"]),  # Playing: controllers in games
     ("10-settings-bottom", ["Escape", "sleep:0.6"] + ["Down"] * 12 + ["sleep:0.8"]), # Quit, at the end
     # The language switched live (Launcher → Language, its first row), then back.
     ("10b-language-switched", ["Up"] * 12 + ["Down"] * 8 + ["Return", "sleep:0.6", "Right", "sleep:1"]),

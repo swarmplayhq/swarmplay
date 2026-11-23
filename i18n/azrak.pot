@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-23 02:32+0000\n"
+"POT-Creation-Date: 2026-11-23 12:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2823,6 +2823,10 @@ msgstr ""
 msgid "{cpu} ({n} cores) · {gpu} · {ram} GB RAM"
 msgstr ""
 
+#: src/pc_pads.rs
+msgid "Automatic"
+msgstr ""
+
 #: src/pc_ui.rs
 msgid ""
 "Games need a graphics card with Vulkan 1.3: update the graphics driver, or "
@@ -3605,6 +3609,10 @@ msgid "Controller & keyboard"
 msgstr ""
 
 #: src/settings.rs
+msgid "Controller in PC games"
+msgstr ""
+
+#: src/settings.rs
 msgid "Controller in Windows games"
 msgstr ""
 
@@ -3659,6 +3667,12 @@ msgstr ""
 
 #: src/settings.rs
 msgid "For example --vblank-frequency 60 --tessellation"
+msgstr ""
+
+#: src/settings.rs
+msgid ""
+"For games that see your controller twice, as PlayStation and as Xbox · "
+"Automatic follows the one connected"
 msgstr ""
 
 #. Rollbacks only when there is something to go back to.

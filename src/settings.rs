@@ -60,6 +60,8 @@ pub enum SId {
     NotifCat(u8),
     // Controllers in Windows games (src/wine_pads.rs)
     WineSdlPads,
+    /// Which controller native PC games see (src/pc_pads.rs).
+    PcPad,
     // In-game overlay (src/overlay_ui.rs)
     OverlayHelper,
     OverlayPause,
@@ -165,6 +167,10 @@ impl App {
         r.on = cfg.wine_sdl_pads;
         r.hint = tr!("Shows any controller (DualShock, DualSense…) to Windows games as an Xbox one · takes effect at the next start").into();
         rows.push((SId::WineSdlPads, r));
+        let mut r = row(3, &tr!("Controller in PC games"));
+        r.value = crate::pc_pads::label(&cfg.pc_pad).into();
+        r.hint = tr!("For games that see your controller twice, as PlayStation and as Xbox · Automatic follows the one connected").into();
+        rows.push((SId::PcPad, r));
         rows.push((SId::ThisPc, self.this_pc_row()));
         rows.extend(self.overlay_rows(&cfg));
 
@@ -796,6 +802,13 @@ impl App {
                     c.height = h;
                 });
             }
+            SId::PcPad => {
+                let kinds = crate::pc_pads::KINDS;
+                let cur = self.cfg.lock().unwrap().pc_pad.clone();
+                let p = kinds.iter().position(|k| *k == cur).unwrap_or(0) as i32;
+                let next = kinds[(p + dir).rem_euclid(kinds.len() as i32) as usize].to_string();
+                self.save_cfg(|c| c.pc_pad = next);
+            }
             SId::Present => {
                 let cur = self.cfg.lock().unwrap().present_mode.clone();
                 let pos = PRESENT_MODES.iter().position(|(k, _)| *k == cur).unwrap_or(0) as i32;
@@ -915,7 +928,7 @@ impl App {
                 let on = self.settings_rows[i].on;
                 self.settings_change(i, if on { -1 } else { 1 });
             }
-            SId::Resolution | SId::Present | SId::Display | SId::Language | SId::AvatarColor | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
+            SId::Resolution | SId::Present | SId::PcPad | SId::Display | SId::Language | SId::AvatarColor | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
             // A press turns it up a step (◂ ▸ go both ways).
             SId::SoundVolume => self.settings_change(i, 1),
             // A press goes round Off, Low, Medium, High.

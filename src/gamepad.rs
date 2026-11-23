@@ -131,12 +131,25 @@ fn gamepad_paths() -> Vec<String> {
 /// Names of the connected controllers, for showing whether games will get one. Reads the same
 /// device list as `gamepad_paths`, so it works even without permission to open the devices.
 pub fn connected() -> Vec<String> {
+    pads().into_iter().map(|(name, _)| name).collect()
+}
+
+/// Whether the first connected controller is a Sony one (DualShock, DualSense): PC games that
+/// can tell show PlayStation buttons for it (src/pc_pads.rs).
+pub fn sony_first() -> Option<bool> {
+    pads().first().map(|(_, vendor)| vendor == "054c")
+}
+
+/// The connected controllers: name and USB vendor id (4 hex digits), one per name.
+fn pads() -> Vec<(String, String)> {
     let Ok(text) = std::fs::read_to_string("/proc/bus/input/devices") else { return Vec::new() };
-    let mut names: Vec<String> = Vec::new();
+    let mut names: Vec<(String, String)> = Vec::new();
     for block in text.split("\n\n") {
-        let (mut name, mut handlers, mut keys) = ("", "", "");
+        let (mut name, mut handlers, mut keys, mut vendor) = ("", "", "", "");
         for line in block.lines() {
-            if let Some(n) = line.strip_prefix("N: Name=") {
+            if let Some(i) = line.strip_prefix("I: ") {
+                vendor = i.split_whitespace().find_map(|w| w.strip_prefix("Vendor=")).unwrap_or("");
+            } else if let Some(n) = line.strip_prefix("N: Name=") {
                 name = n.trim_matches('"');
             } else if let Some(h) = line.strip_prefix("H: Handlers=") {
                 handlers = h;
@@ -152,8 +165,8 @@ pub fn connected() -> Vec<String> {
             let (w, b) = ((n / 64) as usize, n % 64);
             words.len() > w && words[words.len() - 1 - w] >> b & 1 == 1
         };
-        if (bit(BTN_SOUTH) || bit(BTN_MODE)) && !name.is_empty() && !names.iter().any(|n| n == name) {
-            names.push(name.to_string());
+        if (bit(BTN_SOUTH) || bit(BTN_MODE)) && !name.is_empty() && !names.iter().any(|(n, _)| n == name) {
+            names.push((name.to_string(), vendor.to_ascii_lowercase()));
         }
     }
     names

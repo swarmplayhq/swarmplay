@@ -38,6 +38,7 @@ mod overlay;
 mod overlay_ui;
 mod ipc;
 mod wine_pads;
+mod pc_pads;
 mod pfs;
 mod rar;
 mod package;
