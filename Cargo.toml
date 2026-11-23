@@ -1,6 +1,6 @@
 [package]
 name = "azrak"
-version = "1.32.5"
+version = "1.32.6"
 edition = "2021"
 description = "SwarmPlay: a fast, native console-style game launcher for Linux (a fork of Azrak Launcher)"
 license = "MIT"

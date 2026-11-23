@@ -57,8 +57,24 @@ fn icon_of(id: &str) -> &'static str {
     match id {
         "pause" => "pause", "resume" | "play_install" | "play" => "play", "cancel" | "discard" | "cancel_install" => "close",
         "remove" | "delete" => "trash", "retry" => "retry", "share" => "share", "stop_seed" => "unshare",
-        "install" => "disk", "locate" => "folder", "info" => "info", "vpn" => "gear", _ => "check",
+        "install" => "disk", "locate" => "folder", "info" => "info", "vpn" => "gear", "better" => "search", _ => "check",
     }
+}
+
+/// A download this slow (MB/s, on average over `SLOW_SAMPLES` seconds) may do better from
+/// another version of the game that more people share.
+const SLOW_MBPS: f32 = 2.0;
+const SLOW_SAMPLES: usize = 30;
+
+/// Of a game's other versions (index, how well it plays here, seeders), one worth switching a
+/// slow download to: one that plays at least as well, shared by many (`GOOD_SEEDERS`) and by at
+/// least twice as many as the one downloading; the most shared of those.
+fn better_shared(current: (u8, u64), others: impl IntoIterator<Item = (usize, u8, u64)>) -> Option<usize> {
+    let (score, seeders) = current;
+    others.into_iter()
+        .filter(|&(_, s, n)| s >= score && n >= crate::words::GOOD_SEEDERS && n >= seeders.saturating_mul(2).max(1))
+        .max_by_key(|&(i, s, n)| (n, s, std::cmp::Reverse(i)))
+        .map(|(i, ..)| i)
 }
 
 fn mbps(v: f64) -> String { format!("{} MB/s", crate::i18n::num(v, 1)) }
@@ -302,6 +318,20 @@ fn describe(job: &Job, install: Option<&Record>, failure: Option<&String>, queue
 }
 
 impl App {
+    /// The catalog release a slow download could switch to (see `better_shared`): only while it
+    /// downloads slowly, with most of it still to come.
+    fn faster_version(&self, job: &Job) -> Option<usize> {
+        if job.state != State::Downloading || job.progress() > 0.5 { return None; }
+        let speeds = self.dl_speeds.get(&job.key).filter(|s| s.len() >= SLOW_SAMPLES)?;
+        let average = speeds.iter().rev().take(SLOW_SAMPLES).sum::<f32>() / SLOW_SAMPLES as f32;
+        if average >= SLOW_MBPS { return None; }
+        let game = self.games.iter().position(|game| game.g.id == job.topic)?;
+        let others = self.groups.releases(game).iter().copied()
+            .filter(|&i| i != game && self.games[i].local.is_none() && !self.games[i].g.magnet.is_empty())
+            .map(|i| (i, self.plays(i).score(), self.games[i].g.seeders.unwrap_or(0)));
+        better_shared((self.plays(game).score(), self.games[game].g.seeders.unwrap_or(0)), others)
+    }
+
     /// Download pressed: the Download & install panel, or the download if it's already under way.
     pub fn prepare_download(&mut self, target: Target) {
         if let Some(job) = self.download_for_target(target).filter(|job| job.state != State::Ready) {
@@ -378,7 +408,7 @@ impl App {
         let Some(job) = jobs.iter().find(|job| job.key == key) else { return };
         let install = self.installer.snapshot().into_iter().find(|record| record.key == key);
         // Nothing that changes the download while it's being installed from.
-        let touches = !matches!(action, "info" | "cancel_install" | "play_install" | "vpn" | "stop_seed" | "share" | "choose");
+        let touches = !matches!(action, "info" | "cancel_install" | "play_install" | "vpn" | "stop_seed" | "share" | "choose" | "better");
         self.dl_notes.remove(key);
         self.dl_page_note.clear();
         // A game started from this row: what it says isn't this press's news. (From another
@@ -408,6 +438,13 @@ impl App {
                         self.run_action("play", Target { game: self.locals[local].cat, local: Some(local) });
                     } else { self.note_download(key, &tr!("Its folder is missing: check Game folders in Settings")); }
                 }
+                return;
+            }
+            // Its Game Hub, on the version more people share (Back comes here again).
+            "better" => {
+                if let Some(game) = self.faster_version(job) {
+                    self.open_hub_at(Target { game: Some(game), local: None }, 0);
+                } else { self.note_download(key, &tr!("It isn't slow any more")); }
                 return;
             }
             // On Your VPN (✕ connects it), not on the switch (✕ there would turn protection off).
@@ -483,7 +520,16 @@ impl App {
         let mut rows: Vec<(usize, Desc)> = jobs.iter().enumerate().map(|(i, job)| {
             let install = installs.iter().find(|record| record.key == job.key);
             let behind = installs.iter().find(|record| record.state.active() && record.key != job.key).map(|record| record.name.as_str());
-            (i, describe(job, install, self.install_failures.get(&job.key), behind, sharing_on))
+            let mut d = describe(job, install, self.install_failures.get(&job.key), behind, sharing_on);
+            // Slow, while another version of it is shared by many more people: said, and one
+            // press away (its Game Hub, to see how it plays before switching).
+            if let Some(other) = self.faster_version(job) {
+                let g = &self.games[other].g;
+                let size = crate::present::size_label(g).unwrap_or_default();
+                d.note = tr!("Few people share this version · another one for {} has {} sharing · {}", g.platform.label(), g.seeders.unwrap_or(0), size);
+                d.actions.insert(1, ("better", tr!("See that version"), "search"));
+            }
+            (i, d)
         }).collect();
         let counts = [rows.len(), rows.iter().filter(|r| r.1.group == 0).count(), rows.iter().filter(|r| r.1.group == 1).count(), rows.iter().filter(|r| r.1.group == 2).count()];
         rows.retain(|(_, d)| self.dl_filter == 0 || d.group == self.dl_filter as i32 - 1);
@@ -976,5 +1022,23 @@ impl App {
             _ => return,
         }
         self.push_downloads();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::better_shared;
+
+    #[test]
+    fn a_slow_download_is_pointed_to_a_version_many_more_people_share() {
+        // Ghost of Tsushima: the PC release at 5 seeders; another PC one at 11, PS4 at 69 (plays
+        // worse here), a PC one at 8.
+        let others = [(1, 6, 11), (2, 4, 69), (3, 6, 8)];
+        assert_eq!(better_shared((6, 5), others), Some(1), "one that plays as well, not the most shared");
+        assert_eq!(better_shared((4, 5), others), Some(2), "plays alike: the most shared");
+        assert_eq!(better_shared((6, 6), others), None, "not twice as many");
+        assert_eq!(better_shared((6, 0), [(1, 6, 9)]), None, "too few to be worth it");
+        assert_eq!(better_shared((6, 0), [(1, 6, 10)]), Some(1));
+        assert_eq!(better_shared((6, 5), []), None);
     }
 }

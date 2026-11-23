@@ -318,7 +318,7 @@ impl App {
             let detail = if installed {
                 tr!("Installed")
             } else {
-                [tr!("Availability: {}", Availability::of(g.g.seeders).label()), crate::present::size_label(&g.g).unwrap_or_default()]
+                [tr!("Availability: {}", Availability::with_count(g.g.seeders)), crate::present::size_label(&g.g).unwrap_or_default()]
                     .into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" · ")
             };
             crate::VersionData {
