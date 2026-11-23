@@ -188,7 +188,7 @@ Developers: see the [developer guide](docs/DEVELOPMENT.md).
 
 ## License
 
-Free and open source under the [MIT License](LICENSE).
+[MIT License](LICENSE).
 
 ---
 
