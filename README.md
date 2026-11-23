@@ -14,18 +14,37 @@ and install them, and play them with the [KytyPS5](https://github.com/KytyPS5/Ky
 [shadPS4](https://github.com/shadps4-emu/shadPS4) (PS4) emulators, using a controller, keyboard or
 mouse.
 
-![The Home screen, a Game Hub, then the Library filtered to PS4 games and a PS4 game's Hub](docs/demo/demo-loop.webp)
+![SwarmPlay's Home: a row of games with Balatro chosen, its art, logo, Play button and activity cards](docs/screenshots/home.webp)
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/game-library.webp" alt="The Game Library: your installed games as covers"></td>
+    <td><img src="docs/screenshots/profile.webp" alt="The profile card from the avatar: your picture, hours played, Switch user, Media gallery, Power"></td>
+    <td><img src="docs/screenshots/hub.webp" alt="A Game Hub: logo, genres, Play and screenshots"></td>
+  </tr>
+</table>
 
 - **Your games on a console-style Home screen**, with official backgrounds, logos and trailers that
-  play right in the launcher.
-- **A Library of 400+ PS5 games** with search, genre filters and sorting. New releases show up
+  play right in the launcher, activity cards, and a profile card on your avatar.
+- **A Game Library and a Store:** your installed games apart from the catalog, and a Store to
+  discover new games and browse the rest, sorted and filtered from one panel. New releases show up
   by themselves: the list is updated daily.
 - **PS4 games too:** they run on shadPS4, which the launcher installs and updates by itself, like KytyPS5.
 - **And PC games:** native Linux games, and Windows games packed to run with Wine, with Steam
   artwork and ProtonDB ratings.
 - **See what runs:** every game shows how far it gets in its emulator.
 - **Download, install and play** without leaving the launcher, through your own VPN if you like.
+  File lists arrive in seconds, and you choose the drive, never a folder to type.
+- **Manage your games like a console:** delete them, or move them to another drive in the background.
 - **Keeps itself and KytyPS5 up to date**, without touching your saves.
+
+### Coming soon
+
+- **SwarmPlay Link:** play your PC's games on your TV and phone (Android TV, Android, iPhone and
+  iPad). One button opens SwarmPlay straight away, and a built-in private network lets you play away
+  from home too.
+- **SwarmPlay OS:** an operating system that turns any PC into a console, starting straight into
+  SwarmPlay.
 
 ## Install
 

@@ -24,21 +24,18 @@ GAMES = ["Hades II", "Cyberpunk 2077", "Baldur's Gate III", "Hollow Knight: Silk
          "Stardew Valley", "Celeste", "Balatro", "Dead Cells", "Outer Wilds", "Terraria"]
 
 STEPS = [
-    ("home", ["sleep:8", "Return", "sleep:4"]),   # past who's playing
-    ("welcome", ["Left", "Down", "sleep:0.8"]),
-    ("home-peek", ["Up", "Right", "Down", "Down", "sleep:0.8"]),
+    ("home", ["sleep:8", "Return", "sleep:5"]),   # past who's playing
+    # Home's last tile: the Game Library (installed stand-ins only, no catalog on screen).
+    ("game-library", ["End", "sleep:0.6", "Return", "sleep:2.5"]),
+    ("welcome", ["Escape", "sleep:0.8", "Home", "sleep:0.4", "Down", "sleep:0.8"]),
+    ("home-peek", ["Up", "Right", "Down", "Down", "sleep:1"]),
     ("hub", ["Return", "sleep:1.5"]),
     ("hub-scrolled", ["Down", "sleep:1.2", "Down", "Down", "sleep:0.8"]),
     ("gallery", ["Return", "sleep:1.2", "Right", "sleep:1"]),
-    ("library", ["Escape", "sleep:0.6", "Escape", "Escape", "Up", "Up", "Right", "Return", "sleep:1.5"]),
-    ("menu", ["Escape", "sleep:0.5", "Escape", "sleep:0.8", "o", "sleep:0.6"]),
-    ("settings", ["Escape", "Escape", "sleep:0.5", "s", "sleep:0.8"]),
-    ("settings-theme", ["Down"] * 7 + ["Return", "Right", "sleep:0.8"]),
-    ("settings-sound", ["Escape", "sleep:0.6"] + ["Up"] * 4 + ["Return", "sleep:0.8"]),
-    ("settings-storage", ["Escape", "sleep:0.5", "Up", "Up", "Return", "sleep:0.8"]),
-    ("settings-playing", ["Escape", "sleep:0.5", "Down", "Return", "sleep:0.8"]),
-    ("control-center", ["Escape", "Escape", "sleep:0.5", "Escape", "sleep:0.5", "F1", "sleep:0.8"]),
-    ("notifications", ["Right", "Return", "sleep:0.9"]),
+    # The avatar at the top: the profile card.
+    ("profile", ["Escape", "sleep:0.6", "Escape", "sleep:0.8", "Up", "Up", "sleep:0.3"] + ["Right", "sleep:0.2"] * 6 + ["Return", "sleep:1"]),
+    ("settings-storage", ["Escape", "sleep:0.8", "s", "sleep:1", "Down", "Return", "sleep:1.2"]),
+    ("control-center", ["Escape", "Escape", "sleep:0.5", "Escape", "sleep:0.5", "F1", "sleep:1"]),
 ]
 
 
