@@ -585,6 +585,13 @@ fn volumes(plan: &Plan) -> Result<Option<Vec<String>>> {
         ensure!(n > 0 && n <= MAX_ENTRIES as u32, "Invalid multipart volume number");
         ensure!(groups.entry(family).or_default().insert(n, entry.path.clone()).is_none(), "Duplicate multipart volume number");
     }
+    // PS5 releases may bring a firmware backport beside the game ("Backpork PPSA17221 4.00.rar":
+    // a swapped eboot and libraries for a jailbroken console on older firmware). The emulator
+    // runs the original game, so that archive is left out when another one is the game.
+    if groups.len() > 1 {
+        let extra = |family: &str| { let f = family.to_ascii_lowercase(); f.contains("backpork") || f.contains("backport") };
+        if groups.keys().any(|f| !extra(f)) { groups.retain(|f, _| !extra(f)); }
+    }
     ensure!(groups.len() <= 1, tr!("Multiple independent archives found; choose a single release folder"));
     let Some((_, group)) = groups.into_iter().next() else { return Ok(None); };
     let mut out = Vec::new();
@@ -2534,6 +2541,9 @@ mod tests {
         }
         assert_eq!(volumes(&plan(&["x.part02.rar", "x.part01.rar"])).unwrap().unwrap(), ["x.part01.rar", "x.part02.rar"]);
         assert_eq!(volumes(&plan(&["x.r01", "x.rar", "x.r00"])).unwrap().unwrap(), ["x.rar", "x.r00", "x.r01"]);
+        assert_eq!(volumes(&plan(&["PPSA17221-app.rar", "Backpork PPSA17221 4.00.rar", "ps5-backpork.elf"])).unwrap().unwrap(), ["PPSA17221-app.rar"],
+            "a PS5 firmware backport beside the game is left out");
+        assert_eq!(volumes(&plan(&["Backpork 4.00.rar"])).unwrap().unwrap(), ["Backpork 4.00.rar"], "alone, it's what there is");
     }
 
     #[test]
