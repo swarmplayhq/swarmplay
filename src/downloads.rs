@@ -33,9 +33,9 @@ const LOOKUP_TRACKERS: [&str; 5] = [
 ];
 
 /// Peers per torrent at once.
-const PEER_LIMIT: usize = 150;
+const PEER_LIMIT: usize = 500;
 /// Upload while downloading and sharing (peers favour those that send back), bytes/s.
-const UPLOAD_BPS: u32 = 1024 * 1024;
+const UPLOAD_BPS: u32 = 50 * 1024 * 1024;
 
 /// The port peers reach this PC on: chosen once, then kept (in the transfers folder).
 fn listen_port(store: &Path) -> u16 {
@@ -209,6 +209,7 @@ struct Policy {
     local_only: bool,
     initial_peers: Vec<SocketAddr>,
     download_bps: Option<NonZeroU32>,
+    upload_bps: Option<NonZeroU32>,
     seed_after_download: bool,
     /// Download only through a VPN: `Some(preferred interface)` ("" = any connected VPN).
     vpn: Option<String>,
@@ -221,7 +222,7 @@ struct Policy {
 impl Default for Policy {
     fn default() -> Self {
         Self {
-            local_only: false, initial_peers: vec![], download_bps: None, seed_after_download: true,
+            local_only: false, initial_peers: vec![], download_bps: None, upload_bps: NonZeroU32::new(UPLOAD_BPS), seed_after_download: true,
             vpn: None, vpn_probe: crate::vpn::active,
             #[cfg(test)] loopback_listener: false,
         }
@@ -999,7 +1000,7 @@ impl Worker {
             let mut opts = SessionOptions {
                 persistence: None, fastresume: false, disable_local_service_discovery: true,
                 peer_limit: Some(PEER_LIMIT), concurrent_init_limit: Some(2),
-                ratelimits: librqbit::limits::LimitsConfig { upload_bps: NonZeroU32::new(UPLOAD_BPS), download_bps: self.policy.download_bps },
+                ratelimits: librqbit::limits::LimitsConfig { upload_bps: self.policy.upload_bps, download_bps: self.policy.download_bps },
                 // Peers can reach this PC too (most of a swarm is behind a router and can't be
                 // reached otherwise); the router is asked to forward the port, except through a
                 // VPN, whose own address is the one peers see.
@@ -1817,7 +1818,7 @@ mod tests {
     }
 
     fn local_policy(seeder: &Session) -> Policy {
-        Policy { local_only: true, initial_peers: vec![seeder.listen_addr().unwrap()], download_bps: NonZeroU32::new(32 * 1024), seed_after_download: false, ..Default::default() }
+        Policy { local_only: true, initial_peers: vec![seeder.listen_addr().unwrap()], download_bps: NonZeroU32::new(32 * 1024), upload_bps: NonZeroU32::new(128 * 1024), seed_after_download: false, ..Default::default() }
     }
 
     fn ready_fixture(worker: &mut Worker, base: &Path, torrent: &librqbit::CreateTorrentResult) -> String {
@@ -1846,6 +1847,8 @@ mod tests {
         let (source, torrent, source_handle, expected) = seeder(root).await;
         let policy = Policy {
             local_only: true, initial_peers: vec![source.listen_addr().unwrap()], download_bps: None,
+            // Slow enough for the upload speed to be seen before the second leecher finishes.
+            upload_bps: NonZeroU32::new(128 * 1024),
             seed_after_download: enabled, loopback_listener: true, ..Default::default()
         };
         let mut worker = Worker::new(root.join("state"), Arc::new(Mutex::new(vec![])), policy);
