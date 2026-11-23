@@ -1418,13 +1418,13 @@ impl App {
         let pc_runs: Option<(String, String, i32)> = pc_game.then(|| self.plays_for(t).hub_fact()).flatten();
         // Three overview boxes: how it runs (PC games), how easy it is to get, which version.
         // The size is in the line under Download.
-        let availability = g.filter(|_| t.local.is_none()).map(|g| crate::words::Availability::of(g.seeders));
+        let availability = g.filter(|_| t.local.is_none()).map(|g| (crate::words::Availability::of(g.seeders), crate::words::Availability::with_count(g.seeders)));
         let mode = g.map(|g| mode_label(&g.mode)).filter(|s| !s.is_empty())
             .or_else(|| info.as_ref().and_then(|i| i.players.as_ref()).and_then(|p| p.as_i64()).map(players))
             .unwrap_or_default();
         let summary: Vec<Fact> = [
             pc_runs,
-            availability.map(|a| (fact_label("AVAILABILITY"), a.label().to_string(), a.kind())),
+            availability.map(|(a, text)| (fact_label("AVAILABILITY"), text, a.kind())),
             Some(if let Some(local) = t.local { (fact_label("INSTALLED VERSION"), self.locals[local].l.version.clone(), 0) }
                 else { (fact_label("VERSION"), g.map(|g| g.version.clone()).unwrap_or_default(), 0) }),
             Some((fact_label("PLAYERS"), mode, 0)),

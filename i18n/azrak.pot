@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-23 20:45+0000\n"
+"POT-Creation-Date: 2026-11-23 21:39+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -704,6 +704,10 @@ msgid "Downloading"
 msgstr ""
 
 #: src/download_ui.rs
+msgid "Few people share this version · another one for {} has {} sharing · {}"
+msgstr ""
+
+#: src/download_ui.rs
 msgid "Files moved"
 msgstr ""
 
@@ -768,6 +772,10 @@ msgstr ""
 
 #: src/download_ui.rs
 msgid "Installs next"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "It isn't slow any more"
 msgstr ""
 
 #: src/download_ui.rs
@@ -888,6 +896,10 @@ msgstr ""
 
 #: src/download_ui.rs
 msgid "Retry install"
+msgstr ""
+
+#: src/download_ui.rs
+msgid "See that version"
 msgstr ""
 
 #. Sharing goes on and off; Delete (which asks what to delete) sits beside it.
@@ -4985,6 +4997,12 @@ msgstr ""
 #: src/words.rs
 msgid "Updating the {console} game list…"
 msgstr ""
+
+#: src/words.rs
+msgid "{n} sharing"
+msgid_plural "{n} sharing"
+msgstr[0] ""
+msgstr[1] ""
 
 #: ui/app.slint:328
 msgid "Starting with KytyPS5…"

@@ -8,9 +8,10 @@ use tr::tr;
 /// catalog counted them. The counts aren't live, so this is a hint, not a promise.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Availability {
-    /// Several people share it: it should download steadily.
+    /// Many people share it (`GOOD_SEEDERS` or more): it should download steadily.
     Good,
-    /// One or two: it may download slowly, or stall when they're away.
+    /// A few: it may download slowly (most of them can't be reached from behind a router), or
+    /// stall when they're away.
     Low,
     /// Nobody was sharing it.
     None,
@@ -18,13 +19,25 @@ pub enum Availability {
     Unknown,
 }
 
+/// From how many seeders a release counts as easy to download.
+pub const GOOD_SEEDERS: u64 = 10;
+
 impl Availability {
     pub fn of(seeders: Option<u64>) -> Availability {
         match seeders {
             None => Availability::Unknown,
             Some(0) => Availability::None,
-            Some(1..=2) => Availability::Low,
+            Some(n) if n < GOOD_SEEDERS => Availability::Low,
             Some(_) => Availability::Good,
+        }
+    }
+
+    /// The label with how many were sharing it ("Good · 69 sharing"), where there's room for it.
+    pub fn with_count(seeders: Option<u64>) -> String {
+        let a = Availability::of(seeders);
+        match seeders {
+            Some(n) if n > 0 => format!("{} · {}", a.label(), tr!("{n} sharing" | "{n} sharing" % n)),
+            _ => a.label(),
         }
     }
 
@@ -101,12 +114,16 @@ mod tests {
     #[test]
     fn availability_from_seeders() {
         assert_eq!(Availability::of(Some(46)), Availability::Good);
-        assert_eq!(Availability::of(Some(3)), Availability::Good);
+        assert_eq!(Availability::of(Some(10)), Availability::Good);
+        assert_eq!(Availability::of(Some(9)), Availability::Low, "a few seeders download slowly");
         assert_eq!(Availability::of(Some(2)), Availability::Low);
         assert_eq!(Availability::of(Some(1)), Availability::Low);
         assert_eq!(Availability::of(Some(0)), Availability::None);
         assert_eq!(Availability::of(None), Availability::Unknown, "a missing count is unknown, not zero");
         assert_eq!((Availability::Good.kind(), Availability::Low.kind(), Availability::None.kind()), (1, 2, 4));
+        assert_eq!(Availability::with_count(Some(69)), "Good · 69 sharing");
+        assert_eq!(Availability::with_count(Some(0)), "None");
+        assert_eq!(Availability::with_count(None), "Unknown");
     }
 
     #[test]
