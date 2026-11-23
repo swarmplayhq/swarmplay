@@ -11,6 +11,10 @@ use crate::{ActionData, DlStat, DlTab};
 use slint::{Model, ModelRc, VecModel};
 use tr::tr;
 
+/// The list (right): a row's height, and a group heading's above its first row (design px).
+const LIST_ROW: f32 = 104.0;
+const LIST_HEADING: f32 = 44.0;
+
 /// Tile width and gap on the shelf, and the extra gap before each group (design units).
 const TILE: f32 = 288.0;
 const GAP: f32 = 20.0;
@@ -46,6 +50,15 @@ struct Desc {
     tile: f32,
     /// Downloading or verifying right now.
     working: bool,
+}
+
+/// A menu item's icon for a download action (the page's own buttons carry theirs).
+fn icon_of(id: &str) -> &'static str {
+    match id {
+        "pause" => "pause", "resume" | "play_install" | "play" => "play", "cancel" | "discard" | "cancel_install" => "close",
+        "remove" | "delete" => "trash", "retry" => "retry", "share" => "share", "stop_seed" => "unshare",
+        "install" => "disk", "locate" => "folder", "info" => "info", "vpn" => "gear", _ => "check",
+    }
 }
 
 fn mbps(v: f64) -> String { format!("{} MB/s", crate::i18n::num(v, 1)) }
@@ -333,6 +346,26 @@ impl App {
         ui.invoke_focus_root();
     }
 
+    /// The Options button on a download: every action it has, in the Options menu over the page.
+    fn download_more(&mut self, key: &str, sel: usize) {
+        let Some(row) = self.download_model.row_data(sel) else { return };
+        // Menu items keep a static id: the actions a download can have.
+        const IDS: [&str; 17] = ["pause", "resume", "cancel", "discard", "remove", "delete", "retry", "choose", "share", "stop_seed",
+            "play_install", "install", "cancel_install", "locate", "info", "vpn", "play"];
+        let items: Vec<ActionDef> = row.actions.iter().filter_map(|a| {
+            let id = IDS.iter().copied().find(|i| *i == a.id.as_str())?;
+            Some(ActionDef { id, label: a.label.to_string(), icon: icon_of(id), primary: false, danger: a.danger, round: false })
+        }).collect();
+        if items.is_empty() { return; }
+        audio::play(Sound::Select);
+        self.menu_target = None;
+        self.menu_actions = items;
+        self.ui().set_menu_anchor(0);
+        self.push_overlay(Overlay::Menu, Z_MENU, 0);
+        self.menu_download = Some(key.to_string());
+        self.push_menu(&row.title);
+    }
+
     /// Only installing by hand asks for confirmation now (downloads start from the panel).
     pub fn confirm_download(&mut self) {
         if self.overlay != Overlay::Downloads || !self.ui().get_download_consent() { return; }
@@ -474,6 +507,8 @@ impl App {
         let mut glass_key = None;
         let scale = self.scale;
         let mut data = Vec::with_capacity(rows.len());
+        // The list's rows, under their group headings (design px).
+        let mut list_y = 0.0f32;
         for (n, (i, d)) in rows.iter().enumerate() {
             let job = &jobs[*i];
             let game = self.games.iter().position(|game| game.g.id == job.topic);
@@ -531,6 +566,7 @@ impl App {
                 actions: ModelRc::new(VecModel::from(actions)),
                 line: d.line.clone().into(), tile_frac: d.tile, working: d.working,
                 group: d.group, group_first: first, group_label: group_label(d.group as usize).into(),
+                row_y: { if first { list_y += LIST_HEADING; } let y = list_y; list_y += LIST_ROW; y },
             });
         }
         let glass = glass_key.and_then(|key| self.frost_of(&key));
@@ -762,12 +798,44 @@ impl App {
         }).map(|job| job.key.clone()).collect()
     }
 
+    /// The Control Center's Downloads card, saying what's true: the download under way and how
+    /// far, else how many need you (stopped, ready to install, couldn't install), else how many
+    /// are paused; only then nothing.
+    fn push_cc_downloads(&self, jobs: &[Job], installs: &[Record]) {
+        let installed = |j: &Job| installs.iter().any(|r| r.key == j.key && r.state == Install::Installed);
+        let active: Vec<&Job> = jobs.iter().filter(|j| j.state.active()).collect();
+        let needs = jobs.iter().filter(|j| match j.state {
+            State::Failed => j.total > 0,
+            State::Complete => !installed(j) && !installs.iter().any(|r| r.key == j.key && r.state.active()),
+            State::Ready => !j.starting,
+            _ => false,
+        }).count();
+        let paused = jobs.iter().filter(|j| j.state == State::Paused).count();
+        let (title, sub, frac, kind) = match active.first() {
+            Some(j) => {
+                let more = if active.len() > 1 { tr!(" · {} more", active.len() - 1) } else { String::new() };
+                let left = if j.eta.is_empty() { String::new() } else { tr!("{} left", j.eta) };
+                let extra = if needs > 0 { tr!("{n} needs you" | "{n} need you" % needs) } else { String::new() };
+                (format!("{} · {}%{more}", j.name, pct(j.progress())), [left, extra].into_iter().filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" · "), j.progress(), 0)
+            }
+            None if needs > 0 => (tr!("{n} needs you" | "{n} need you" % needs), tr!("Open Downloads"), -1.0, 3),
+            None if paused > 0 => (tr!("{n} paused" | "{n} paused" % paused), tr!("Open Downloads"), -1.0, 0),
+            None => (tr!("Nothing downloading"), tr!("Open Downloads"), -1.0, 0),
+        };
+        let ui = self.ui();
+        ui.set_cc_dl_title(title.into());
+        ui.set_cc_dl_sub(if sub.is_empty() { tr!("Open Downloads") } else { sub }.into());
+        ui.set_cc_dl_frac(frac);
+        ui.set_cc_dl_kind(kind);
+    }
+
     /// The top bar's ring: what needs you (until you've looked), else what's downloading, else
     /// what's installing, else what waits for the VPN. Gone when nothing is happening (the
     /// Downloads icon is there then).
     pub fn push_ring(&mut self) {
         let jobs = self.downloads.snapshot();
         let installs = self.installer.snapshot();
+        self.push_cc_downloads(&jobs, &installs);
         let needs = self.ring_needs(&jobs, &installs);
         self.ring_seen.retain(|key| needs.contains(key));
         // Seen as it happens on the Downloads page: nothing to ask about after.
@@ -882,15 +950,24 @@ impl App {
             Act::TabPrev => return self.filter_downloads((self.dl_filter + 3) % 4),
             Act::TabNext => return self.filter_downloads((self.dl_filter + 1) % 4),
             _ if keys.is_empty() => return,
+            // The chosen one's buttons (left): ◂ ▸ between them; past the last, back to the list.
             Act::Left if self.dl_btn > 0 => { self.dl_btn -= 1; audio::play(Sound::Move); }
             Act::Right if self.dl_btn >= 0 && self.dl_btn + 1 < buttons => { self.dl_btn += 1; audio::play(Sound::Move); }
-            Act::Left | Act::Right if self.dl_btn >= 0 => {}
-            Act::Left => return self.select_download(sel.saturating_sub(1), false),
-            Act::Right => return self.select_download((sel + 1).min(keys.len() - 1), false),
+            Act::Right if self.dl_btn >= 0 => { self.dl_btn = -1; audio::play(Sound::Move); }
+            Act::Left | Act::Up | Act::Down if self.dl_btn >= 0 => {}
+            // The list (right), as a console's: ▴ ▾ go through it, ✕ does what matters now, the
+            // Options button has the rest, ◂ goes to the buttons.
+            Act::Up => return self.select_download(sel.saturating_sub(1), false),
+            Act::Down => return self.select_download((sel + 1).min(keys.len() - 1), false),
             Act::First => return self.select_download(0, false),
             Act::Last => return self.select_download(keys.len() - 1, false),
-            Act::Up | Act::Confirm if self.dl_btn < 0 && buttons > 0 => { self.dl_btn = 0; audio::play(Sound::Move); }
-            Act::Down if self.dl_btn >= 0 => { self.dl_btn = -1; audio::play(Sound::Move); }
+            Act::Left if buttons > 0 => { self.dl_btn = 0; audio::play(Sound::Move); }
+            Act::Confirm if self.dl_btn < 0 => {
+                if let Some(id) = self.download_model.row_data(sel).and_then(|row| row.actions.row_data(0)).map(|a| a.id.to_string()) {
+                    return self.download_action(&keys[sel], &id);
+                }
+            }
+            Act::Options if self.dl_btn < 0 => return self.download_more(&keys[sel].clone(), sel),
             Act::Confirm if self.dl_btn >= 0 => {
                 if let Some(id) = self.download_model.row_data(sel).and_then(|row| row.actions.row_data(self.dl_btn as usize)).map(|a| a.id.to_string()) {
                     return self.download_action(&keys[sel], &id);

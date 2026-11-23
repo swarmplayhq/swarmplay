@@ -419,16 +419,31 @@ impl App {
         self.push_setup();
     }
 
-    /// Change: type the download (1) or install (2) folder.
+    /// Other drive: the next of Settings → Storage's drives, for the download and the install
+    /// together (a console's single choice; nothing to type). Downloads go in its SwarmPlay/Downloads
+    /// and the game in its SwarmPlay/Games, as Storage set them up.
     pub fn setup_change(&mut self, which: i32) {
+        let places: Vec<crate::storage::Place> = self.storage_places().into_iter().filter(|p| p.total > 0).collect();
+        let ui = self.ui();
+        let current = util::expand_home(ui.get_setup_inst_path().trim());
+        let here = places.iter().position(|p| util::expand_home(&p.install) == current).unwrap_or(0);
         if let Some(setup) = self.setup.as_mut() {
-            setup.edit = which;
+            setup.edit = 0;
             setup.focus = if which == 1 { Focus::ChangeDownload } else { Focus::ChangeInstall };
             setup.moved = true;
-            // Another folder: why the last one couldn't be used no longer applies.
+            // Another drive: why the last one couldn't be used no longer applies.
             setup.begin_error.clear();
+            if places.len() < 2 {
+                setup.begin_error = tr!("It's the only drive · add another in Settings → Storage");
+            }
         }
-        audio::play(Sound::Select);
+        if let Some(next) = places.get((here + 1) % places.len().max(1)).filter(|_| places.len() > 1) {
+            ui.set_setup_dl_path(next.download.clone().into());
+            ui.set_setup_inst_path(next.install.clone().into());
+            audio::play(Sound::Move);
+        } else {
+            audio::play(Sound::Error);
+        }
         self.push_setup();
     }
 

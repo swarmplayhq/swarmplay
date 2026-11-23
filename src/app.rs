@@ -505,6 +505,8 @@ pub struct App {
     pub pick: Option<crate::folder_pick::Pick>,
     /// Installed games (src/games.rs): the list, what's picked, a move under way.
     pub games_view: crate::games::GamesView,
+    /// Downloads' More menu is open for this download (its actions run on it, src/download_ui.rs).
+    pub menu_download: Option<String>,
     /// The Game Library (src/game_library.rs): its tab and covers.
     pub lib_view: crate::game_library::LibView,
     /// The Store (src/store.rs): 0 Discover, 1 Browse; Discover's rows, art keys, featured game.
@@ -872,6 +874,7 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         notes: crate::toast::Store::load(),
         pick: None,
         games_view: Default::default(),
+        menu_download: None,
         lib_view: Default::default(),
         store_tab: 0,
         discover: Vec::new(),
@@ -3062,11 +3065,16 @@ impl App {
         match a {
             Act::Up if self.idx > 0 => self.move_focus(Z_MENU, self.idx - 1),
             Act::Down if self.idx + 1 < n => self.move_focus(Z_MENU, self.idx + 1),
-            Act::Back | Act::Options => self.back_soft(),
+            Act::Back | Act::Options => { self.menu_download = None; self.back_soft() }
             Act::Confirm => {
                 let act = self.menu_actions.get(self.idx as usize).map(|a| a.id);
                 let t = self.menu_target;
                 self.back();
+                // Downloads' More menu: on the download it was opened for (src/download_ui.rs).
+                if let Some(key) = self.menu_download.take() {
+                    if let Some(act) = act { self.download_action(&key, act); }
+                    return;
+                }
                 // The Power card's (it's about no game).
                 if let (Some(act), None) = (act, t) { return self.power_choice(act); }
                 if let (Some(act), Some(t)) = (act, t) {
@@ -3144,6 +3152,7 @@ impl App {
             self.ui().set_overlay(ov as i32);
             self.ui().set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
             self.ui().set_lib_open(ov == Overlay::GameLibrary || self.stack.iter().any(|s| s.0 == Overlay::GameLibrary));
+            self.ui().set_dl_open(ov == Overlay::Menu && self.stack.last().is_some_and(|s| s.0 == Overlay::Downloads));
             self.set_focus(zone, idx);
             if ov == Overlay::None {
                 self.ui().set_hub_open(false);
@@ -3188,6 +3197,7 @@ impl App {
         ui.set_hub_open(self.hub.is_some() && (ov == Overlay::Hub || self.stack.iter().any(|s| s.0 == Overlay::Hub)));
         ui.set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
         ui.set_lib_open(ov == Overlay::GameLibrary || self.stack.iter().any(|s| s.0 == Overlay::GameLibrary));
+        ui.set_dl_open(ov == Overlay::Menu && self.stack.last().is_some_and(|s| s.0 == Overlay::Downloads));
         self.set_focus(zone, idx);
     }
 
@@ -3758,6 +3768,7 @@ impl App {
     }
 
     pub fn open_menu(&mut self, t: Target) {
+        self.menu_download = None;
         let mut items: Vec<ActionDef> = Vec::new();
         let mk = |id: &'static str, label: &str, icon: &'static str| ActionDef { id, label: label.into(), icon, primary: false, danger: false, round: false };
         for a in self.actions_for(t, true) {
@@ -3865,6 +3876,7 @@ impl App {
             self.ui().set_overlay(ov as i32);
             self.ui().set_games_open(ov == Overlay::Games || self.stack.iter().any(|s| s.0 == Overlay::Games));
             self.ui().set_lib_open(ov == Overlay::GameLibrary || self.stack.iter().any(|s| s.0 == Overlay::GameLibrary));
+            self.ui().set_dl_open(ov == Overlay::Menu && self.stack.last().is_some_and(|s| s.0 == Overlay::Downloads));
             self.set_focus(z, i);
         }
     }

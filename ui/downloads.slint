@@ -269,73 +269,92 @@ export component DownloadsPage inherits Rectangle {
         }
     }
 
-    // Filters.
-    if root.has-any: HorizontalLayout {
-        x: (120px * S.k); y: (668px * S.k); height: (40px * S.k);
-        spacing: (36px * S.k); alignment: start;
-        Rectangle {
-            width: (34px * S.k); height: (24px * S.k); y: (8px * S.k); border-radius: (6px * S.k);
-            border-width: 1.5px; border-color: #ffffff40;
-            Text { text: root.pad ? "L1" : "Q"; font-size: (13px * S.k); font-weight: 700; color: Theme.hint; }
-        }
-        for t[i] in root.tabs: Rectangle {
-            width: row.preferred-width;
-            row := HorizontalLayout {
-                spacing: (8px * S.k);
-                Text { text: t.label; font-size: (21px * S.k); font-weight: root.filter == i ? 600 : 500; color: root.filter == i ? Theme.text : Theme.hint; vertical-alignment: center; }
-                Text { text: t.count; font-size: (21px * S.k); font-weight: 500; color: t.warn ? Theme.warn : root.filter == i ? Theme.text2 : Theme.text3; vertical-alignment: center; }
-            }
-            Rectangle { x: 0; y: parent.height + (2px * S.k); width: (28px * S.k); height: (3px * S.k); border-radius: (2px * S.k); background: root.filter == i ? Theme.text : transparent; }
-            TouchArea { mouse-cursor: pointer; clicked => { root.filter-clicked(i); } }
-        }
-        Rectangle {
-            width: (34px * S.k); height: (24px * S.k); y: (8px * S.k); border-radius: (6px * S.k);
-            border-width: 1.5px; border-color: #ffffff40;
-            Text { text: root.pad ? "R1" : "E"; font-size: (13px * S.k); font-weight: 700; color: Theme.hint; }
-        }
-    }
-
-    // The shelf: every download as key art, newest first.
-    if root.any: Rectangle {
-        x: 0; y: (730px * S.k); width: root.width; height: (270px * S.k);
+    // The list, as a console's Downloads: every download in a row under its group, on glass at the
+    // right, its filters (L1/R1) on top. The chosen one's detail stays on the left.
+    if root.has-any: Rectangle {
+        x: root.width - self.width - (96px * S.k); y: (112px * S.k);
+        width: min((740px * S.k), root.width * 0.42);
+        height: root.height - self.y - (92px * S.k);
+        border-radius: (24px * S.k);
+        background: #070a14e0;
+        border-width: 1px; border-color: #ffffff1f;
         clip: true;
         HorizontalLayout {
-            x: (120px * S.k) - root.shelf-x; y: (8px * S.k);
-            spacing: (20px * S.k); alignment: start;
-            animate x { duration: 260ms; easing: ease-out-quad; }
-            for t[i] in root.data: VerticalLayout {
-                width: (288px * S.k) + (t.group-first && i > 0 ? (40px * S.k) : 0);
-                padding-left: t.group-first && i > 0 ? (40px * S.k) : 0;
-                spacing: (12px * S.k);
-                Text { text: t.group-first ? t.group-label : ""; height: (20px * S.k); font-size: (16px * S.k); font-weight: 600; color: Theme.hint; }
+            x: (22px * S.k); y: (18px * S.k); height: (40px * S.k);
+            spacing: (18px * S.k); alignment: start;
+            Rectangle {
+                width: (34px * S.k); height: (24px * S.k); y: (8px * S.k); border-radius: (6px * S.k);
+                border-width: 1.5px; border-color: #ffffff40;
+                Text { text: root.pad ? "L1" : "Q"; font-size: (13px * S.k); font-weight: 700; color: Theme.hint; }
+            }
+            for t[i] in root.tabs: Rectangle {
+                width: trow.preferred-width;
+                trow := HorizontalLayout {
+                    spacing: (6px * S.k);
+                    Text { text: t.label; font-size: (18px * S.k); font-weight: root.filter == i ? 600 : 500; color: root.filter == i ? Theme.text : Theme.hint; vertical-alignment: center; }
+                    Text { text: t.count; font-size: (18px * S.k); font-weight: 500; color: t.warn ? Theme.warn : root.filter == i ? Theme.text2 : Theme.text3; vertical-alignment: center; }
+                }
+                Rectangle { x: 0; y: parent.height + (2px * S.k); width: (24px * S.k); height: (3px * S.k); border-radius: (2px * S.k); background: root.filter == i ? Theme.text : transparent; }
+                TouchArea { mouse-cursor: pointer; clicked => { root.filter-clicked(i); } }
+            }
+            Rectangle {
+                width: (34px * S.k); height: (24px * S.k); y: (8px * S.k); border-radius: (6px * S.k);
+                border-width: 1.5px; border-color: #ffffff40;
+                Text { text: root.pad ? "R1" : "E"; font-size: (13px * S.k); font-weight: 700; color: Theme.hint; }
+            }
+        }
+        if root.any: Flickable {
+            x: 0; y: (72px * S.k);
+            width: parent.width; height: parent.height - self.y;
+            interactive: false;
+            property <float> last: root.data[root.data.length - 1].row-y;
+            content-height: (root.data[root.data.length - 1].row-y + 140) * 1px * S.k;
+            // The chosen row in view, a third of the way down when there's more to see.
+            content-y: -max(0px, min((root.s.row-y * 1px * S.k) - self.height / 3, self.content-height - self.height));
+            animate content-y { duration: 260ms; easing: ease-out-quart; }
+            for t[i] in root.data: Rectangle {
+                property <bool> chosen: root.sel == i;
+                property <bool> f: chosen && root.focus-btn < 0;
+                x: (14px * S.k); y: (t.row-y * 1px * S.k);
+                width: parent.width - (28px * S.k); height: (96px * S.k);
+                if t.group-first: Text {
+                    x: (10px * S.k); y: -(36px * S.k); height: (28px * S.k);
+                    text: t.group-label; font-size: (14px * S.k); font-weight: 600; letter-spacing: (1px * S.k); color: Theme.hint; vertical-alignment: center;
+                }
                 Rectangle {
-                    height: (162px * S.k);
-                    FocusRing { w: parent.width; h: parent.height; on: root.sel == i && root.focus-btn < 0; radius: (14px * S.k); }
-                    Rectangle {
-                        border-radius: (14px * S.k); clip: true; background: #101c32;
-                        border-width: root.sel == i && root.focus-btn >= 0 ? (2px * S.k) : 0; border-color: #ffffff99;
-                        if !t.has-tile-art: Text { x: (16px * S.k); width: parent.width - (32px * S.k); text: t.title; font-size: (20px * S.k); font-weight: 600; color: Theme.text2; wrap: word-wrap; }
-                        if t.has-tile-art: Image { width: parent.width; height: parent.height; source: t.tile-art; image-fit: cover; opacity: t.group == 2 && root.sel != i ? 0.75 : 1; }
-                        Rectangle {
-                            y: parent.height - self.height; height: (4px * S.k); background: #00000080;
-                            tfill := Rectangle {
-                                x: 0; width: parent.width * t.tile-frac; clip: true;
-                                background: t.kind == 2 ? Theme.danger : t.kind == 3 ? #3ddc9799 : t.kind == 1 ? Theme.hint : t.kind == 4 ? #2dd4bf : #4d94ff;
-                                if t.working: Rectangle {
-                                    width: (90px * S.k);
-                                    x: mod(animation-tick() / 1ms * 0.2px * S.k, tfill.width + self.width) - self.width;
-                                    background: @linear-gradient(90deg, #ffffff00 0%, #ffffff99 50%, #ffffff00 100%);
-                                }
-                            }
+                    border-radius: (16px * S.k);
+                    background: f ? #ffffff1f : chosen ? #ffffff10 : ta-row.has-hover ? #ffffff0a : transparent;
+                    border-width: f ? (3px * S.k) : 0; border-color: #f5f7fb;
+                    animate background { duration: 160ms; }
+                }
+                Rectangle {
+                    x: (12px * S.k); y: (12px * S.k); width: (72px * S.k); height: self.width;
+                    border-radius: (12px * S.k); clip: true; background: #101c32;
+                    if t.has-tile-art: Image { width: parent.width; height: parent.height; source: t.tile-art; image-fit: cover; }
+                }
+                Text { x: (100px * S.k); y: (16px * S.k); width: parent.width - (230px * S.k); height: (26px * S.k); text: t.title; font-size: (19px * S.k); font-weight: 600; color: Theme.text; overflow: elide; vertical-alignment: top; }
+                Text { x: (100px * S.k); y: (44px * S.k); width: parent.width - (230px * S.k); height: (22px * S.k); text: t.line; font-size: (15px * S.k); color: t.kind == 0 ? Theme.hint : root.kind-color(t.kind); overflow: elide; vertical-alignment: top; }
+                // Its progress, under the words (none once it's ready).
+                if t.tile-frac > 0 && t.tile-frac < 1: Rectangle {
+                    x: (100px * S.k); y: (74px * S.k); width: parent.width - (230px * S.k); height: (4px * S.k);
+                    border-radius: (2px * S.k); background: #ffffff22; clip: true;
+                    lfill := Rectangle {
+                        x: 0; width: parent.width * t.tile-frac; height: parent.height; border-radius: (2px * S.k);
+                        background: t.kind == 2 ? Theme.danger : t.kind == 1 ? Theme.hint : t.kind == 4 ? #2dd4bf : #4d94ff;
+                        if t.working: Rectangle {
+                            width: (60px * S.k);
+                            x: mod(animation-tick() / 1ms * 0.2px * S.k, lfill.width + self.width) - self.width;
+                            background: @linear-gradient(90deg, #ffffff00 0%, #ffffffaa 50%, #ffffff00 100%);
                         }
                     }
-                    TouchArea { mouse-cursor: pointer; clicked => { root.select(i); } }
                 }
-                VerticalLayout {
-                    spacing: (4px * S.k); padding-left: (2px * S.k);
-                    Text { text: t.title; font-size: (18px * S.k); font-weight: 600; color: Theme.text; overflow: elide; }
-                    Text { text: t.line; font-size: (15px * S.k); color: t.kind == 0 ? Theme.hint : root.kind-color(t.kind); overflow: elide; }
+                // The big number of the chosen one's detail, small, at the row's end.
+                Text {
+                    x: parent.width - self.width - (18px * S.k); y: 0; width: (110px * S.k); height: parent.height;
+                    text: t.big != "" ? t.big + t.big-unit : "";
+                    font-size: (20px * S.k); font-weight: 700; color: Theme.text2; horizontal-alignment: right; vertical-alignment: center;
                 }
+                ta-row := TouchArea { mouse-cursor: pointer; clicked => { root.select(i); } }
             }
         }
     }
@@ -381,9 +400,10 @@ export component DownloadsPage inherits Rectangle {
             vertical-alignment: center; overflow: elide; horizontal-stretch: 1;
         }
         Rectangle { horizontal-stretch: 1; }
-        if root.pad: HorizontalLayout { spacing: (10px * S.k); PadGlyph { glyph: "✕"; } Text { text: @tr("Select"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; } }
+        if root.pad: HorizontalLayout { spacing: (10px * S.k); PadGlyph { glyph: "✕"; } Text { text: root.focus-btn < 0 ? root.s.actions[0].label : @tr("Select"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; } }
+        if root.pad && root.focus-btn < 0: HorizontalLayout { spacing: (10px * S.k); PadGlyph { glyph: "☰"; } Text { text: @tr("More"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; } }
         if root.pad: HorizontalLayout { spacing: (10px * S.k); PadGlyph { glyph: "○"; } Text { text: @tr("Back"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; } }
-        if !root.pad: Text { text: @tr("Enter Select · Esc Back"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
+        if !root.pad: Text { text: root.focus-btn < 0 ? @tr("Enter {} · O More · Esc Back", root.s.actions[0].label) : @tr("Enter Select · Esc Back"); font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
     }
 }
 
@@ -497,7 +517,8 @@ component Destination inherits VerticalLayout {
             width: label.preferred-width + (36px * S.k); border-radius: self.height / 2;
             background: root.focused ? #ffffff : ta.has-hover ? #ffffff24 : #ffffff0d;
             border-width: 1px; border-color: #ffffff24;
-            label := Text { text: root.editing ? @tr("Done") : @tr("Change"); font-size: (16px * S.t); font-weight: 500; color: root.focused ? #0a0d18 : Theme.text; }
+            // A drive at a time (Settings → Storage's); no folder to type.
+            label := Text { text: root.editing ? @tr("Done") : @tr("Other drive"); font-size: (16px * S.t); font-weight: 500; color: root.focused ? #0a0d18 : Theme.text; }
             ta := TouchArea { mouse-cursor: pointer; clicked => { if root.editing { root.done(); } else { root.change(); } } }
         }
     }
