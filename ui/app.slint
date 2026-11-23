@@ -474,6 +474,8 @@ export component AppWindow inherits Window {
     callback download-delete-choose(int);
     callback download-filter-clicked(int);
     callback setup-toggle(int);
+    // The Download panel's file list is open (folded into "Choose files" by default).
+    in property <bool> setup-files-open;
     callback setup-go();
     callback setup-cancel();
     callback setup-change(int);
@@ -2537,6 +2539,7 @@ export component AppWindow inherits Window {
             inst-line: root.setup-inst-line; inst-frac: root.setup-inst-frac; inst-bad: root.setup-inst-bad;
             go-label: root.setup-go-label; go-enabled: root.setup-go-enabled;
             focus-row: root.setup-focus-row; focus-item: root.setup-focus-item; edit: root.setup-edit;
+            files-open: root.setup-files-open;
             toggle(i) => { root.setup-toggle(i); }
             go => { root.setup-go(); }
             cancel => { root.setup-cancel(); }
