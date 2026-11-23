@@ -742,7 +742,7 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         library,
         art,
         sessions,
-        downloads: { let c = cfg.lock().unwrap(); crate::downloads::Manager::load(c.seed_after_download, c.download_vpn(), &crate::storage::download_bases(&c)) },
+        downloads: { let c = cfg.lock().unwrap(); crate::downloads::Manager::load(c.seed_after_download, c.download_vpn(), c.upload_limit_mb, &crate::storage::download_bases(&c)) },
         installer: crate::installer::Manager::load(),
         install_pending: None,
         storage_watched: 0.0,

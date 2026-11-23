@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-23 12:43+0000\n"
+"POT-Creation-Date: 2026-11-23 20:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1159,6 +1159,10 @@ msgstr ""
 
 #: src/downloads.rs
 msgid "Transfer not found"
+msgstr ""
+
+#: src/downloads.rs
+msgid "Unlimited"
 msgstr ""
 
 #: src/downloads.rs
@@ -3705,7 +3709,7 @@ msgid "Go back to the previous shadPS4"
 msgstr ""
 
 #: src/settings.rs
-msgid "Helps other players download faster · uploads at most 128 KiB/s"
+msgid "Helps other players download faster"
 msgstr ""
 
 #: src/settings.rs
@@ -3869,6 +3873,12 @@ msgid "Same as accent"
 msgstr ""
 
 #: src/settings.rs
+msgid ""
+"Sending more makes downloads faster too · Unlimited uses all of your "
+"connection"
+msgstr ""
+
+#: src/settings.rs
 msgid "Set up again"
 msgstr ""
 
@@ -3968,6 +3978,10 @@ msgstr ""
 
 #: src/settings.rs src/toast.rs src/welcome.rs
 msgid "Updates"
+msgstr ""
+
+#: src/settings.rs
+msgid "Upload limit"
 msgstr ""
 
 #: src/settings.rs
@@ -5595,9 +5609,9 @@ msgstr ""
 #: ui/downloads.slint:443
 msgid ""
 "Only download content you are authorized to obtain and share. {} Transfers "
-"upload pieces, capped at 128 KiB/s. After completion, seeding continues by "
-"default while the launcher is open; switch it off in Settings or stop an "
-"individual seed in Downloads."
+"upload pieces, up to the limit in Settings. After completion, seeding "
+"continues by default while the launcher is open; switch it off in Settings "
+"or stop an individual seed in Downloads."
 msgstr ""
 
 #: ui/downloads.slint:449

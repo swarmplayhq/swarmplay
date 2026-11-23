@@ -13,6 +13,8 @@ pub struct Config {
     pub install_dir: String,
     /// Continue sharing completed downloads until stopped or the launcher exits.
     pub seed_after_download: bool,
+    /// Torrent upload limit in MB/s (src/downloads.rs `UPLOAD_LIMITS`); 0: unlimited.
+    pub upload_limit_mb: u32,
     pub library_compact: bool,
     pub fullscreen: bool,
     pub width: u32,
@@ -122,6 +124,7 @@ impl Default for Config {
             download_dir: "~/Downloads/Azrak".into(),
             install_dir: "~/Games/Azrak".into(),
             seed_after_download: true,
+            upload_limit_mb: crate::downloads::UPLOAD_DEFAULT_MB,
             library_compact: false,
             fullscreen: true,
             width: 1920,

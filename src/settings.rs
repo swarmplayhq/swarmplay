@@ -42,6 +42,7 @@ pub enum SId {
     Vpn,
     VpnAdd,
     SeedCompleted,
+    UploadLimit,
     Downloads,
     // Updates
     AppUpdate,
@@ -221,8 +222,12 @@ impl App {
         }
         let mut r = row(2, &tr!("Keep sharing finished downloads"));
         r.on = cfg.seed_after_download;
-        r.hint = tr!("Helps other players download faster · uploads at most 128 KiB/s").into();
+        r.hint = tr!("Helps other players download faster").into();
         rows.push((SId::SeedCompleted, r));
+        let mut r = row(3, &tr!("Upload limit"));
+        r.value = crate::downloads::upload_label(cfg.upload_limit_mb).into();
+        r.hint = tr!("Sending more makes downloads faster too · Unlimited uses all of your connection").into();
+        rows.push((SId::UploadLimit, r));
         // No controller button opens Downloads (the top bar's icon does), so a controller player
         // just presses this row; Ctrl+D is only worth showing to keyboard players.
         let mut r = row(4, &tr!("Open downloads"));
@@ -850,6 +855,17 @@ impl App {
                 self.save_cfg(|c| c.vpn_only = on);
                 self.push_downloads();
             }
+            SId::UploadLimit => {
+                let limits = crate::downloads::UPLOAD_LIMITS;
+                let cur = self.cfg.lock().unwrap().upload_limit_mb;
+                let p = limits.iter().position(|l| *l == cur).unwrap_or(3) as i32;
+                let next = limits[(p + dir).rem_euclid(limits.len() as i32) as usize];
+                if let Err(error) = self.downloads.set_upload_limit(next) {
+                    self.note_setting(SId::UploadLimit, &tr!("Couldn't change it: {error}", error), 2);
+                    return;
+                }
+                self.save_cfg(|c| c.upload_limit_mb = next);
+            }
             SId::SeedCompleted => {
                 let on = dir > 0;
                 if let Err(error) = self.downloads.set_seed_after_download(on) {
@@ -928,7 +944,7 @@ impl App {
                 let on = self.settings_rows[i].on;
                 self.settings_change(i, if on { -1 } else { 1 });
             }
-            SId::Resolution | SId::Present | SId::PcPad | SId::Display | SId::Language | SId::AvatarColor | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
+            SId::Resolution | SId::Present | SId::PcPad | SId::UploadLimit | SId::Display | SId::Language | SId::AvatarColor | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
             // A press turns it up a step (◂ ▸ go both ways).
             SId::SoundVolume => self.settings_change(i, 1),
             // A press goes round Off, Low, Medium, High.

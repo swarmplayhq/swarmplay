@@ -32,6 +32,48 @@ const LOOKUP_TRACKERS: [&str; 5] = [
     "udp://open.demonii.com:1337/announce",
 ];
 
+/// Peers per torrent at once.
+const PEER_LIMIT: usize = 500;
+/// The upload limits to choose from (Settings → Downloads), MB/s; 0: unlimited. Peers favour
+/// those that send back, so a high one also downloads faster.
+pub const UPLOAD_LIMITS: [u32; 6] = [5, 10, 25, 50, 100, 0];
+pub const UPLOAD_DEFAULT_MB: u32 = 50;
+
+/// An upload limit (MB/s, 0: unlimited) as the engine takes it.
+pub fn upload_bps(mb: u32) -> Option<NonZeroU32> { NonZeroU32::new(mb.saturating_mul(1024 * 1024)) }
+
+/// An upload limit, as shown.
+pub fn upload_label(mb: u32) -> String {
+    if mb == 0 { tr!("Unlimited") } else { format!("{mb} MB/s") }
+}
+
+/// The port peers reach this PC on: chosen once, then kept (in the transfers folder).
+fn listen_port(store: &Path) -> u16 {
+    let file = store.join("listen-port");
+    if let Some(port) = std::fs::read_to_string(&file).ok().and_then(|t| t.trim().parse::<u16>().ok()).filter(|p| *p >= 1025) {
+        return port;
+    }
+    use std::hash::{BuildHasher, Hasher};
+    let mut hasher = std::collections::hash_map::RandomState::new().build_hasher();
+    hasher.write_u128(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos());
+    let port = 20_000 + (hasher.finish() % 40_000) as u16;
+    let _ = secure_write(&file, port.to_string().as_bytes());
+    port
+}
+
+/// The trackers a torrent is downloaded and shared with: its magnet's, and for a public one the
+/// big public trackers too (more people to download from); a private torrent keeps to its own.
+fn trackers_for(bytes: &[u8], magnet: Vec<String>, local_only: bool) -> Vec<String> {
+    let private = librqbit::torrent_from_bytes(bytes).map_or(true, |meta| meta.info.data.private);
+    let mut trackers = magnet;
+    if !private && !local_only {
+        for tracker in LOOKUP_TRACKERS {
+            if !trackers.iter().any(|t| t == tracker) { trackers.push(tracker.to_string()); }
+        }
+    }
+    trackers
+}
+
 /// A public cache of torrent files by info hash, asked alongside the peers (a popular game's file
 /// list is usually there at once, while peers that send it can take minutes).
 const METADATA_CACHE: &str = "https://itorrents.org/torrent/{}.torrent";
@@ -177,6 +219,7 @@ struct Policy {
     local_only: bool,
     initial_peers: Vec<SocketAddr>,
     download_bps: Option<NonZeroU32>,
+    upload_bps: Option<NonZeroU32>,
     seed_after_download: bool,
     /// Download only through a VPN: `Some(preferred interface)` ("" = any connected VPN).
     vpn: Option<String>,
@@ -189,14 +232,14 @@ struct Policy {
 impl Default for Policy {
     fn default() -> Self {
         Self {
-            local_only: false, initial_peers: vec![], download_bps: None, seed_after_download: true,
+            local_only: false, initial_peers: vec![], download_bps: None, upload_bps: upload_bps(UPLOAD_DEFAULT_MB), seed_after_download: true,
             vpn: None, vpn_probe: crate::vpn::active,
             #[cfg(test)] loopback_listener: false,
         }
     }
 }
 
-enum Command { Prepare(Job), Begin { key: String, base: PathBuf, selected: Vec<usize>, install_to: Option<PathBuf> }, Discard(Job), Start(String), Pause(String), Cancel(String), Remove(String), Delete(String), Save, Reseed, StopSeed(String), Seed(String), SetSeedAfterDownload(bool), SetVpn(Option<String>), Shutdown }
+enum Command { Prepare(Job), Begin { key: String, base: PathBuf, selected: Vec<usize>, install_to: Option<PathBuf> }, Discard(Job), Start(String), Pause(String), Cancel(String), Remove(String), Delete(String), Save, Reseed, StopSeed(String), Seed(String), SetSeedAfterDownload(bool), SetVpn(Option<String>), SetUpload(Option<NonZeroU32>), Shutdown }
 
 const VPN_WAIT: &str = "Waiting for your VPN: downloads only run through it (Settings → Downloads)";
 const FILES_CHANGED: &str = "The downloaded files were moved, changed or deleted, so this download can't seed. Remove it, or download it again.";
@@ -213,8 +256,10 @@ pub struct Manager {
 impl Manager {
     /// `vpn`: download only through a VPN (`Some(preferred interface)`, "" for any). `bases`:
     /// where downloads can be (see `relocate`), so ones moved since are found before sharing.
-    pub fn load(seed_after_download: bool, vpn: Option<String>, bases: &[PathBuf]) -> Self {
-        Self::open(crate::util::config_dir().join("transfers"), Policy { seed_after_download, vpn, ..Default::default() }, bases)
+    /// `upload_mb`: the upload limit (0: unlimited).
+    pub fn load(seed_after_download: bool, vpn: Option<String>, upload_mb: u32, bases: &[PathBuf]) -> Self {
+        let policy = Policy { seed_after_download, vpn, upload_bps: upload_bps(upload_mb), ..Default::default() };
+        Self::open(crate::util::config_dir().join("transfers"), policy, bases)
     }
 
     #[cfg(test)]
@@ -406,6 +451,11 @@ impl Manager {
     /// Download only through a VPN (`Some(preferred interface)`), or through any connection.
     pub fn set_vpn(&self, vpn: Option<String>) -> Result<()> {
         self.tx.try_send(Command::SetVpn(vpn)).with_context(|| tr!("Download worker is busy or unavailable"))
+    }
+
+    /// The upload limit in MB/s (0: unlimited), at once for what's running too.
+    pub fn set_upload_limit(&self, mb: u32) -> Result<()> {
+        self.tx.try_send(Command::SetUpload(upload_bps(mb))).with_context(|| tr!("Download worker is busy or unavailable"))
     }
 
     pub fn shutdown(&mut self) {
@@ -957,28 +1007,49 @@ impl Worker {
     }
     async fn session(&mut self) -> Result<Arc<Session>> {
         if let Some(session) = &self.session { return Ok(session.clone()); }
-        let mut opts = SessionOptions {
-            persistence: None, fastresume: false, disable_local_service_discovery: true,
-            peer_limit: Some(50), concurrent_init_limit: Some(2),
-            ratelimits: librqbit::limits::LimitsConfig { upload_bps: NonZeroU32::new(128 * 1024), download_bps: self.policy.download_bps },
-            ..Default::default()
-        };
-        if self.policy.local_only { opts.dht = None; opts.disable_trackers = true; opts.listen = None; }
         // Every connection, listener, tracker and DHT socket is bound to the VPN's interface, so
         // nothing can leave by another route; without a connected VPN nothing starts.
         let bound = match &self.policy.vpn {
             Some(preferred) => Some((self.policy.vpn_probe)(preferred).context(VPN_WAIT)?),
             None => None,
         };
-        opts.bind_device_name = bound.clone();
-        #[cfg(test)]
-        if self.policy.local_only && self.policy.loopback_listener {
-            opts.listen = Some(librqbit::ListenerOptions {
-                mode: librqbit::ListenerMode::TcpOnly, listen_addr: "127.0.0.1:0".parse().unwrap(),
-                enable_upnp_port_forwarding: false, ..Default::default()
-            });
-        }
-        let session = Session::new_with_opts(self.store.join("unused-default-output"), opts).await?;
+        let options = |port: u16| {
+            let mut opts = SessionOptions {
+                persistence: None, fastresume: false, disable_local_service_discovery: true,
+                peer_limit: Some(PEER_LIMIT), concurrent_init_limit: Some(2),
+                ratelimits: librqbit::limits::LimitsConfig { upload_bps: self.policy.upload_bps, download_bps: self.policy.download_bps },
+                // Peers can reach this PC too (most of a swarm is behind a router and can't be
+                // reached otherwise); the router is asked to forward the port, except through a
+                // VPN, whose own address is the one peers see.
+                listen: Some(librqbit::ListenerOptions {
+                    mode: librqbit::ListenerMode::TcpOnly, listen_addr: (std::net::Ipv6Addr::UNSPECIFIED, port).into(),
+                    enable_upnp_port_forwarding: bound.is_none(), ..Default::default()
+                }),
+                ..Default::default()
+            };
+            if self.policy.local_only { opts.dht = None; opts.disable_trackers = true; opts.listen = None; }
+            opts.bind_device_name = bound.clone();
+            #[cfg(test)]
+            if self.policy.local_only && self.policy.loopback_listener {
+                opts.listen = Some(librqbit::ListenerOptions {
+                    mode: librqbit::ListenerMode::TcpOnly, listen_addr: "127.0.0.1:0".parse().unwrap(),
+                    enable_upnp_port_forwarding: false, ..Default::default()
+                });
+            }
+            opts
+        };
+        let output = self.store.join("unused-default-output");
+        // The same port every time (peers that learned it can come back); if something else has
+        // it now, any free one.
+        let port = listen_port(&self.store);
+        let session = match Session::new_with_opts(output.clone(), options(port)).await {
+            Ok(session) => session,
+            Err(error) if !self.policy.local_only => {
+                crate::log!("downloads: port {port} isn't free ({error:#}), using another");
+                Session::new_with_opts(output, options(0)).await?
+            }
+            Err(error) => return Err(error),
+        };
         self.session = Some(session.clone());
         self.bound = bound;
         Ok(session)
@@ -1165,10 +1236,11 @@ impl Worker {
             let session = self.session().await?;
             let magnet = librqbit::Magnet::parse(&job.magnet)?;
             let peers = self.peers.get(key).cloned().unwrap_or_else(|| self.policy.initial_peers.clone());
+            let trackers = trackers_for(&bytes, magnet.trackers, self.policy.local_only);
             let response = session.add_torrent(AddTorrent::from_bytes(bytes), Some(AddTorrentOptions {
                 paused: false, overwrite: true, output_folder: Some(folder.to_string_lossy().into_owned()),
                 storage_factory: Some(KeepTimes::new(&folder)),
-                trackers: Some(magnet.trackers), initial_peers: Some(peers), only_files: wanted.clone(), ..Default::default()
+                trackers: Some(trackers), initial_peers: Some(peers), only_files: wanted.clone(), ..Default::default()
             })).await?;
             let handle = response.into_handle().context("No transfer handle")?;
             self.handles.insert(key.into(), handle);
@@ -1281,11 +1353,12 @@ impl Worker {
         let session = self.session().await?;
         let magnet = librqbit::Magnet::parse(&job.magnet)?;
         let peers = self.peers.get(key).cloned().unwrap_or_else(|| self.policy.initial_peers.clone());
+        let trackers = trackers_for(&bytes, magnet.trackers, self.policy.local_only);
         // Only the files that were downloaded: sharing must never fetch the ones left out.
         let response = session.add_torrent(AddTorrent::from_bytes(bytes), Some(AddTorrentOptions {
             paused: true, overwrite: true, output_folder: Some(folder.to_string_lossy().into_owned()),
             storage_factory: Some(KeepTimes::new(&folder)),
-            trackers: Some(magnet.trackers), initial_peers: Some(peers), only_files: job.selected.clone(), ..Default::default()
+            trackers: Some(trackers), initial_peers: Some(peers), only_files: job.selected.clone(), ..Default::default()
         })).await?;
         let handle = response.into_handle().context("No transfer handle")?;
         self.handles.insert(key.into(), handle);
@@ -1536,6 +1609,11 @@ impl Worker {
                             self.vpn_check().await;
                             None
                         },
+                        Some(Command::SetUpload(bps)) => {
+                            self.policy.upload_bps = bps;
+                            if let Some(session) = &self.session { session.ratelimits.set_upload_bps(bps); }
+                            None
+                        },
                         Some(Command::Shutdown) | None => break,
                     };
                     if let Some((key, Err(error))) = result { self.fail(&key, error); }
@@ -1673,6 +1751,41 @@ mod tests {
         (key, bytes)
     }
 
+    #[test]
+    fn public_torrents_get_the_public_trackers_and_private_ones_keep_their_own() {
+        let own = vec!["udp://own.example:1/announce".to_string()];
+        let (_, public) = metadata(&[&["a.bin"]], None, false);
+        let (_, private) = metadata(&[&["a.bin"]], None, true);
+        let trackers = trackers_for(&public, own.clone(), false);
+        assert_eq!(trackers[0], own[0]);
+        assert_eq!(trackers.len(), 1 + LOOKUP_TRACKERS.len());
+        assert_eq!(trackers_for(&private, own.clone(), false), own, "a private torrent keeps to its own trackers");
+        assert_eq!(trackers_for(&public, own.clone(), true), own, "nothing public when nothing may leave this PC");
+        assert_eq!(trackers_for(b"not a torrent", own.clone(), false), own);
+        let again = trackers_for(&public, vec![LOOKUP_TRACKERS[0].to_string()], false);
+        assert_eq!(again.len(), LOOKUP_TRACKERS.len(), "no tracker twice");
+    }
+
+    #[test]
+    fn upload_limits_reach_the_engine_and_zero_is_unlimited() {
+        assert_eq!(upload_bps(0), None);
+        assert_eq!(upload_bps(50).map(|b| b.get()), Some(50 * 1024 * 1024));
+        assert_eq!(upload_bps(u32::MAX).map(|b| b.get()), Some(u32::MAX), "no overflow");
+        assert!(UPLOAD_LIMITS.contains(&UPLOAD_DEFAULT_MB) && UPLOAD_LIMITS.contains(&0));
+        assert_eq!(upload_label(25), "25 MB/s");
+        assert_eq!(Policy::default().upload_bps, upload_bps(UPLOAD_DEFAULT_MB));
+    }
+
+    #[test]
+    fn the_listen_port_is_chosen_once_and_kept() {
+        let temp = tempfile::tempdir().unwrap();
+        let port = listen_port(temp.path());
+        assert!((20_000..60_000).contains(&port));
+        assert_eq!(listen_port(temp.path()), port);
+        std::fs::write(temp.path().join("listen-port"), "80").unwrap();
+        assert!(listen_port(temp.path()) >= 20_000, "a privileged port isn't used");
+    }
+
     async fn wait_job(manager: &Manager, key: &str, predicate: impl Fn(&Job) -> bool) -> Job {
         let mut interval = tokio::time::interval(Duration::from_millis(50));
         tokio::time::timeout(Duration::from_secs(120), async {
@@ -1737,7 +1850,7 @@ mod tests {
     }
 
     fn local_policy(seeder: &Session) -> Policy {
-        Policy { local_only: true, initial_peers: vec![seeder.listen_addr().unwrap()], download_bps: NonZeroU32::new(32 * 1024), seed_after_download: false, ..Default::default() }
+        Policy { local_only: true, initial_peers: vec![seeder.listen_addr().unwrap()], download_bps: NonZeroU32::new(32 * 1024), upload_bps: NonZeroU32::new(128 * 1024), seed_after_download: false, ..Default::default() }
     }
 
     fn ready_fixture(worker: &mut Worker, base: &Path, torrent: &librqbit::CreateTorrentResult) -> String {
@@ -1766,6 +1879,8 @@ mod tests {
         let (source, torrent, source_handle, expected) = seeder(root).await;
         let policy = Policy {
             local_only: true, initial_peers: vec![source.listen_addr().unwrap()], download_bps: None,
+            // Slow enough for the upload speed to be seen before the second leecher finishes.
+            upload_bps: NonZeroU32::new(128 * 1024),
             seed_after_download: enabled, loopback_listener: true, ..Default::default()
         };
         let mut worker = Worker::new(root.join("state"), Arc::new(Mutex::new(vec![])), policy);
