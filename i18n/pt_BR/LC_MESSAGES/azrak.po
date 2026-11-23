@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SwarmPlay\n"
-"POT-Creation-Date: 2026-11-23 12:43+0000\n"
+"POT-Creation-Date: 2026-11-23 20:45+0000\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1133,6 +1133,10 @@ msgstr "A pasta do download pertence a outro usuário"
 #: src/downloads.rs
 msgid "Transfer not found"
 msgstr "Download não encontrado"
+
+#: src/downloads.rs
+msgid "Unlimited"
+msgstr "Ilimitado"
 
 #: src/downloads.rs
 msgid "Waiting for your VPN: downloads only run through it (Settings → Downloads)"
@@ -3596,8 +3600,8 @@ msgid "Go back to the previous shadPS4"
 msgstr "Voltar ao shadPS4 anterior"
 
 #: src/settings.rs
-msgid "Helps other players download faster · uploads at most 128 KiB/s"
-msgstr "Ajuda outros jogadores a baixar mais rápido · envia no máximo 128 KiB/s"
+msgid "Helps other players download faster"
+msgstr "Ajuda outros jogadores a baixar mais rápido"
 
 #: src/settings.rs
 msgid "Hides your IP address from other players · uses your own VPN"
@@ -3758,6 +3762,10 @@ msgid "Same as accent"
 msgstr "A mesma do destaque"
 
 #: src/settings.rs
+msgid "Sending more makes downloads faster too · Unlimited uses all of your connection"
+msgstr "Enviar mais também deixa seus downloads mais rápidos · Ilimitado usa toda a sua conexão"
+
+#: src/settings.rs
 msgid "Set up again"
 msgstr "Configurar de novo"
 
@@ -3852,6 +3860,10 @@ msgstr "Atualizar para {l}"
 #: src/settings.rs src/toast.rs src/welcome.rs
 msgid "Updates"
 msgstr "Atualizações"
+
+#: src/settings.rs
+msgid "Upload limit"
+msgstr "Limite de upload"
 
 #: src/settings.rs
 msgid "Volume and where sound goes"
@@ -5445,8 +5457,8 @@ msgid "Looking up this magnet contacts trackers, DHT and peers and reveals your 
 msgstr "Buscar este magnet contata trackers, DHT e outros usuários e revela o seu endereço IP, mesmo antes de se saber se ele é privado."
 
 #: ui/downloads.slint:443
-msgid "Only download content you are authorized to obtain and share. {} Transfers upload pieces, capped at 128 KiB/s. After completion, seeding continues by default while the launcher is open; switch it off in Settings or stop an individual seed in Downloads."
-msgstr "Só faça download de conteúdo que você tem permissão para obter e compartilhar. {} As transferências enviam partes, limitadas a 128 KiB/s. Depois de concluído, o compartilhamento (seed) continua por padrão enquanto o SwarmPlay estiver aberto; desative em Configurações ou pare um compartilhamento em Downloads."
+msgid "Only download content you are authorized to obtain and share. {} Transfers upload pieces, up to the limit in Settings. After completion, seeding continues by default while the launcher is open; switch it off in Settings or stop an individual seed in Downloads."
+msgstr ""
 
 #: ui/downloads.slint:449
 msgid "Destination · an owned subfolder will be created here"
@@ -5577,6 +5589,12 @@ msgstr "NOVO"
 #: ui/widgets.slint:269
 msgid "● PLAYING"
 msgstr "● JOGANDO"
+
+#~ msgid "Only download content you are authorized to obtain and share. {} Transfers upload pieces, capped at 128 KiB/s. After completion, seeding continues by default while the launcher is open; switch it off in Settings or stop an individual seed in Downloads."
+#~ msgstr "Só faça download de conteúdo que você tem permissão para obter e compartilhar. {} As transferências enviam partes, até o limite definido em Configurações. Depois de concluído, o compartilhamento (seed) continua por padrão enquanto o SwarmPlay estiver aberto; desative em Configurações ou pare um compartilhamento em Downloads."
+
+#~ msgid "Helps other players download faster · uploads at most 128 KiB/s"
+#~ msgstr "Ajuda outros jogadores a baixar mais rápido · envia no máximo 128 KiB/s"
 
 #~ msgid "All set · pick a game in the Library to play"
 #~ msgstr "Tudo pronto · escolha um jogo na Biblioteca para jogar"

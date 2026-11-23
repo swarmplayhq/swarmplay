@@ -34,8 +34,18 @@ const LOOKUP_TRACKERS: [&str; 5] = [
 
 /// Peers per torrent at once.
 const PEER_LIMIT: usize = 500;
-/// Upload while downloading and sharing (peers favour those that send back), bytes/s.
-const UPLOAD_BPS: u32 = 50 * 1024 * 1024;
+/// The upload limits to choose from (Settings → Downloads), MB/s; 0: unlimited. Peers favour
+/// those that send back, so a high one also downloads faster.
+pub const UPLOAD_LIMITS: [u32; 6] = [5, 10, 25, 50, 100, 0];
+pub const UPLOAD_DEFAULT_MB: u32 = 50;
+
+/// An upload limit (MB/s, 0: unlimited) as the engine takes it.
+pub fn upload_bps(mb: u32) -> Option<NonZeroU32> { NonZeroU32::new(mb.saturating_mul(1024 * 1024)) }
+
+/// An upload limit, as shown.
+pub fn upload_label(mb: u32) -> String {
+    if mb == 0 { tr!("Unlimited") } else { format!("{mb} MB/s") }
+}
 
 /// The port peers reach this PC on: chosen once, then kept (in the transfers folder).
 fn listen_port(store: &Path) -> u16 {
@@ -222,14 +232,14 @@ struct Policy {
 impl Default for Policy {
     fn default() -> Self {
         Self {
-            local_only: false, initial_peers: vec![], download_bps: None, upload_bps: NonZeroU32::new(UPLOAD_BPS), seed_after_download: true,
+            local_only: false, initial_peers: vec![], download_bps: None, upload_bps: upload_bps(UPLOAD_DEFAULT_MB), seed_after_download: true,
             vpn: None, vpn_probe: crate::vpn::active,
             #[cfg(test)] loopback_listener: false,
         }
     }
 }
 
-enum Command { Prepare(Job), Begin { key: String, base: PathBuf, selected: Vec<usize>, install_to: Option<PathBuf> }, Discard(Job), Start(String), Pause(String), Cancel(String), Remove(String), Delete(String), Save, Reseed, StopSeed(String), Seed(String), SetSeedAfterDownload(bool), SetVpn(Option<String>), Shutdown }
+enum Command { Prepare(Job), Begin { key: String, base: PathBuf, selected: Vec<usize>, install_to: Option<PathBuf> }, Discard(Job), Start(String), Pause(String), Cancel(String), Remove(String), Delete(String), Save, Reseed, StopSeed(String), Seed(String), SetSeedAfterDownload(bool), SetVpn(Option<String>), SetUpload(Option<NonZeroU32>), Shutdown }
 
 const VPN_WAIT: &str = "Waiting for your VPN: downloads only run through it (Settings → Downloads)";
 const FILES_CHANGED: &str = "The downloaded files were moved, changed or deleted, so this download can't seed. Remove it, or download it again.";
@@ -246,8 +256,10 @@ pub struct Manager {
 impl Manager {
     /// `vpn`: download only through a VPN (`Some(preferred interface)`, "" for any). `bases`:
     /// where downloads can be (see `relocate`), so ones moved since are found before sharing.
-    pub fn load(seed_after_download: bool, vpn: Option<String>, bases: &[PathBuf]) -> Self {
-        Self::open(crate::util::config_dir().join("transfers"), Policy { seed_after_download, vpn, ..Default::default() }, bases)
+    /// `upload_mb`: the upload limit (0: unlimited).
+    pub fn load(seed_after_download: bool, vpn: Option<String>, upload_mb: u32, bases: &[PathBuf]) -> Self {
+        let policy = Policy { seed_after_download, vpn, upload_bps: upload_bps(upload_mb), ..Default::default() };
+        Self::open(crate::util::config_dir().join("transfers"), policy, bases)
     }
 
     #[cfg(test)]
@@ -439,6 +451,11 @@ impl Manager {
     /// Download only through a VPN (`Some(preferred interface)`), or through any connection.
     pub fn set_vpn(&self, vpn: Option<String>) -> Result<()> {
         self.tx.try_send(Command::SetVpn(vpn)).with_context(|| tr!("Download worker is busy or unavailable"))
+    }
+
+    /// The upload limit in MB/s (0: unlimited), at once for what's running too.
+    pub fn set_upload_limit(&self, mb: u32) -> Result<()> {
+        self.tx.try_send(Command::SetUpload(upload_bps(mb))).with_context(|| tr!("Download worker is busy or unavailable"))
     }
 
     pub fn shutdown(&mut self) {
@@ -1592,6 +1609,11 @@ impl Worker {
                             self.vpn_check().await;
                             None
                         },
+                        Some(Command::SetUpload(bps)) => {
+                            self.policy.upload_bps = bps;
+                            if let Some(session) = &self.session { session.ratelimits.set_upload_bps(bps); }
+                            None
+                        },
                         Some(Command::Shutdown) | None => break,
                     };
                     if let Some((key, Err(error))) = result { self.fail(&key, error); }
@@ -1742,6 +1764,16 @@ mod tests {
         assert_eq!(trackers_for(b"not a torrent", own.clone(), false), own);
         let again = trackers_for(&public, vec![LOOKUP_TRACKERS[0].to_string()], false);
         assert_eq!(again.len(), LOOKUP_TRACKERS.len(), "no tracker twice");
+    }
+
+    #[test]
+    fn upload_limits_reach_the_engine_and_zero_is_unlimited() {
+        assert_eq!(upload_bps(0), None);
+        assert_eq!(upload_bps(50).map(|b| b.get()), Some(50 * 1024 * 1024));
+        assert_eq!(upload_bps(u32::MAX).map(|b| b.get()), Some(u32::MAX), "no overflow");
+        assert!(UPLOAD_LIMITS.contains(&UPLOAD_DEFAULT_MB) && UPLOAD_LIMITS.contains(&0));
+        assert_eq!(upload_label(25), "25 MB/s");
+        assert_eq!(Policy::default().upload_bps, upload_bps(UPLOAD_DEFAULT_MB));
     }
 
     #[test]
