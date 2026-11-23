@@ -89,7 +89,24 @@ OPTIONS:
     -h, --help          Show this help
 ";
 
+/// A PC game's torrent has thousands of files, and the download engine keeps every one open while
+/// it writes them. Programs started from the desktop get 1024 open files at most, far too few:
+/// starting such a download failed with "error opening … in read/write mode". The soft limit goes
+/// up to what the system allows (the hard limit, capped), as Steam does; games started from here
+/// inherit it, which Wine's esync wants too.
+fn raise_open_files() -> Option<(u64, u64)> {
+    let mut r = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
+    if unsafe { libc::getrlimit(libc::RLIMIT_NOFILE, &mut r) } != 0 { return None; }
+    let before = r.rlim_cur as u64;
+    let want = (r.rlim_max as u64).min(524_288);
+    if before >= want { return Some((before, before)); }
+    r.rlim_cur = want as libc::rlim_t;
+    if unsafe { libc::setrlimit(libc::RLIMIT_NOFILE, &r) } != 0 { return Some((before, before)); }
+    Some((before, want))
+}
+
 fn main() {
+    raise_open_files();
     // `--supports FEATURE`: exit 0 when this launcher has it, so AzrakOS can tell (older releases
     // reject the option). gamescope: it tags its window, so Gamescope shows it; os-install: the
     // USB stick's install screens (the stick's build checks the launcher it bundles has them).
@@ -172,4 +189,16 @@ fn main() {
     }
     ui.set_app_version(env!("CARGO_PKG_VERSION").into());
     app::run(ui, mons, target, windowed);
+}
+
+#[cfg(test)]
+mod open_files_tests {
+    #[test]
+    fn the_open_files_limit_goes_up_to_what_the_system_allows() {
+        let (_, after) = super::raise_open_files().expect("readable limit");
+        let mut r = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
+        assert_eq!(unsafe { libc::getrlimit(libc::RLIMIT_NOFILE, &mut r) }, 0);
+        assert_eq!(r.rlim_cur as u64, after);
+        assert!(after >= (r.rlim_max as u64).min(524_288), "as high as allowed (capped)");
+    }
 }
