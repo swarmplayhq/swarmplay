@@ -540,6 +540,8 @@ export component DownloadPanel inherits Rectangle {
     in property <string> message-title;
     in property <string> message;
     in property <[SetupFile]> files;
+    // The list shown; folded, one "Choose files" line stands for it.
+    in property <bool> files-open;
     in property <string> count;
     in property <string> total;
     in property <int> all-state;
@@ -632,12 +634,12 @@ export component DownloadPanel inherits Rectangle {
             // Files, straight from the torrent.
             HorizontalLayout {
                 height: (40px * S.t); spacing: (16px * S.k);
-                if root.state == 1: Check {
+                if root.state == 1 && root.files-open: Check {
                     y: (parent.height - self.height) / 2; state: root.all-state;
                     TouchArea { mouse-cursor: pointer; clicked => { root.toggle(-1); } }
                 }
                 Text { text: @tr("Files"); font-size: (22px * S.t); font-weight: 600; color: Theme.text; vertical-alignment: center; }
-                if root.state == 1: HorizontalLayout {
+                if root.state == 1 && root.files-open: HorizontalLayout {
                     spacing: (7px * S.k); padding-left: (6px * S.k);
                     if root.pad: PadGlyph { glyph: "△"; width: (22px * S.k); y: (9px * S.k); }
                     Text { text: root.pad ? @tr("Select all") : "/ " + @tr("Select all"); font-size: (15px * S.t); color: Theme.hint; vertical-alignment: center; }
@@ -651,8 +653,25 @@ export component DownloadPanel inherits Rectangle {
                 vertical-stretch: 1; min-height: (120px * S.k);
                 clip: true;
                 Rectangle { y: 0; height: 1px; background: #ffffff14; }
+                // Folded (as a console's download): one line for every file, to open and pick some.
+                if root.state == 1 && !root.files-open: Rectangle {
+                    y: (10px * S.k); height: (84px * S.k);
+                    border-radius: (14px * S.k);
+                    background: root.focus-item == 5 ? #ffffff1a : ta-cf.has-hover ? #ffffff10 : #ffffff0a;
+                    border-width: root.focus-item == 5 ? (3px * S.k) : 0; border-color: Theme.ring;
+                    HorizontalLayout {
+                        padding-left: (20px * S.k); padding-right: (18px * S.k); spacing: (14px * S.k);
+                        VerticalLayout {
+                            alignment: center; spacing: (4px * S.k); horizontal-stretch: 1;
+                            Text { text: @tr("Choose files"); font-size: (20px * S.t); font-weight: 600; color: Theme.text; }
+                            Text { text: root.all-state == 2 ? @tr("Every file downloads · press to pick some") : @tr("Some files left out · press to change"); font-size: (15px * S.t); color: Theme.hint; overflow: elide; }
+                        }
+                        Image { y: (parent.height - self.height) / 2; source: Icons.chevr; colorize: #9ba6c0; width: (18px * S.k); height: self.width; }
+                    }
+                    ta-cf := TouchArea { mouse-cursor: pointer; clicked => { root.toggle(-2); } }
+                }
                 list := Flickable {
-                    visible: root.state == 1;
+                    visible: root.state == 1 && root.files-open;
                     y: 1px; height: parent.height - 1px;
                     content-height: root.files.length * root.row-h;
                     animate content-y { duration: 160ms; easing: ease-out-quad; }

@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use tr::tr;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Focus { Row(usize), ChangeDownload, ChangeInstall, Go, Cancel }
+pub enum Focus { Row(usize), Files, ChangeDownload, ChangeInstall, Go, Cancel }
 
 pub struct Setup {
     /// The transfer being looked up (none if it couldn't even start).
@@ -34,6 +34,9 @@ pub struct Setup {
     /// Which folder is being typed: 1 download, 2 install.
     pub edit: i32,
     pub begun: bool,
+    /// The file list, shown: folded by default into one line ("Choose files"), as a console's
+    /// download asks nothing about files; opened to pick some.
+    pub files_open: bool,
     /// Each folder's drive, looked up at most every few seconds (a slow drive mustn't stall
     /// the panel, which is drawn every second).
     drives: std::cell::RefCell<Vec<(PathBuf, std::time::Instant, Option<downloads::Drive>)>>,
@@ -106,7 +109,7 @@ impl App {
         };
         if let Some(old) = looked_up.filter(|old| key.as_ref() != Some(old)) { let _ = self.downloads.discard(&old); }
         self.setup = Some(Setup { key, platform, created, entries: vec![], indices: vec![], on: vec![], error, begin_error: String::new(),
-            focus: Focus::Cancel, moved: false, edit: 0, begun: false, drives: Default::default() });
+            focus: Focus::Cancel, moved: false, edit: 0, begun: false, files_open: false, drives: Default::default() });
         self.setup_model.set_vec(vec![]);
         let ui = self.ui();
         ui.set_setup_title(name.into());
@@ -357,7 +360,8 @@ impl App {
         ui.set_setup_go_label(view.go_label.into());
         ui.set_setup_go_enabled(view.go_enabled);
         ui.set_setup_focus_row(if let Focus::Row(i) = focus { i as i32 } else { -1 });
-        ui.set_setup_focus_item(match focus { Focus::Row(_) => 0, Focus::ChangeDownload => 1, Focus::ChangeInstall => 2, Focus::Go => 3, Focus::Cancel => 4 });
+        ui.set_setup_focus_item(match focus { Focus::Row(_) => 0, Focus::ChangeDownload => 1, Focus::ChangeInstall => 2, Focus::Go => 3, Focus::Cancel => 4, Focus::Files => 5 });
+        ui.set_setup_files_open(self.setup.as_ref().is_some_and(|s| s.files_open));
         ui.set_setup_edit(edit);
     }
 
@@ -372,14 +376,26 @@ impl App {
 
     pub fn act_setup(&mut self, a: Act) {
         let Some(setup) = self.setup.as_ref() else { return self.back() };
-        let rows = if self.ui().get_setup_state() == 1 { setup.entries.len() } else { 0 };
+        let listed = self.ui().get_setup_state() == 1;
+        let open = setup.files_open;
+        let rows = if listed && open { setup.entries.len() } else { 0 };
         let go = self.ui().get_setup_go_enabled();
         let bottom = if go { Focus::Go } else { Focus::Cancel };
         let next = match (a, setup.focus) {
+            // ○ on the open list folds it again (the panel stays).
+            (Act::Back, _) if open => {
+                if let Some(setup) = self.setup.as_mut() { setup.files_open = false; setup.focus = Focus::Files; }
+                audio::play(Sound::Back);
+                return self.push_setup();
+            }
             (Act::Back, _) => return self.back(),
-            (Act::Search, _) => return self.setup_toggle(-1),
+            (Act::Search, _) if open => return self.setup_toggle(-1),
+            (Act::Search, _) => return,
             (Act::Up, Focus::Row(i)) => Focus::Row(i.saturating_sub(1)),
             (Act::Up, Focus::ChangeDownload) if rows > 0 => Focus::Row(rows - 1),
+            (Act::Up, Focus::ChangeDownload) if listed => Focus::Files,
+            (Act::Down, Focus::Files) => Focus::ChangeDownload,
+            (Act::Confirm, Focus::Files) => return self.setup_toggle(-2),
             (Act::Up, Focus::ChangeInstall) => Focus::ChangeDownload,
             (Act::Up, Focus::Go | Focus::Cancel) => Focus::ChangeInstall,
             (Act::Down, Focus::Row(i)) if i + 1 < rows => Focus::Row(i + 1),
@@ -391,6 +407,7 @@ impl App {
             (Act::PageUp, Focus::Row(i)) => Focus::Row(i.saturating_sub(8)),
             (Act::PageDown, Focus::Row(i)) => Focus::Row((i + 8).min(rows.saturating_sub(1))),
             (Act::First, _) if rows > 0 => Focus::Row(0),
+            (Act::First, _) if listed => Focus::Files,
             (Act::Last, _) => bottom,
             (Act::Confirm, Focus::Row(i)) => return self.setup_toggle(i as i32),
             (Act::Confirm, Focus::ChangeDownload) => return self.setup_change(1),
@@ -402,10 +419,17 @@ impl App {
         self.setup_focus(next);
     }
 
-    /// Tick or untick a file (-1: all of them).
+    /// Tick or untick a file (-1: all of them; -2: open the folded list to pick some).
     pub fn setup_toggle(&mut self, index: i32) {
         let Some(setup) = self.setup.as_mut() else { return };
         if setup.entries.is_empty() { return; }
+        if index == -2 {
+            setup.files_open = true;
+            setup.focus = Focus::Row(0);
+            setup.moved = true;
+            audio::play(Sound::Select);
+            return self.push_setup();
+        }
         if index < 0 {
             let all = setup.entries.iter().zip(&setup.on).all(|(e, on)| e.blocked || *on);
             for (on, e) in setup.on.iter_mut().zip(&setup.entries) { *on = !all && !e.blocked; }
