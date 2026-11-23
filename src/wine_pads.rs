@@ -6,8 +6,10 @@
 
 use std::path::{Path, PathBuf};
 
-/// The winebus settings in a prefix's system.reg (HKLM\System\CurrentControlSet links here).
-const SECTION: &str = r"[System\\ControlSet001\\Services\\winebus]";
+/// The winebus settings in a prefix's system.reg. Newer Wine keeps them in ControlSet001 (and
+/// CurrentControlSet links there); prefixes made by older Wine (5.x, in Kron4ek's repacks) keep
+/// a real CurrentControlSet, which is the one their Wine reads.
+const SECTIONS: [&str; 2] = [r"[System\\ControlSet001\\Services\\winebus]", r"[System\\CurrentControlSet\\Services\\winebus]"];
 const VALUES: [(&str, &str); 2] = [("\"DisableHidraw\"", "dword:00000001"), ("\"Enable SDL\"", "dword:00000001")];
 
 /// Wine prefixes in a game's folder (a repack's game/prefix, say): folders with a system.reg
@@ -33,28 +35,42 @@ pub fn prefixes_in(dir: &Path) -> Vec<PathBuf> {
 
 /// `text` (a system.reg) with controllers going through SDL; None when it already does.
 fn with_sdl(text: &str) -> Option<String> {
-    let lines: Vec<&str> = text.lines().collect();
-    let Some(start) = lines.iter().position(|l| l.starts_with(SECTION)) else {
-        // No winebus key yet: add it (Wine reads it at the next start).
+    let has = |section: &str| text.lines().any(|l| l.starts_with(section));
+    let present: Vec<&str> = SECTIONS.into_iter().filter(|s| has(s)).collect();
+    if present.is_empty() {
+        // No winebus key yet: add it where this prefix's Wine keeps its services (read at the next start).
+        let old = !text.contains(r"[System\\ControlSet001\\") && text.contains(r"[System\\CurrentControlSet\\");
         let mut out = text.trim_end().to_string();
-        out.push_str(&format!("\n\n{SECTION} 0\n"));
+        out.push_str(&format!("\n\n{} 0\n", SECTIONS[old as usize]));
         for (k, v) in VALUES { out.push_str(&format!("{k}={v}\n")); }
         return Some(out);
-    };
+    }
+    let mut out = text.to_string();
+    let mut changed = false;
+    for section in present {
+        if let Some(new) = set_in(&out, section) { out = new; changed = true; }
+    }
+    changed.then_some(out)
+}
+
+/// `text` with VALUES set in its `section`, which it has; None: already so.
+fn set_in(text: &str, section: &str) -> Option<String> {
+    let lines: Vec<&str> = text.lines().collect();
+    let start = lines.iter().position(|l| l.starts_with(section))?;
     let end = lines[start + 1..].iter().position(|l| l.trim().is_empty() || l.starts_with('[')).map_or(lines.len(), |n| start + 1 + n);
-    let mut section: Vec<String> = lines[start + 1..end].iter().map(|l| l.to_string()).collect();
+    let mut body: Vec<String> = lines[start + 1..end].iter().map(|l| l.to_string()).collect();
     let mut changed = false;
     for (k, v) in VALUES {
         let want = format!("{k}={v}");
-        match section.iter().position(|l| l.starts_with(&format!("{k}="))) {
-            Some(i) if section[i] == want => {}
-            Some(i) => { section[i] = want; changed = true; }
-            None => { section.push(want); changed = true; }
+        match body.iter().position(|l| l.starts_with(&format!("{k}="))) {
+            Some(i) if body[i] == want => {}
+            Some(i) => { body[i] = want; changed = true; }
+            None => { body.push(want); changed = true; }
         }
     }
     if !changed { return None; }
     let mut out: Vec<String> = lines[..=start].iter().map(|l| l.to_string()).collect();
-    out.extend(section);
+    out.extend(body);
     out.extend(lines[end..].iter().map(|l| l.to_string()));
     Some(out.join("\n") + "\n")
 }
@@ -89,6 +105,18 @@ mod tests {
         assert!(!out.contains("\"Enable SDL\"=dword:00000000"));
         assert!(out.contains("[Software] 1\n\"x\"=\"y\""), "the rest stays as it was");
         assert_eq!(with_sdl(&out), None, "already set: left alone");
+    }
+
+    #[test]
+    fn an_older_wines_current_control_set_is_the_one_set() {
+        // Wine 5.x prefixes: a real CurrentControlSet; a ControlSet001 key there is never read.
+        let reg = "WINE REGISTRY Version 2\n\n[System\\\\CurrentControlSet\\\\Services\\\\winebus] 1795442974\n#time=1dd\n\"Start\"=dword:00000003\n\n[System\\\\CurrentControlSet\\\\Services\\\\winehid] 1\n\"x\"=\"y\"\n";
+        let out = with_sdl(reg).unwrap();
+        assert!(out.contains("[System\\\\CurrentControlSet\\\\Services\\\\winebus] 1795442974\n#time=1dd\n\"Start\"=dword:00000003\n\"DisableHidraw\"=dword:00000001\n\"Enable SDL\"=dword:00000001"));
+        assert!(!out.contains("ControlSet001"));
+        assert_eq!(with_sdl(&out), None);
+        let fresh = with_sdl("WINE REGISTRY Version 2\n\n[System\\\\CurrentControlSet\\\\Control] 1\n").unwrap();
+        assert!(fresh.contains("[System\\\\CurrentControlSet\\\\Services\\\\winebus] 0\n"), "no key yet: added where that Wine reads");
     }
 
     #[test]
