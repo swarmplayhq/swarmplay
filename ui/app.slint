@@ -416,6 +416,13 @@ export component AppWindow inherits Window {
     in property <bool> games-picking;
     // Open, perhaps under its Options menu or the Delete card (which then show over it).
     in property <bool> games-open;
+    // Downloads open under its More menu (src/download_ui.rs).
+    in property <bool> dl-open;
+    // The Control Center's Downloads card (src/download_ui.rs): what's true now, its bar (-1 none).
+    in property <string> cc-dl-title;
+    in property <string> cc-dl-sub;
+    in property <float> cc-dl-frac: -1;
+    in property <int> cc-dl-kind;
     // The Game Library (src/game_library.rs): open (perhaps under its Options menu), its tab, covers.
     in property <bool> lib-open;
     // The Store (src/store.rs): 0 Discover, 1 Browse; Discover's featured game and rows.
@@ -2497,7 +2504,8 @@ export component AppWindow inherits Window {
             choose(index) => { root.click(Zone.sort-picker, index); }
             close => { root.click(Zone.sort-picker, -1); }
         }
-        if root.overlay == 7 && !root.download-consent: DownloadsPage {
+        // Open, perhaps under its More menu (which shows over it).
+        if (root.overlay == 7 || root.dl-open) && !root.download-consent: DownloadsPage {
             property <bool> entered: false;
             init => { self.entered = true; }
             opacity: self.entered && root.closing != 7 ? 1 : 0;
@@ -3131,14 +3139,18 @@ export component AppWindow inherits Window {
                             spacing: (8px * S.k);
                             Text { text: @tr("DOWNLOADS"); font-size: (15px * S.k); font-weight: 600; letter-spacing: (1.5px * S.k); color: Theme.text2; }
                             Text {
-                                text: root.ring-kind > 0 ? root.ring-label + root.ring-suffix : @tr("Nothing downloading");
+                                text: root.cc-dl-title;
                                 font-size: (24px * S.k);
                                 font-weight: 600;
-                                color: root.ring-kind == 3 ? Theme.warn : root.ring-kind == 5 ? Theme.ok : Theme.text;
+                                color: root.cc-dl-kind == 3 ? Theme.warn : Theme.text;
                                 overflow: elide;
                             }
+                            if root.cc-dl-frac >= 0: Rectangle {
+                                height: (5px * S.k); border-radius: (3px * S.k); background: #ffffff22;
+                                Rectangle { x: 0; width: parent.width * clamp(root.cc-dl-frac, 0, 1); height: parent.height; border-radius: parent.border-radius; background: #4d94ff; animate width { duration: 900ms; } }
+                            }
                             Rectangle { vertical-stretch: 1; }
-                            Text { text: @tr("Open Downloads"); font-size: (17px * S.k); color: Theme.hint; }
+                            Text { text: root.cc-dl-sub; font-size: (17px * S.k); color: Theme.hint; overflow: elide; }
                         }
                         TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.control-center, o); } }
                     }
