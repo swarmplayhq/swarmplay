@@ -70,6 +70,8 @@ pub const Z_LIBRARY: i32 = 36;
 pub const Z_DISCOVER: i32 = 37;
 /// The lines of Sort and filter (src/store.rs).
 pub const Z_FILTERS: i32 = 38;
+/// The profile card's lines (src/profile_card.rs).
+pub const Z_PROFILE_CARD: i32 = 39;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Overlay {
@@ -109,6 +111,8 @@ pub enum Overlay {
     GameLibrary = 22,
     /// Browse's Sort and filter panel (src/store.rs).
     Filters = 23,
+    /// Who's playing, from the avatar at the top (src/profile_card.rs).
+    ProfileCard = 24,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -372,6 +376,10 @@ pub struct App {
     /// gallery's (files, src/storage.rs), and the strip's picture keys.
     pub viewer_shots: Vec<String>,
     pub viewer_strip_keys: Vec<String>,
+    /// Home: the screenshot on the Hub's Trailers & screenshots card, and which settling of the
+    /// background art may start its slow drift (present.rs).
+    pub peek_shot_key: String,
+    pub bg_drift_gen: u64,
     pub viewer_i: usize,
     pub menu_target: Option<Target>,
     pub menu_actions: Vec<ActionDef>,
@@ -792,6 +800,8 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         hub_shots: Vec::new(),
         viewer_shots: Vec::new(),
         viewer_strip_keys: Vec::new(),
+        peek_shot_key: String::new(),
+        bg_drift_gen: 0,
         viewer_i: 0,
         menu_target: None,
         menu_actions: Vec::new(),
@@ -2437,6 +2447,9 @@ impl App {
         if zone == Z_GAMES && self.overlay == Overlay::Games {
             return self.click_games(idx);
         }
+        if zone == Z_PROFILE_CARD && self.overlay == Overlay::ProfileCard {
+            return self.click_profile_card(idx);
+        }
         if zone == Z_FILTERS && self.overlay == Overlay::Filters {
             return self.click_filters(idx);
         }
@@ -2594,6 +2607,7 @@ impl App {
             Overlay::Games => self.act_games(a),
             Overlay::GameLibrary => self.act_game_library(a),
             Overlay::Filters => self.act_filters(a),
+            Overlay::ProfileCard => self.act_profile_card(a),
             Overlay::Onboard => self.act_onboard(a),
             Overlay::Avatar => self.act_avatar_pick(a),
             Overlay::Settings if self.zone == Z_SETTINGS_NAV => self.act_settings_nav(a),
@@ -2655,7 +2669,8 @@ impl App {
                         // The ring's download (what stopped, or what's going) is the one shown.
                         4 => { let key = self.ring_key.clone(); self.open_downloads(key.as_deref()) }
                         5 => self.open_search(),
-                        6 => self.toggle_control_center(),
+                        // You: the profile card, as on a console (the Control Center is on Guide/F1).
+                        6 => self.open_profile_card(),
                         _ => self.open_settings(),
                     },
                     _ => {}
@@ -3056,7 +3071,7 @@ impl App {
     /// a moment, then closes. Everything else closes at once. (Code that needs the page gone right
     /// away calls `back`.)
     pub fn back_soft(&mut self) {
-        const SOFT: [Overlay; 12] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar, Overlay::Games, Overlay::GameLibrary, Overlay::Filters];
+        const SOFT: [Overlay; 13] = [Overlay::Settings, Overlay::Menu, Overlay::Viewer, Overlay::Downloads, Overlay::Controls, Overlay::ControlCenter, Overlay::Notifications, Overlay::Folders, Overlay::Avatar, Overlay::Games, Overlay::GameLibrary, Overlay::Filters, Overlay::ProfileCard];
         let ov = self.overlay;
         if !SOFT.contains(&ov) || (ov == Overlay::Downloads && self.ui().get_download_consent()) {
             return self.back();

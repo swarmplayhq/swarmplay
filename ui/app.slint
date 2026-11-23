@@ -280,6 +280,15 @@ export component AppWindow inherits Window {
     // The avatar's picture (src/avatar.rs), when it has one.
     in property <image> user-picture;
     in property <bool> user-has-picture;
+    // The profile card (src/profile_card.rs): what's going on, totals, its lines.
+    in property <string> profile-status;
+    in property <bool> profile-playing;
+    in property <string> profile-stats;
+    in property <[string]> profile-items;
+    // Home: the background art's slow drift once settled, and the first screenshot on the Hub's
+    // Trailers & screenshots card.
+    in property <bool> bg-drift;
+    in property <image> home-peek-shot;
     // The grid of avatars to choose from (src/avatar.rs).
     in property <[AvatarChoice]> avatar-choices;
     // The first-run setup (src/onboard.rs): its page, a number per page (a new one plays the
@@ -495,9 +504,9 @@ export component AppWindow inherits Window {
             image-fit: cover;
             opacity: root.bg-show-b ? 0 : 1;
             // The incoming backdrop settles from a slight zoom while it fades in.
-            transform-scale: root.bg-show-b ? 1.06 : 1.0;
+            transform-scale: root.bg-show-b ? 1.06 : root.bg-drift ? 1.05 : 1.0;
             animate opacity { duration: 520ms; easing: ease-out-quad; }
-            animate transform-scale { duration: root.bg-show-b ? 0ms : 1600ms; easing: ease-out-quint; }
+            animate transform-scale { duration: root.bg-show-b ? 0ms : root.bg-drift ? 24000ms : 1600ms; easing: ease-out-quad; }
         }
         Image {
             source: root.bg-b;
@@ -505,9 +514,9 @@ export component AppWindow inherits Window {
             height: root.height;
             image-fit: cover;
             opacity: root.bg-show-b ? 1 : 0;
-            transform-scale: root.bg-show-b ? 1.0 : 1.06;
+            transform-scale: root.bg-show-b ? (root.bg-drift ? 1.05 : 1.0) : 1.06;
             animate opacity { duration: 520ms; easing: ease-out-quad; }
-            animate transform-scale { duration: root.bg-show-b ? 1600ms : 0ms; easing: ease-out-quint; }
+            animate transform-scale { duration: root.bg-show-b ? (root.bg-drift ? 24000ms : 1600ms) : 0ms; easing: ease-out-quad; }
         }
         // The theme's wallpaper on Welcome (a game's tile always shows the game's art).
         Wallpaper {
@@ -546,15 +555,16 @@ export component AppWindow inherits Window {
             }
 
             // Tile row: the selected tile is larger with its name beside it (PS5 home).
-            property <length> big: (172px * S.k);
-            property <length> small: (112px * S.k);
-            property <length> gap: (22px * S.k);
+            // As a console's: the selected game big and anchored left, the rest after its name.
+            property <length> big: (196px * S.k);
+            property <length> small: (128px * S.k);
+            property <length> gap: (18px * S.k);
             property <length> x0: (96px * S.k);
             property <length> label-w: min((560px * S.k), max(row-name-t.preferred-width, row-sub-t.preferred-width)) + gap * 2.6;
 
             Rectangle {
                 y: (128px * S.k);
-                height: (210px * S.k);
+                height: (236px * S.k);
                 // Scrolled off under the tabs while Home is scrolled down.
                 opacity: root.home-lift > 0 ? 0 : 1;
                 animate opacity { duration: 220ms; easing: ease-out-quad; }
@@ -566,11 +576,13 @@ export component AppWindow inherits Window {
                     height: self.width;
                     opacity: i < root.sel ? 0 : 1;
                     visible: self.x < root.width + (40px * S.k) && i >= root.sel - 2;
-                    animate x, width { duration: 360ms; easing: ease-out-expo; }
+                    animate x { duration: 360ms; easing: ease-out-expo; }
+                    // The one chosen grows with a little spring.
+                    animate width { duration: 320ms; easing: ease-out-back; }
                     animate opacity { duration: 220ms; easing: ease-out-quad; }
-                    FocusRing { w: parent.width; h: parent.height; on: i == root.sel && root.zone == Zone.row && root.overlay == 0; radius: (18px * S.k); }
+                    FocusRing { w: parent.width; h: parent.height; on: i == root.sel && root.zone == Zone.row && root.overlay == 0; radius: (22px * S.k); }
                     Rectangle {
-                        border-radius: (18px * S.k);
+                        border-radius: (22px * S.k);
                         clip: true;
                         background: t.welcome ? @linear-gradient(135deg, Theme.accent.darker(0.45) 0%, Theme.accent 60%, Theme.accent.brighter(0.35) 100%)
                             : t.special ? #ffffff1f : Theme.panel;
@@ -797,6 +809,20 @@ export component AppWindow inherits Window {
                         border-width: 1px;
                         border-color: peek-card.f ? #ffffff00 : #ffffff1f;
                         animate background { duration: 200ms; }
+                    }
+                    // Trailers & screenshots: its first screenshot behind the words.
+                    if i == 2: Rectangle {
+                        border-radius: (18px * S.k);
+                        clip: true;
+                        Image { source: root.home-peek-shot; width: parent.width; height: parent.height; image-fit: cover; opacity: 0.55; }
+                        Rectangle { background: @linear-gradient(180deg, #050a1ccc 0%, #050a1c33 100%); }
+                    }
+                    // Compatibility: how well it plays, as a coloured bar under the words.
+                    if p.kind > 0: Rectangle {
+                        x: (22px * S.k); y: (74px * S.k);
+                        width: parent.width * 0.5; height: (5px * S.k);
+                        border-radius: (3px * S.k);
+                        background: p.kind == 1 ? Theme.ok : p.kind == 2 ? Theme.warn : Theme.danger;
                     }
                     FocusRing { w: parent.width; h: parent.height; on: peek-card.f; radius: (18px * S.k); glow: false; }
                     VerticalLayout {
@@ -1444,7 +1470,7 @@ export component AppWindow inherits Window {
                             }
                             ta-gear := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.top, 3); } }
                         }
-                        // You: an avatar with your initial; it opens the Control Center (Power is there).
+                        // You: an avatar with your initial or picture; it opens the profile card (src/profile_card.rs).
                         av := Rectangle {
                             property <bool> f: root.zone == Zone.top && root.idx == 6 && root.overlay == 0;
                             width: (56px * S.k);
@@ -1569,7 +1595,9 @@ export component AppWindow inherits Window {
             // the cards that ask something (Join Wi-Fi, Restart now?): they show their own keys.
             visible: root.overlay != 4 && root.overlay != 3 && root.overlay != 6 && root.overlay != 7 && root.overlay != 12 && root.overlay != 13 && root.overlay != 17
                 && root.overlay != 2
-                && (root.view == 0 || root.overlay != 0);
+                && (root.view == 0 || root.overlay != 0)
+                // Home with a controller: no keys on screen, as on a console (the keyboard's show).
+                && !(root.view == 0 && root.overlay == 0 && root.pad-hints);
             hints := HorizontalLayout {
                 padding-left: (20px * S.k);
                 padding-right: (22px * S.k);
@@ -2878,6 +2906,73 @@ export component AppWindow inherits Window {
                         spacing: (8px * S.k);
                         KeyCap { text: h.k; round: false; }
                         Text { text: h.l; font-size: (16px * S.k); color: Theme.hint; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+
+        // ------------------------------------------------------------ PROFILE CARD
+        // From the avatar at the top: who's playing, and where to go from there (src/profile_card.rs).
+        if root.overlay == 24: pc := Rectangle {
+            property <bool> entered: false;
+            init => { entered = true; }
+            property <bool> on: entered && root.closing != 24;
+            background: on ? #03050c8c : #03050c00;
+            animate background { duration: 200ms; }
+            TouchArea { clicked => { root.click(Zone.profile-card, -1); } }
+            Rectangle {
+                x: root.width - self.width - (96px * S.k);
+                y: (100px * S.k);
+                width: (460px * S.k);
+                height: pcl.preferred-height;
+                border-radius: (24px * S.k);
+                background: @linear-gradient(180deg, #121c38 0%, #0a1024 100%);
+                border-width: 1px;
+                border-color: Theme.line;
+                drop-shadow-blur: (50px * S.k);
+                drop-shadow-color: #000000aa;
+                opacity: pc.on ? 1 : 0;
+                transform-scale: pc.on ? 1.0 : 0.96;
+                animate opacity { duration: 180ms; easing: ease-out-quad; }
+                animate transform-scale { duration: 320ms; easing: ease-out-back; }
+                TouchArea {}
+                pcl := VerticalLayout {
+                    padding: (28px * S.k);
+                    spacing: (6px * S.k);
+                    HorizontalLayout {
+                        spacing: (18px * S.k);
+                        Rectangle {
+                            width: (88px * S.k); height: self.width;
+                            border-radius: self.width / 2;
+                            clip: true;
+                            background: root.user-color;
+                            border-width: (3px * S.k);
+                            border-color: #ffffff30;
+                            if root.user-has-picture: Image { source: root.user-picture; width: parent.width; height: parent.height; image-fit: cover; }
+                            if !root.user-has-picture: Text { text: root.user-initial; font-size: (40px * S.k); font-weight: 700; color: #ffffff; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: (4px * S.k);
+                            Text { text: root.user-name; font-size: (26px * S.k); font-weight: 700; color: Theme.text; overflow: elide; }
+                            HorizontalLayout {
+                                spacing: (8px * S.k);
+                                alignment: start;
+                                Rectangle { width: (10px * S.k); height: self.width; y: (7px * S.k); border-radius: self.width / 2; background: root.profile-playing ? Theme.ok : Theme.accent.brighter(0.4); }
+                                Text { text: root.profile-status; font-size: (16px * S.k); color: root.profile-playing ? Theme.ok : Theme.text2; overflow: elide; }
+                            }
+                        }
+                    }
+                    Text { text: root.profile-stats; font-size: (16px * S.k); color: Theme.text2; }
+                    Rectangle { height: (10px * S.k); }
+                    for it[i] in root.profile-items: Rectangle {
+                        property <bool> f: root.zone == Zone.profile-card && root.idx == i;
+                        height: (58px * S.k);
+                        border-radius: (14px * S.k);
+                        background: f ? #ffffff : ta-pi.has-hover ? #ffffff14 : transparent;
+                        animate background { duration: 160ms; }
+                        Text { x: (18px * S.k); text: it; font-size: (18px * S.k); font-weight: 600; color: f ? #0a0f22 : Theme.text; vertical-alignment: center; height: parent.height; }
+                        ta-pi := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.profile-card, i); } }
                     }
                 }
             }
