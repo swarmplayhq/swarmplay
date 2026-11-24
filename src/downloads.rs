@@ -34,6 +34,8 @@ const LOOKUP_TRACKERS: [&str; 5] = [
 
 /// Peers per torrent at once.
 const PEER_LIMIT: usize = 500;
+/// How peers connect, both ways: TCP, and uTP when TCP doesn't get through.
+const LISTEN_MODE: librqbit::ListenerMode = librqbit::ListenerMode::TcpAndUtp;
 /// The upload limits to choose from (Settings → Downloads), MB/s; 0: unlimited. Peers favour
 /// those that send back, so a high one also downloads faster.
 pub const UPLOAD_LIMITS: [u32; 6] = [5, 10, 25, 50, 100, 0];
@@ -1020,9 +1022,11 @@ impl Worker {
                 ratelimits: librqbit::limits::LimitsConfig { upload_bps: self.policy.upload_bps, download_bps: self.policy.download_bps },
                 // Peers can reach this PC too (most of a swarm is behind a router and can't be
                 // reached otherwise); the router is asked to forward the port, except through a
-                // VPN, whose own address is the one peers see.
+                // VPN, whose own address is the one peers see. uTP (over UDP, on the same port)
+                // as well: the engine dials it when TCP doesn't answer, and it gets through more
+                // routers, so peers TCP can't reach (behind a NAT, like a CGNAT) still can be.
                 listen: Some(librqbit::ListenerOptions {
-                    mode: librqbit::ListenerMode::TcpOnly, listen_addr: (std::net::Ipv6Addr::UNSPECIFIED, port).into(),
+                    mode: LISTEN_MODE, listen_addr: (std::net::Ipv6Addr::UNSPECIFIED, port).into(),
                     enable_upnp_port_forwarding: bound.is_none(), ..Default::default()
                 }),
                 ..Default::default()
@@ -2533,6 +2537,42 @@ mod tests {
     }
 
     /// A two-file torrent (a "game" and an "extra", 256 KiB each, whole pieces apiece).
+    #[test]
+    fn a_peer_reachable_only_over_utp_is_still_downloaded_from() {
+        runtime().block_on(async {
+            let temp = tempfile::tempdir().unwrap();
+            let session = |root: PathBuf, mode| Session::new_with_opts(root, SessionOptions {
+                dht: None, disable_trackers: true, disable_local_service_discovery: true, persistence: None, fastresume: false,
+                listen: Some(librqbit::ListenerOptions {
+                    mode, listen_addr: "127.0.0.1:0".parse().unwrap(), enable_upnp_port_forwarding: false, ..Default::default()
+                }),
+                ..Default::default()
+            });
+            // A seeder TCP can't reach (like one behind a NAT that only lets UDP through).
+            let source = temp.path().join("Release");
+            std::fs::create_dir_all(&source).unwrap();
+            let expected: Vec<u8> = (0..256 * 1024u32).map(|i| (i.wrapping_mul(2654435761) >> 13) as u8).collect();
+            std::fs::write(source.join("game.pkg"), &expected).unwrap();
+            let seeder = session(temp.path().to_path_buf(), librqbit::ListenerMode::UtpOnly).await.unwrap();
+            let (torrent, seeded) = seeder.create_and_serve_torrent(&source, librqbit::CreateTorrentOptions {
+                name: None, trackers: vec![], piece_length: Some(65536),
+            }).await.unwrap();
+            tokio::time::timeout(Duration::from_secs(30), async {
+                while !seeded.stats().finished { tokio::time::sleep(Duration::from_millis(25)).await; }
+            }).await.expect("seeder verifies fixture");
+            let leecher = session(temp.path().join("leecher"), LISTEN_MODE).await.unwrap();
+            let handle = leecher.add_torrent(AddTorrent::from_bytes(torrent.as_bytes().unwrap()), Some(AddTorrentOptions {
+                initial_peers: Some(vec![seeder.listen_addr().unwrap()]), ..Default::default()
+            })).await.unwrap().into_handle().unwrap();
+            tokio::time::timeout(Duration::from_secs(60), async {
+                while !handle.stats().finished { tokio::time::sleep(Duration::from_millis(50)).await; }
+            }).await.expect("the download reaches the uTP-only seeder");
+            assert_eq!(std::fs::read(temp.path().join("leecher/game.pkg")).unwrap(), expected);
+            leecher.stop().await;
+            seeder.stop().await;
+        });
+    }
+
     async fn two_file_seeder(root: &Path) -> (Arc<Session>, librqbit::CreateTorrentResult, Vec<u8>, Vec<u8>) {
         let mut seed = 0x9e3779b9u32;
         let mut bytes = |n: usize| -> Vec<u8> { (0..n).map(|_| { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; seed as u8 }).collect() };
