@@ -19,7 +19,8 @@ pub const REPO: &str = "AzrakHQ/azrak-launcher";
 /// `AZRAK_UPDATE_REPO` overrides it.
 const UPDATE_REPO: &str = "swarmplayhq/swarmplay";
 const ASSET: &str = "swarmplay-linux-x86_64.tar.gz";
-const CHECK_INTERVAL: f64 = 6.0 * 3600.0;
+/// How often a running SwarmPlay asks for a new version (GitHub allows 60 asks an hour).
+const CHECK_INTERVAL: f64 = 30.0 * 60.0;
 
 #[derive(Clone, Debug)]
 pub struct Release {
@@ -98,7 +99,10 @@ pub fn latest_release() -> Result<Release, String> {
 
 /// The installed binary, if the launcher may replace it itself.
 pub fn replaceable_exe() -> Result<PathBuf, String> {
-    let exe = std::env::current_exe().and_then(|p| p.canonicalize()).map_err(|e| e.to_string())?;
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    // Replaced already by an update waiting for a restart: Linux names it "… (deleted)", the
+    // path is still where the newer one goes.
+    let exe = PathBuf::from(exe.to_string_lossy().trim_end_matches(" (deleted)")).canonicalize().map_err(|e| e.to_string())?;
     if exe.components().any(|c| c.as_os_str() == "target") && exe.parent().is_some_and(|p| p.ends_with("release") || p.ends_with("debug")) {
         return Err(tr::tr!("running from a source build (update with git pull + ./install.sh)"));
     }
@@ -195,7 +199,7 @@ impl App {
     pub fn app_update_start(&mut self) {
         self.app_update_check(false);
         let t = slint::Timer::default();
-        t.start(slint::TimerMode::Repeated, Duration::from_secs(30 * 60), || {
+        t.start(slint::TimerMode::Repeated, Duration::from_secs(5 * 60), || {
             with_app(|app| {
                 if now_secs() - app.upd.last_check > CHECK_INTERVAL {
                     app.app_update_check(false);
@@ -213,6 +217,12 @@ impl App {
 
     pub fn app_update_available(&self) -> bool {
         self.upd.installed.is_none() && self.upd.latest.as_ref().is_some_and(|r| is_newer(&r.version, &current_version()))
+    }
+
+    /// One newer still than the update installed and waiting for a restart: it's got the same
+    /// way (the restart then goes straight into it).
+    fn newer_than_installed(&self, rel: &Release) -> bool {
+        self.upd.installed.as_ref().is_some_and(|v| is_newer(&rel.version, v))
     }
 
     pub fn app_update_check(&mut self, manual: bool) {
@@ -240,7 +250,7 @@ impl App {
                         }
                         // Otherwise Settings says it: "Update to …" on the row and "1 ready"
                         // beside Updates, or "Up to date".
-                        if app.app_update_available() && (manual || app.cfg.lock().unwrap().app_auto_update) {
+                        if (app.app_update_available() || app.newer_than_installed(&rel)) && (manual || app.cfg.lock().unwrap().app_auto_update) {
                             app.app_update_install(rel);
                         }
                     }
@@ -318,8 +328,8 @@ impl App {
     pub fn push_update(&mut self) {
         let latest = self.upd.latest.as_ref().map(|r| r.version.clone()).unwrap_or_default();
         let (kind, version) = match &self.upd.installed {
+            _ if self.upd.busy => (2, latest),
             Some(v) => (3, v.clone()),
-            None if self.upd.busy => (2, latest),
             None if self.app_update_available() => (1, latest),
             None => (0, String::new()),
         };
