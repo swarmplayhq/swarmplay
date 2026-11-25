@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SwarmPlay\n"
-"POT-Creation-Date: 2026-11-25 16:12+0000\n"
+"POT-Creation-Date: 2026-11-25 18:54+0000\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -3551,10 +3551,6 @@ msgid "Controller in PC games"
 msgstr "Controle em jogos de PC"
 
 #: src/settings.rs
-msgid "Controller in Windows games"
-msgstr "Controle em jogos de Windows"
-
-#: src/settings.rs
 msgid "Couldn't change it: {error}"
 msgstr "Não foi possível mudar: {error}"
 
@@ -3707,6 +3703,10 @@ msgstr "No seu avatar e na tela de início"
 msgid "Only for AMD processors"
 msgstr "Só para processadores AMD"
 
+#: src/settings.rs
+msgid "Only for games that don't see your controller: shows it to them as an Xbox one · games made for PlayStation controllers work best with this off"
+msgstr "Só para jogos que não enxergam o seu controle: mostra-o a eles como um de Xbox · jogos feitos para controles PlayStation funcionam melhor com isto desligado"
+
 #. No controller button opens Downloads (the top bar's icon does), so a controller player
 #. just presses this row; Ctrl+D is only worth showing to keyboard players.
 #: src/settings.rs
@@ -3814,12 +3814,12 @@ msgid "Share your game ratings"
 msgstr "Compartilhar suas avaliações de jogos"
 
 #: src/settings.rs
-msgid "Show them for"
-msgstr "Mostrar por"
+msgid "Show controllers as Xbox ones in Windows games"
+msgstr "Mostrar controles como de Xbox em jogos de Windows"
 
 #: src/settings.rs
-msgid "Shows any controller (DualShock, DualSense…) to Windows games as an Xbox one · takes effect at the next start"
-msgstr "Mostra qualquer controle (DualShock, DualSense…) aos jogos de Windows como um de Xbox · vale a partir do próximo início"
+msgid "Show them for"
+msgstr "Mostrar por"
 
 #: src/settings.rs
 msgid "Small cards at the top right · everything is kept in the list (Control Center)"
@@ -5635,6 +5635,12 @@ msgstr "NOVO"
 #: ui/widgets.slint:269
 msgid "● PLAYING"
 msgstr "● JOGANDO"
+
+#~ msgid "Controller in Windows games"
+#~ msgstr "Controle em jogos de Windows"
+
+#~ msgid "Shows any controller (DualShock, DualSense…) to Windows games as an Xbox one · takes effect at the next start"
+#~ msgstr "Mostra qualquer controle (DualShock, DualSense…) aos jogos de Windows como um de Xbox · vale a partir do próximo início"
 
 #~ msgid "Only download content you are authorized to obtain and share. {} Transfers upload pieces, capped at 128 KiB/s. After completion, seeding continues by default while the launcher is open; switch it off in Settings or stop an individual seed in Downloads."
 #~ msgstr "Só faça download de conteúdo que você tem permissão para obter e compartilhar. {} As transferências enviam partes, até o limite definido em Configurações. Depois de concluído, o compartilhamento (seed) continua por padrão enquanto o SwarmPlay estiver aberto; desative em Configurações ou pare um compartilhamento em Downloads."

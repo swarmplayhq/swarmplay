@@ -357,10 +357,14 @@ impl Sessions {
             let mut command = pc_command(game)?;
             // Controllers as XInput ones: the game's own Wine prefix (a repack's), SwarmPlay's
             // prefix for it, and Proton (src/wine_pads.rs).
-            if cfg.wine_sdl_pads {
+            let own_prefix = crate::util::data_dir().join("prefixes").join(&game.id);
+            if cfg.wine_xinput_pads {
                 crate::wine_pads::prefer_sdl(&game.path);
-                crate::wine_pads::prefer_sdl(&crate::util::data_dir().join("prefixes").join(&game.id));
+                crate::wine_pads::prefer_sdl(&own_prefix);
                 command.env("PROTON_PREFER_SDL", "1");
+            } else {
+                crate::wine_pads::prefer_native(&game.path);
+                crate::wine_pads::prefer_native(&own_prefix);
             }
             crate::pc_pads::prepare(&game.path, &cfg.pc_pad);
             crate::perf_hud::prepare(&mut command, &cfg.perf_hud);

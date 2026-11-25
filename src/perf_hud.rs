@@ -69,9 +69,10 @@ pub fn config_text(level: &str) -> String {
             "resolution", "present_mode", "refresh_rate", "vulkan_driver", "engine_version", "wine", "gamemode", "time"],
         _ => &["no_display"],
     };
-    // In the corner notifications don't use, in the panel's colours, numbers easy to read.
-    let look = ["legacy_layout=0", "position=top-left", "offset_x=16", "offset_y=16", "round_corners=10",
-        "background_color=0f1424", "background_alpha=0.6", "font_size=22", "text_outline"];
+    // In the corner notifications don't use, over the game with nothing behind the numbers (an
+    // outline keeps them readable on bright scenes).
+    let look = ["legacy_layout=0", "position=top-left", "offset_x=16", "offset_y=16", "background_alpha=0",
+        "font_size=22", "text_outline"];
     let mut text = String::from("# Written by SwarmPlay (Settings → Playing → Performance overlay): changes here are replaced.\n");
     for line in look.iter().chain(body) {
         text.push_str(line);
@@ -134,6 +135,7 @@ mod tests {
         assert!(lines("Simple").contains(&"fps_only".into()) && !lines("Simple").contains(&"no_display".into()));
         assert!(lines("Detailed").contains(&"horizontal".into()) && lines("Detailed").contains(&"gpu_temp".into()));
         assert!(lines("Full").contains(&"fps_metrics=avg,0.01,0.001".into()) && !lines("Full").contains(&"horizontal".into()));
+        for l in LEVELS { assert!(lines(l).contains(&"background_alpha=0".into()), "see-through: {l}"); }
         for l in LEVELS { assert!(config_text(l).lines().all(|l| l.starts_with('#') || !l.contains(' ')), "one option per line: {l}"); }
     }
 

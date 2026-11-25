@@ -1,8 +1,10 @@
 //! Controllers in Windows games. Wine hands Sony controllers (DualShock 4, DualSense) to games
-//! raw, through hidraw: a game that only knows XInput (most PC games, RE Engine's among them)
-//! then sees no controller at all. Through SDL instead, Wine shows every controller as an XInput
-//! one. Before a Windows game starts, its Wine prefix is set that way (Settings → Playing →
-//! Controller in Windows games); Proton gets the same through PROTON_PREFER_SDL.
+//! raw, through hidraw, as Proton does: games made for them (Sony's ports, most big ones) read
+//! them natively, with PlayStation buttons. A game that only knows XInput may then see none;
+//! through SDL instead, Wine shows every controller as an XInput one (Settings → Playing →
+//! Controller in Windows games, off by default). It isn't the default because SDL's copy keeps
+//! the Sony controller's ids but not its reports: a game made for the real one reads it wrong
+//! (Ghost of Tsushima: a stick held up). Proton gets the same through PROTON_PREFER_SDL.
 
 use std::path::{Path, PathBuf};
 
@@ -11,6 +13,11 @@ use std::path::{Path, PathBuf};
 /// a real CurrentControlSet, which is the one their Wine reads.
 const SECTIONS: [&str; 2] = [r"[System\\ControlSet001\\Services\\winebus]", r"[System\\CurrentControlSet\\Services\\winebus]"];
 const VALUES: [(&str, &str); 2] = [("\"DisableHidraw\"", "dword:00000001"), ("\"Enable SDL\"", "dword:00000001")];
+/// Wine's own way, in a prefix SwarmPlay set to SDL before: hidraw for Sony controllers again.
+const NATIVE: [(&str, &str); 1] = [("\"DisableHidraw\"", "dword:00000000")];
+/// Left in a prefix the first time SwarmPlay changes it: the original, and the mark of a prefix
+/// it set.
+const BACKUP: &str = "system.reg.swarmplay-backup";
 
 /// Wine prefixes in a game's folder (a repack's game/prefix, say): folders with a system.reg
 /// and a drive_c, a few levels down at most.
@@ -35,6 +42,11 @@ pub fn prefixes_in(dir: &Path) -> Vec<PathBuf> {
 
 /// `text` (a system.reg) with controllers going through SDL; None when it already does.
 fn with_sdl(text: &str) -> Option<String> {
+    with_values(text, &VALUES)
+}
+
+/// `text` with `values` in its winebus key (added when it has none); None when already so.
+fn with_values(text: &str, values: &[(&str, &str)]) -> Option<String> {
     let has = |section: &str| text.lines().any(|l| l.starts_with(section));
     let present: Vec<&str> = SECTIONS.into_iter().filter(|s| has(s)).collect();
     if present.is_empty() {
@@ -42,25 +54,25 @@ fn with_sdl(text: &str) -> Option<String> {
         let old = !text.contains(r"[System\\ControlSet001\\") && text.contains(r"[System\\CurrentControlSet\\");
         let mut out = text.trim_end().to_string();
         out.push_str(&format!("\n\n{} 0\n", SECTIONS[old as usize]));
-        for (k, v) in VALUES { out.push_str(&format!("{k}={v}\n")); }
+        for (k, v) in values { out.push_str(&format!("{k}={v}\n")); }
         return Some(out);
     }
     let mut out = text.to_string();
     let mut changed = false;
     for section in present {
-        if let Some(new) = set_in(&out, section) { out = new; changed = true; }
+        if let Some(new) = set_in(&out, section, values) { out = new; changed = true; }
     }
     changed.then_some(out)
 }
 
-/// `text` with VALUES set in its `section`, which it has; None: already so.
-fn set_in(text: &str, section: &str) -> Option<String> {
+/// `text` with `values` set in its `section`, which it has; None: already so.
+fn set_in(text: &str, section: &str, values: &[(&str, &str)]) -> Option<String> {
     let lines: Vec<&str> = text.lines().collect();
     let start = lines.iter().position(|l| l.starts_with(section))?;
     let end = lines[start + 1..].iter().position(|l| l.trim().is_empty() || l.starts_with('[')).map_or(lines.len(), |n| start + 1 + n);
     let mut body: Vec<String> = lines[start + 1..end].iter().map(|l| l.to_string()).collect();
     let mut changed = false;
-    for (k, v) in VALUES {
+    for (k, v) in values {
         let want = format!("{k}={v}");
         match body.iter().position(|l| l.starts_with(&format!("{k}="))) {
             Some(i) if body[i] == want => {}
@@ -82,7 +94,7 @@ pub fn prefer_sdl(dir: &Path) {
         let reg = prefix.join("system.reg");
         let Ok(text) = std::fs::read_to_string(&reg) else { continue };
         if let Some(new) = with_sdl(&text) {
-            let backup = prefix.join("system.reg.swarmplay-backup");
+            let backup = prefix.join(BACKUP);
             if !backup.exists() { let _ = std::fs::copy(&reg, &backup); }
             match crate::util::atomic_write(&reg, new.as_bytes()) {
                 Ok(()) => crate::log!("controllers through SDL in {}", prefix.display()),
@@ -90,6 +102,25 @@ pub fn prefer_sdl(dir: &Path) {
             }
         }
     }
+}
+
+/// Every prefix under `dir` that SwarmPlay set to SDL back to Wine's own way (Sony controllers
+/// natively, through hidraw). Prefixes it never changed are left as their game came.
+pub fn prefer_native(dir: &Path) {
+    for prefix in prefixes_in(dir).into_iter().filter(|p| p.join(BACKUP).is_file()) {
+        let reg = prefix.join("system.reg");
+        let Ok(text) = std::fs::read_to_string(&reg) else { continue };
+        let Some(new) = native(&text) else { continue };
+        match crate::util::atomic_write(&reg, new.as_bytes()) {
+            Ok(()) => crate::log!("controllers natively again in {}", prefix.display()),
+            Err(e) => crate::log!("couldn't set controllers natively in {}: {e}", prefix.display()),
+        }
+    }
+}
+
+/// `text` with hidraw on again, where it was turned off; None when it isn't.
+fn native(text: &str) -> Option<String> {
+    text.contains("\"DisableHidraw\"=dword:00000001").then(|| with_values(text, &NATIVE)).flatten()
 }
 
 #[cfg(test)]
@@ -117,6 +148,15 @@ mod tests {
         assert_eq!(with_sdl(&out), None);
         let fresh = with_sdl("WINE REGISTRY Version 2\n\n[System\\\\CurrentControlSet\\\\Control] 1\n").unwrap();
         assert!(fresh.contains("[System\\\\CurrentControlSet\\\\Services\\\\winebus] 0\n"), "no key yet: added where that Wine reads");
+    }
+
+    #[test]
+    fn going_back_turns_hidraw_on_again_and_keeps_sdl() {
+        let set = with_sdl("WINE REGISTRY Version 2\n").unwrap();
+        let back = native(&set).unwrap();
+        assert!(back.contains("\"DisableHidraw\"=dword:00000000\n\"Enable SDL\"=dword:00000001"));
+        assert_eq!(native(&back), None, "already native: left alone");
+        assert_eq!(native("WINE REGISTRY Version 2\n"), None, "never set: nothing to undo");
     }
 
     #[test]

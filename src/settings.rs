@@ -166,9 +166,9 @@ impl App {
         r.value_kind = if connected { 1 } else { 0 };
         r.hint = if connected { tr!("Your controller works in games with no setup") } else { tr!("Games play best with a controller · open to see the keyboard keys") }.into();
         rows.push((SId::Controls, r));
-        let mut r = row(2, &tr!("Controller in Windows games"));
-        r.on = cfg.wine_sdl_pads;
-        r.hint = tr!("Shows any controller (DualShock, DualSense…) to Windows games as an Xbox one · takes effect at the next start").into();
+        let mut r = row(2, &tr!("Show controllers as Xbox ones in Windows games"));
+        r.on = cfg.wine_xinput_pads;
+        r.hint = tr!("Only for games that don't see your controller: shows it to them as an Xbox one · games made for PlayStation controllers work best with this off").into();
         rows.push((SId::WineSdlPads, r));
         let mut r = row(3, &tr!("Controller in PC games"));
         r.value = crate::pc_pads::label(&cfg.pc_pad).into();
@@ -884,7 +884,7 @@ impl App {
             SId::Fullscreen | SId::Amd | SId::ReturnOnExit | SId::AutoUpdate | SId::OverlayPause | SId::WineSdlPads => {
                 let on = dir > 0;
                 self.save_cfg(|c| match id {
-                    SId::WineSdlPads => c.wine_sdl_pads = on,
+                    SId::WineSdlPads => c.wine_xinput_pads = on,
                     SId::OverlayPause => c.overlay_pause = on,
                     SId::Fullscreen => c.fullscreen = on,
                     SId::Amd => c.amd_cpu = on,
