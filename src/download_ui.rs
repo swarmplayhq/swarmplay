@@ -945,10 +945,27 @@ impl App {
         let sizer: String = suffix.chars().map(|c| if c.is_ascii_digit() { '0' } else { c }).collect();
         let ui = self.ui();
         ui.set_ring_kind(kind);
-        ui.set_ring_label(words.into());
-        ui.set_ring_suffix(suffix.into());
+        ui.set_ring_label(words.as_str().into());
+        ui.set_ring_suffix(suffix.as_str().into());
         ui.set_ring_sizer(sizer.into());
         ui.set_ring_path(ring_path(frac).into());
+        // Closed, the island shows the percentage in its ring.
+        ui.set_ring_pct(if suffix.is_empty() { String::new() } else { pct(frac) }.into());
+        // News (something started, changed what it's doing, finished, needs you) opens the island
+        // to say it, then it closes back to its ring. Not under the start screen or a page over the
+        // bar: it waits for them to go (the Downloads page says it all itself).
+        let news = if kind == 0 { String::new() } else { format!("{kind} {words}") };
+        if self.overlay == Overlay::Downloads || news.is_empty() { self.ring_shown = news; }
+        // One thing at a time: news of a new SwarmPlay being said goes first.
+        else if news != self.ring_shown && !self.boot.active && self.overlay == Overlay::None && !ui.get_upd_open() {
+            self.ring_shown = news;
+            self.ring_open_seq += 1;
+            let seq = self.ring_open_seq;
+            ui.set_ring_open(true);
+            slint::Timer::single_shot(crate::update::ISLAND_OPEN, move || with_app(move |app| {
+                if app.ring_open_seq == seq { app.ui().set_ring_open(false); }
+            }));
+        }
         // The ring went (nothing's happening): its place in the top bar goes too.
         if kind == 0 && self.zone == Z_TOP && self.idx == 4 && self.overlay == Overlay::None {
             self.set_focus(Z_TOP, 3);

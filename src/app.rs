@@ -474,6 +474,10 @@ pub struct App {
     pub ring_seen: HashSet<String>,
     /// The download the ring is about, when it's about one.
     pub ring_key: Option<String>,
+    /// What the island last opened to say about downloads, and its opening (a newer one's timer
+    /// closes it, not an older one's).
+    pub ring_shown: String,
+    pub ring_open_seq: u64,
     /// A VPN connect, disconnect or import in progress ("Connecting…"), shown in Settings.
     pub vpn_busy: String,
     /// The VPNs last shown in Settings, to refresh it when one connects or drops.
@@ -856,6 +860,8 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         ring_busy: HashSet::new(),
         ring_done: Vec::new(),
         ring_key: None,
+        ring_shown: String::new(),
+        ring_open_seq: 0,
         vpn_busy: String::new(),
         vpn_seen: String::new(),
         catalog_timer: slint::Timer::default(),
@@ -945,6 +951,7 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
     if !Config::path().exists() {
         cfg.lock().unwrap().save(); // remember detected defaults
     }
+    app.resume_after_restart();
     APP.with(|a| *a.borrow_mut() = Some(app));
     with_app(move |app| {
         // From the AzrakOS USB stick: first the choice to try AzrakOS or install it. The launcher
@@ -2559,14 +2566,14 @@ impl App {
     /// SwarmPlay (src/update.rs `push_update`). (2 was
     /// a search button, which only led to the Library's own search: △ or / still gets there.)
     fn top_items(&self) -> Vec<i32> {
-        // As they stand, like a console's: the running game's Resume and Stop, Search, the
-        // Downloads ring (only while something's happening; otherwise Downloads is in the
-        // Control Center), Settings, then you.
+        // As they stand, like a console's: the running game's Resume and Stop, the island (only
+        // while something's happening; otherwise Downloads is in the Control Center), Search,
+        // Settings, then you.
         let mut items = if self.live.is_empty() { vec![] } else { vec![0, 1] };
-        // A new SwarmPlay: its button, left of Search.
+        // The island, left of Search: a new SwarmPlay, then what's downloading.
         if self.ui().get_upd_kind() > 0 { items.push(7); }
-        items.push(5);
         if self.ui().get_ring_kind() > 0 { items.push(4); }
+        items.push(5);
         items.extend([3, 6]);
         items
     }
