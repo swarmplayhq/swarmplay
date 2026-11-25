@@ -66,6 +66,8 @@ pub enum SId {
     // In-game overlay (src/overlay_ui.rs)
     OverlayHelper,
     OverlayPause,
+    /// The performance overlay's level (src/perf_hud.rs).
+    PerfHud,
     // Storage (src/storage.rs)
     StoragePlace(u16),
     /// A line of a drive's legend: games, downloads, media, other.
@@ -814,6 +816,10 @@ impl App {
                 let next = kinds[(p + dir).rem_euclid(kinds.len() as i32) as usize].to_string();
                 self.save_cfg(|c| c.pc_pad = next);
             }
+            SId::PerfHud => {
+                let next = crate::perf_hud::step(&self.cfg.lock().unwrap().perf_hud, dir);
+                self.set_perf_hud(next);
+            }
             SId::Present => {
                 let cur = self.cfg.lock().unwrap().present_mode.clone();
                 let pos = PRESENT_MODES.iter().position(|(k, _)| *k == cur).unwrap_or(0) as i32;
@@ -944,7 +950,7 @@ impl App {
                 let on = self.settings_rows[i].on;
                 self.settings_change(i, if on { -1 } else { 1 });
             }
-            SId::Resolution | SId::Present | SId::PcPad | SId::UploadLimit | SId::Display | SId::Language | SId::AvatarColor | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
+            SId::Resolution | SId::Present | SId::PcPad | SId::PerfHud | SId::UploadLimit | SId::Display | SId::Language | SId::AvatarColor | SId::ThemeWallpaper | SId::ThemeAccent | SId::SoundOut => self.settings_change(i, 1),
             // A press turns it up a step (◂ ▸ go both ways).
             SId::SoundVolume => self.settings_change(i, 1),
             // A press goes round Off, Low, Medium, High.

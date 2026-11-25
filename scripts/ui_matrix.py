@@ -75,6 +75,8 @@ STEPS = [
                     "Down", "Home", "Right", "sleep:0.6", "Down", "sleep:0.4"]),
     ("13a-in-game", ["Return", "sleep:0.6", "Down", "sleep:0.4", "Return", "sleep:5"]),   # Your games → the game → Play
     ("13b-overlay", ["run:{bin} --overlay", "sleep:1.2"]),
+    # FPS, pressed twice: Detailed (keys to the panel's own window, then to the launcher's again).
+    ("13b2-overlay-fps", ["win:SwarmPlay Overlay", "Down", "Right", "Right", "sleep:0.3", "Return", "Return", "sleep:0.6", "win:"]),
     ("13c-screenshot-notice", ["run:{bin} --screenshot", "sleep:1.6"]),
 ]
 
@@ -125,6 +127,11 @@ def shoot(size: str, n: int, out: Path, binary: Path, game: Path | None, lang: s
     fake = work / "kyty_emulator"
     fake.write_text(f"#!/bin/sh\n[ -e \"$HOME/.play\" ] && exec display -backdrop -background '#0c0907' -title 'Stand-in game' {picture}\nexit 0\n")
     fake.chmod(0o755)
+    # MangoHud "installed" (its Vulkan layer where the loader looks): the performance overlay's levels
+    # show. The stand-in game draws with X11, so nothing loads it.
+    layers = home / ".local/share/vulkan/implicit_layer.d"
+    layers.mkdir(parents=True)
+    (layers / "MangoHud.x86_64.json").write_text("{}")
     (home / ".config/azrak/config.json").write_text(json.dumps(
         {"game_dirs": ["~/Games"], "sounds": False, **NO_UPDATES, "emulator": str(fake), "seed_after_download": False,
          "language": lang or "en"}))
@@ -192,6 +199,11 @@ exit 0
                     time.sleep(float(k[6:]))
                     continue
                 # A command, as a desktop shortcut would run it ({bin}: this launcher).
+                # Keys to another window, by its title ("win:" alone: the launcher's again).
+                if k.startswith("win:"):
+                    found = run(["xdotool", "search", "--name", k[4:]], env=env, capture_output=True, text=True).stdout.split() if k[4:] else []
+                    win = found[-1] if found else ids[-1]
+                    continue
                 if k.startswith("run:"):
                     run(["sh", "-c", k[4:].replace("{bin}", str(binary))], env=env, cwd=work)
                     time.sleep(0.25)
