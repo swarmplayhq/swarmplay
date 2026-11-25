@@ -71,7 +71,9 @@ STEPS = [
     ("11-toasts", ["Escape", "sleep:0.5", "Home", "Down", "Right", "Right", "Right", "Return", "sleep:0.4",
                    "Up", "Right", "Right", "Down", "Return", "sleep:0.8"]),
     ("12-power", ["Escape", "Escape", "F1", "sleep:0.7", "Down", "Right", "Right", "Right", "Return", "sleep:0.6"]),  # Control Center → Power
-    ("12b-notifications", ["Escape", "sleep:0.5", "F1", "sleep:0.7", "Right", "Return", "sleep:0.9"]),  # Control Center → the list
+    # Restart SwarmPlay, asked first: what stops meanwhile.
+    ("12a-restart-card", ["Return", "sleep:0.7"]),
+    ("12b-notifications", ["Escape", "sleep:0.4", "Escape", "sleep:0.5", "F1", "sleep:0.7", "Right", "Return", "sleep:0.9"]),  # Control Center → the list
     # The in-game overlay, over a stand-in game: Play, then the overlay as a keyboard shortcut opens
     # it, then a screenshot (the panel goes, a notification shows over the game).
     ("13-to-play", ["run:touch $HOME/.play", "Escape", "sleep:0.4", "Escape", "sleep:0.4", "Up", "Up", "Left", "Return", "sleep:0.6",

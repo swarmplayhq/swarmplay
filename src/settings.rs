@@ -975,7 +975,7 @@ impl App {
             SId::AppUpdate => {
                 audio::play(Sound::Select);
                 if self.upd.installed.is_some() {
-                    self.app_restart();
+                    self.power_ask(crate::os::power::Power::App);
                 } else if self.upd.busy || self.upd.checking {
                     return;
                 } else if self.app_update_available() {
