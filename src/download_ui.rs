@@ -101,7 +101,7 @@ fn added_label(added: u64) -> String {
 
 /// The top bar ring's arc for `frac` (0–1), on a 36×36 box: a circle of radius 15 from the top,
 /// clockwise.
-fn ring_path(frac: f32) -> String {
+pub fn ring_path(frac: f32) -> String {
     let f = frac.clamp(0.0, 1.0);
     if f >= 0.999 { return "M 18 3 A 15 15 0 0 1 18 33 A 15 15 0 0 1 18 3".into(); }
     let a = f.max(0.01) * std::f32::consts::TAU;

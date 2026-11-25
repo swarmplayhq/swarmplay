@@ -173,7 +173,16 @@ pub struct AppUpdate {
     pub last_check: f64,
     /// The version a notification already told about (once per version).
     pub told: String,
+    /// How far the download is (0–1), for the top bar's button.
+    pub fraction: f32,
+    /// The top bar's button as last opened ("kind version"): it opens again only for news.
+    pub shown: String,
+    /// Bumped each time it opens: a close timer from an older opening leaves it alone.
+    pub open_seq: u64,
 }
+
+/// How long the top bar's button stays open to say what's new, as a phone's island does.
+const ISLAND_OPEN: Duration = Duration::from_millis(4200);
 
 fn post(f: impl FnOnce(&mut App) + Send + 'static) {
     let _ = slint::invoke_from_event_loop(move || with_app(f));
@@ -264,12 +273,13 @@ impl App {
         self.kyty_refresh_settings();
         std::thread::spawn(move || {
             let last = std::sync::Mutex::new(String::new());
-            let res = install(&rel, &exe, &|p, _| {
+            let res = install(&rel, &exe, &|p, f| {
                 let mut l = last.lock().unwrap();
                 if *l != p {
                     *l = p.clone();
                     post(move |app| {
                         app.upd.progress = p.clone();
+                        app.upd.fraction = f;
                         if !app.boot.active {
                             app.set_status(&p, true);
                         }
@@ -279,6 +289,7 @@ impl App {
             });
             post(move |app| {
                 app.upd.busy = false;
+                app.upd.fraction = 0.0;
                 app.upd.progress.clear();
                 app.set_status("", false);
                 match res {
@@ -296,6 +307,65 @@ impl App {
                 app.kyty_refresh_settings();
             });
         });
+    }
+
+    /// The top bar's update button, left of Search (ui/app.slint's `upd-*`): 0 none, 1 a new
+    /// version is out (press: get it), 2 getting it, 3 ready (press: restart into it). When there's
+    /// news it opens leftwards to say it, then closes back to its icon. Called every tick.
+    pub fn push_update(&mut self) {
+        let latest = self.upd.latest.as_ref().map(|r| r.version.clone()).unwrap_or_default();
+        let (kind, version) = match &self.upd.installed {
+            Some(v) => (3, v.clone()),
+            None if self.upd.busy => (2, latest),
+            None if self.app_update_available() => (1, latest),
+            None => (0, String::new()),
+        };
+        let text = match kind {
+            1 => tr::tr!("SwarmPlay {} is out", version),
+            2 => tr::tr!("Updating to {} · {}%", version, (self.upd.fraction * 100.0).round() as u32),
+            3 => tr::tr!("SwarmPlay {} is ready · restart", version),
+            _ => String::new(),
+        };
+        let ui = self.ui();
+        ui.set_upd_kind(kind);
+        ui.set_upd_text(text.into());
+        ui.set_upd_ring(crate::download_ui::ring_path(self.upd.fraction).into());
+        // Gone (nothing newer after all) while chosen: Search takes the focus.
+        if kind == 0 && self.zone == Z_TOP && self.idx == 7 { self.set_focus(Z_TOP, 5); }
+        // News is said where it's seen: not under the start screen or a page over the bar (it
+        // waits for them to go).
+        let key = format!("{kind} {version}");
+        if kind == 0 || key == self.upd.shown || self.boot.active || self.overlay != Overlay::None { return; }
+        self.upd.shown = key;
+        self.upd.open_seq += 1;
+        let seq = self.upd.open_seq;
+        ui.set_upd_open(true);
+        slint::Timer::single_shot(ISLAND_OPEN, move || with_app(move |app| {
+            if app.upd.open_seq == seq { app.ui().set_upd_open(false); }
+        }));
+    }
+
+    /// The top bar's update button pressed: get the new version, or restart into it.
+    pub fn update_pressed(&mut self) {
+        match (&self.upd.installed, self.upd.latest.clone()) {
+            (Some(_), _) if !self.live.is_empty() => {
+                self.toast(&tr::tr!("Finish your game first"), &tr::tr!("SwarmPlay restarts into the new version once no game is running"), "alert", crate::toast::FAILED);
+            }
+            (Some(_), _) => self.app_restart(),
+            (None, Some(rel)) if !self.upd.busy && self.app_update_available() => {
+                crate::audio::play(crate::audio::Sound::Select);
+                self.app_update_install(rel);
+            }
+            // Getting it already: Settings → Updates shows how it goes.
+            _ => {
+                self.open_settings();
+                if let Some(i) = self.settings_headers.iter().position(|h| h == "UPDATES") {
+                    self.set_settings_root(false);
+                    self.focus_settings_nav(i);
+                }
+            }
+        }
+        self.push_update();
     }
 
     /// Start the new version in place of this one (keeps the same window position/flags).

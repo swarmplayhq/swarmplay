@@ -308,6 +308,12 @@ export component AppWindow inherits Window {
     in property <[SettingSection]> settings-sections;
     // Updates wants you (an update ready, a restart to finish one): a dot on the top bar's gear.
     in property <bool> settings-dot;
+    // A new SwarmPlay (src/update.rs `push_update`): 0 none, 1 out, 2 being got (the ring), 3 ready
+    // to restart into; what it says when open; open to say news (it closes again by itself).
+    in property <int> upd-kind;
+    in property <string> upd-text;
+    in property <string> upd-ring: "M 18 3";
+    in property <bool> upd-open;
     in property <int> settings-section;
     in property <string> settings-title;
     in property <string> settings-sub;
@@ -1393,6 +1399,75 @@ export component AppWindow inherits Window {
                     y: (20px * S.k);
                     height: (64px * S.k);
                     spacing: (16px * S.k);
+                        // A new SwarmPlay, left of Search: a pill that opens like a phone's island. News opens it
+                        // leftwards (the bar is held to the right) to say the version, with a little
+                        // overshoot; then it closes back to its icon. Chosen or hovered, it opens.
+                        if root.upd-kind > 0: upd := Rectangle {
+                            property <bool> f: root.zone == Zone.top && root.idx == 7 && root.overlay == 0;
+                            property <bool> wide: root.upd-open || self.f || ta-upd.has-hover;
+                            property <length> icon: (56px * S.k);
+                            // The Downloads ring's colours: its blue while out or coming, green once ready.
+                            property <color> tone: root.upd-kind == 3 ? Theme.ok : #8dbaff;
+                            height: (56px * S.k);
+                            y: (4px * S.k);
+                            width: self.wide ? upd-words.preferred-width + self.icon + (26px * S.k) : self.icon;
+                            animate width { duration: 560ms; easing: cubic-bezier(0.32, 1.32, 0.56, 1); }
+                            border-radius: self.height / 2;
+                            // The Downloads ring's own look, so the bar's live things read as one family.
+                            background: self.f ? #f5f7fb : ta-upd.has-hover ? #ffffff2e : #0a0f1d80;
+                            border-width: self.f ? 0 : 1px;
+                            border-color: #ffffff1f;
+                            animate background { duration: 120ms; }
+                            clip: true;
+                            upd-words := Text {
+                                x: (24px * S.k);
+                                height: parent.height;
+                                text: root.upd-text;
+                                font-size: (20px * S.k); font-weight: 600;
+                                color: upd.f ? #05070f : #f5f7fb;
+                                vertical-alignment: center;
+                                // In once the island has room, out at once as it closes.
+                                opacity: upd.wide ? 1 : 0;
+                                animate opacity { duration: upd.wide ? 260ms : 120ms; delay: upd.wide ? 180ms : 0ms; }
+                            }
+                            // The icon, against the island's right end: download, the ring while it
+                            // comes, a tick once it's ready.
+                            Rectangle {
+                                x: parent.width - self.width;
+                                width: upd.icon; height: upd.icon;
+                                if root.upd-kind == 2: Rectangle {
+                                    width: (32px * S.k); height: self.width;
+                                    Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 36; viewbox-height: 36;
+                                        commands: "M 18 3 A 15 15 0 0 1 18 33 A 15 15 0 0 1 18 3";
+                                        stroke: upd.f ? #05070f24 : #ffffff2e;
+                                        stroke-width: (3.2px * S.k);
+                                    }
+                                    Path {
+                                        width: parent.width; height: parent.height;
+                                        viewbox-width: 36; viewbox-height: 36;
+                                        commands: root.upd-ring;
+                                        stroke: upd.f ? Theme.accent : upd.tone;
+                                        stroke-width: (3.2px * S.k);
+                                        stroke-line-cap: round;
+                                    }
+                                }
+                                Image {
+                                    source: root.upd-kind == 3 ? Icons.check : Icons.download;
+                                    colorize: upd.f ? #0a0d18 : upd.tone;
+                                    width: root.upd-kind == 2 ? (16px * S.k) : (28px * S.k); height: self.width;
+                                }
+                                // A dot while it waits for you (out, or ready), as a badge would.
+                                if root.upd-kind != 2 && !upd.wide: Rectangle {
+                                    x: parent.width / 2 + (9px * S.k); y: parent.height / 2 - (17px * S.k);
+                                    width: (11px * S.k); height: self.width;
+                                    border-radius: self.width / 2;
+                                    background: upd.tone;
+                                }
+                            }
+                            ta-upd := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.top, 7); } }
+                        }
                         // Search (the Library's, from anywhere).
                         srch := Rectangle {
                             property <bool> f: root.zone == Zone.top && root.idx == 5 && root.overlay == 0;
