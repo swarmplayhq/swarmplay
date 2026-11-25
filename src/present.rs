@@ -207,7 +207,11 @@ impl App {
             RowItem::Cat(g) => (self.games[g].info.as_ref(), None, Some(self.games[g].g.cover.clone())),
             RowItem::All | RowItem::Welcome => return None,
         };
-        if let Some(r) = info.and_then(|i| req_url(&i.master, 256, 0.0)) {
+        // Steam's games: its library cover (a sharp box cover, the title on it), cut to the square
+        // from its middle. Its hero (the `master` here) is a wide strip: a square of it is a third
+        // of its height blown up, blurred and washed out, and often a corner of the art.
+        let steam = info.is_some_and(|i| i.source.as_deref() == Some("steam"));
+        if let Some(r) = info.and_then(|i| if steam { req_url(&i.portrait, 400, 0.0) } else { req_url(&i.master, 256, 0.0) }) {
             return Some(r);
         }
         if let Some(p) = local.and_then(|l| l.icon0.as_ref()) {
@@ -217,7 +221,8 @@ impl App {
         if let Some(r) = cover.and_then(|c| req_url(&c, 256, crop)) {
             return Some(r);
         }
-        info.and_then(|i| req_url(&i.hub, 512, 0.0))
+        // Last, a wide picture: wide enough that its middle fills the square sharply.
+        info.and_then(|i| req_url(&i.hub, 1024, 0.0))
     }
 
     pub fn target_bg_url(&self, t: Target) -> Option<ImgReq> {
