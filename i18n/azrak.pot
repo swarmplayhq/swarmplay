@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-23 21:39+0000\n"
+"POT-Creation-Date: 2026-11-25 16:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -415,7 +415,7 @@ msgstr ""
 msgid "Medium"
 msgstr ""
 
-#: src/audio.rs src/toast.rs
+#: src/audio.rs src/perf_hud.rs src/toast.rs
 msgid "Off"
 msgstr ""
 
@@ -818,7 +818,7 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: src/download_ui.rs
+#: src/download_ui.rs src/overlay_ui.rs
 msgid "Not installed"
 msgstr ""
 
@@ -2686,6 +2686,10 @@ msgid "In-game overlay"
 msgstr ""
 
 #: src/overlay_ui.rs
+msgid "Install MangoHud"
+msgstr ""
+
+#: src/overlay_ui.rs
 msgid "Install the GNOME helper"
 msgstr ""
 
@@ -2727,6 +2731,10 @@ msgstr ""
 msgid "Pause the game while the overlay is open"
 msgstr ""
 
+#: src/overlay_ui.rs
+msgid "Performance overlay"
+msgstr ""
+
 #. The answer to the player's own press: shown even in a game, as on a console.
 #: src/overlay_ui.rs
 msgid "Pictures → SwarmPlay → {}"
@@ -2746,7 +2754,19 @@ msgid "Screenshot saved"
 msgstr ""
 
 #: src/overlay_ui.rs
+msgid ""
+"Simple: the frame rate · Detailed: a line with the CPU, GPU and memory · "
+"Full: everything · in a game, PS → FPS changes it"
+msgstr ""
+
+#: src/overlay_ui.rs
 msgid "Steam's overlay is used"
+msgstr ""
+
+#: src/overlay_ui.rs
+msgid ""
+"SwarmPlay shows the frame rate with MangoHud: install it from your system's "
+"software store"
 msgstr ""
 
 #: src/overlay_ui.rs
@@ -2932,6 +2952,18 @@ msgstr ""
 
 #: src/pcgame.rs
 msgid "{next} isn't in the game's folder"
+msgstr ""
+
+#: src/perf_hud.rs
+msgid "Detailed"
+msgstr ""
+
+#: src/perf_hud.rs
+msgid "Full"
+msgstr ""
+
+#: src/perf_hud.rs
+msgid "Simple"
 msgstr ""
 
 #: src/pfs.rs
@@ -5153,7 +5185,7 @@ msgstr ""
 msgid "About"
 msgstr ""
 
-#: ui/app.slint:2049 ui/app.slint:3194 ui/overlay.slint:161
+#: ui/app.slint:2049 ui/app.slint:3194 ui/overlay.slint:165
 msgid "Settings"
 msgstr ""
 
@@ -5230,15 +5262,15 @@ msgstr ""
 msgid "NOW PLAYING · {}"
 msgstr ""
 
-#: ui/app.slint:3119 ui/overlay.slint:97
+#: ui/app.slint:3119 ui/overlay.slint:100
 msgid "Back to game"
 msgstr ""
 
-#: ui/app.slint:3119 ui/overlay.slint:98
+#: ui/app.slint:3119 ui/overlay.slint:101
 msgid "Close game"
 msgstr ""
 
-#: ui/app.slint:3143 ui/overlay.slint:113
+#: ui/app.slint:3143 ui/overlay.slint:116
 msgid "DOWNLOADS"
 msgstr ""
 
@@ -5254,7 +5286,7 @@ msgstr ""
 msgid "Controls"
 msgstr ""
 
-#: ui/app.slint:3195 ui/overlay.slint:162
+#: ui/app.slint:3195 ui/overlay.slint:166
 msgid "Power"
 msgstr ""
 
@@ -5718,39 +5750,39 @@ msgctxt "Setup"
 msgid "Next"
 msgstr ""
 
-#: ui/overlay.slint:90
+#: ui/overlay.slint:93
 msgid "PLAYING"
 msgstr ""
 
-#: ui/overlay.slint:98
+#: ui/overlay.slint:101
 msgid "Press again to close"
 msgstr ""
 
-#: ui/overlay.slint:114
+#: ui/overlay.slint:117
 msgid "CAPTURE"
 msgstr ""
 
-#: ui/overlay.slint:114
+#: ui/overlay.slint:117
 msgid "Take a screenshot"
 msgstr ""
 
-#: ui/overlay.slint:159
+#: ui/overlay.slint:162
 msgid "Home"
 msgstr ""
 
-#: ui/overlay.slint:211
+#: ui/overlay.slint:232
 msgid "← → Volume   Enter Done   Esc Done"
 msgstr ""
 
-#: ui/overlay.slint:211
+#: ui/overlay.slint:232
 msgid "◂ ▸ Volume   ✕ Done   ○ Done"
 msgstr ""
 
-#: ui/overlay.slint:212
+#: ui/overlay.slint:233
 msgid "Enter Select   Esc Back to game"
 msgstr ""
 
-#: ui/overlay.slint:212
+#: ui/overlay.slint:233
 msgid "✕ Select   ○ Back to game   PS Back to game"
 msgstr ""
 

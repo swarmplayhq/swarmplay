@@ -17,7 +17,7 @@ export component OverlayWindow inherits Window {
     in property <bool> open;
     // The window is only a notification's card, in the corner: no panel, no scrim.
     in property <bool> compact: false;
-    // Focus: 0 Back to game, 1 Close game, 2 Downloads, 3 Capture | 4 Home, 5 Sound, 6 Settings, 7 Power.
+    // Focus: 0 Back to game, 1 Close game, 2 Downloads, 3 Capture | 4 Home, 5 Sound, 6 FPS, 7 Settings, 8 Power.
     in property <int> idx;
     in property <bool> pad-hints: true;
     in property <string> game-name;
@@ -32,6 +32,9 @@ export component OverlayWindow inherits Window {
     in property <string> capture-sub;
     in property <string> volume;
     in property <float> volume-level;
+    // The performance overlay: its level (0 Off … 3 Full) and its name.
+    in property <int> perf-level;
+    in property <string> perf-label;
     in property <string> pad-battery;
     in property <string> clock;
     in property <ToastData> toast;
@@ -158,6 +161,7 @@ export component OverlayWindow inherits Window {
             for b[j] in [
                 { label: @tr("Home"), icon: 0 },
                 { label: root.vol-edit ? "◂ " + root.volume + " ▸" : root.volume, icon: 1 },
+                { label: "FPS", icon: 4 },
                 { label: @tr("Settings"), icon: 2 },
                 { label: @tr("Power"), icon: 3 },
             ]: VerticalLayout {
@@ -174,7 +178,7 @@ export component OverlayWindow inherits Window {
                         transform-scale: f ? 1.06 : 1;
                         animate transform-scale { duration: 200ms; easing: ease-out-quad; }
                         Image {
-                            source: b.icon == 0 ? Icons.grid : b.icon == 1 ? Icons.sound : b.icon == 2 ? Icons.gear : Icons.power;
+                            source: b.icon == 0 ? Icons.grid : b.icon == 1 ? Icons.sound : b.icon == 2 ? Icons.gear : b.icon == 4 ? Icons.gauge : Icons.power;
                             colorize: f ? #0a0d18 : Theme.text;
                             width: (30px * S.k); height: self.width;
                         }
@@ -190,6 +194,23 @@ export component OverlayWindow inherits Window {
                     background: #ffffff1f;
                     animate height { duration: 140ms; }
                     Rectangle { x: 0; width: parent.width * clamp(root.volume-level, 0, 1); border-radius: parent.border-radius; background: Theme.accent.brighter(0.2); animate width { duration: 120ms; } }
+                }
+                // FPS: how much it shows, in three steps, and the level's name.
+                if b.icon == 4: HorizontalLayout {
+                    height: (4px * S.k);
+                    spacing: (4px * S.k);
+                    for n in 3: Rectangle {
+                        border-radius: self.height / 2;
+                        background: root.perf-level > n ? Theme.accent.brighter(0.2) : #ffffff1f;
+                        animate background { duration: 160ms; }
+                    }
+                }
+                if b.icon == 4: Text {
+                    text: root.perf-label;
+                    font-size: (14px * S.k);
+                    color: root.perf-level > 0 ? Theme.text2 : Theme.hint;
+                    horizontal-alignment: center;
+                    overflow: elide;
                 }
             }
         }

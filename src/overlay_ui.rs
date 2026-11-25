@@ -22,7 +22,7 @@ use tr::tr;
 
 /// Items of the panel: the top row, then the bottom row (ui/overlay.slint's order).
 const TOP: usize = 4;
-const ITEMS: usize = 8;
+const ITEMS: usize = 9;
 
 /// A notification's card at scale 1 (ui/overlay.slint's toast card): while the panel is down the
 /// window is that size, in the corner of the screen, so nothing of it covers the game.
@@ -282,6 +282,9 @@ impl App {
         let v = self.sound.volume;
         w.set_volume(match v { Some(_) if self.sound.muted => tr!("Muted").into(), Some(v) => format!("{v}%").into(), None => tr!("Sound").into() });
         w.set_volume_level(if self.sound.muted { 0.0 } else { v.map_or(0.0, |v| v as f32 / 100.0) });
+        let hud = self.cfg.lock().unwrap().perf_hud.clone();
+        w.set_perf_level(crate::perf_hud::index(&hud) as i32);
+        w.set_perf_label(if crate::perf_hud::available() { crate::perf_hud::label(&hud) } else { tr!("Not installed") }.into());
         w.set_pad_battery(crate::battery::controllers().first().map(|b| format!("{}%", b.percent)).unwrap_or_default().into());
     }
 
@@ -335,7 +338,15 @@ impl App {
             3 => self.ov_capture(),
             4 => self.ov_home(),
             5 => { self.ov_vol_edit = true; audio::play(Sound::Select); self.ov_push(); }
-            6 => { self.ov_home(); self.open_settings(); }
+            // FPS: each press shows more, then none again; the game shows it at once.
+            6 if crate::perf_hud::available() => {
+                let next = crate::perf_hud::step(&self.cfg.lock().unwrap().perf_hud, 1);
+                self.set_perf_hud(next);
+                audio::play(Sound::Select);
+                self.ov_push();
+            }
+            6 => audio::play(Sound::Move),
+            7 => { self.ov_home(); self.open_settings(); }
             _ => { self.ov_home(); self.open_power_menu(); }
         }
     }
@@ -430,7 +441,23 @@ impl App {
         r.on = cfg.overlay_pause;
         r.hint = tr!("The game stops under the panel (a few games' sound may stutter)").into();
         rows.push((SId::OverlayPause, r));
+        let mut r = row(3, &tr!("Performance overlay"));
+        if crate::perf_hud::available() {
+            r.value = crate::perf_hud::label(&cfg.perf_hud).into();
+            r.hint = tr!("Simple: the frame rate · Detailed: a line with the CPU, GPU and memory · Full: everything · in a game, PS → FPS changes it").into();
+        } else {
+            (r.value, r.value_kind) = (tr!("Install MangoHud").into(), 3);
+            r.hint = tr!("SwarmPlay shows the frame rate with MangoHud: install it from your system's software store").into();
+        }
+        rows.push((SId::PerfHud, r));
         rows
+    }
+
+    /// The performance overlay at a level: saved, and in the running game at once (MangoHud reloads
+    /// its config file when it changes).
+    pub fn set_perf_hud(&mut self, level: &str) {
+        self.save_cfg(|c| c.perf_hud = level.to_string());
+        crate::perf_hud::write(level);
     }
 
     pub fn overlay_helper_pressed(&mut self) {

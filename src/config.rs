@@ -60,6 +60,8 @@ pub struct Config {
     /// while the panel is up.
     pub overlay_toasts: bool,
     pub overlay_pause: bool,
+    /// The performance overlay over games (src/perf_hud.rs): "Off", "Simple", "Detailed", "Full".
+    pub perf_hud: String,
     /// Windows games get controllers through SDL, as XInput ones (src/wine_pads.rs).
     pub wine_sdl_pads: bool,
     /// The controller native PC games see when they could see it twice (src/pc_pads.rs):
@@ -151,6 +153,7 @@ impl Default for Config {
             drives: Vec::new(),
             overlay_toasts: true,
             overlay_pause: false,
+            perf_hud: "Off".into(),
             wine_sdl_pads: true,
             pc_pad: "Automatic".into(),
             notify_popups: true,

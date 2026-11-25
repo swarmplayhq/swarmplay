@@ -153,16 +153,16 @@ fn pc_command(game: &LocalGame) -> Result<Command, String> {
             // A script without "#!" (some repacks' "start") runs with sh.
             if crate::pcgame::probe_file(&target) == crate::pcgame::Probe::Script {
                 executable();
-                Command::new(&target)
+                crate::perf_hud::program(&target)
             } else {
-                let mut c = Command::new("sh");
+                let mut c = crate::perf_hud::program(Path::new("sh"));
                 c.arg(&target);
                 c
             }
         }
         Kind::AppImage => {
             executable();
-            let mut c = Command::new(&target);
+            let mut c = crate::perf_hud::program(&target);
             // Without FUSE (common on minimal systems), AppImages can still unpack and run.
             if !Path::new("/dev/fuse").exists() {
                 c.env("APPIMAGE_EXTRACT_AND_RUN", "1");
@@ -171,7 +171,7 @@ fn pc_command(game: &LocalGame) -> Result<Command, String> {
         }
         Kind::Native => {
             executable();
-            Command::new(&target)
+            crate::perf_hud::program(&target)
         }
         Kind::Windows => {
             let (runner, label) = crate::pcgame::windows_runner()
@@ -363,6 +363,7 @@ impl Sessions {
                 command.env("PROTON_PREFER_SDL", "1");
             }
             crate::pc_pads::prepare(&game.path, &cfg.pc_pad);
+            crate::perf_hud::prepare(&mut command, &cfg.perf_hud);
             return self.spawn(&mut inner, game, command, true);
         }
         let ps4 = game.platform == crate::platform::Platform::Ps4;
@@ -398,6 +399,7 @@ impl Sessions {
         }
         let mut command = Command::new(&emu);
         command.args(&args).current_dir(emu.parent().unwrap_or(Path::new("/")));
+        crate::perf_hud::prepare(&mut command, &cfg.perf_hud);
         self.spawn(&mut inner, game, command, false)
     }
 

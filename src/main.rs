@@ -36,6 +36,7 @@ mod avatar;
 mod profiles;
 mod overlay;
 mod overlay_ui;
+mod perf_hud;
 mod ipc;
 mod wine_pads;
 mod pc_pads;

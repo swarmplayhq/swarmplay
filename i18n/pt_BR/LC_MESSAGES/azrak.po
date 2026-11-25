@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SwarmPlay\n"
-"POT-Creation-Date: 2026-11-23 21:39+0000\n"
+"POT-Creation-Date: 2026-11-25 16:12+0000\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -398,7 +398,7 @@ msgstr "Baixo"
 msgid "Medium"
 msgstr "Médio"
 
-#: src/audio.rs src/toast.rs
+#: src/audio.rs src/perf_hud.rs src/toast.rs
 msgid "Off"
 msgstr "Desativado"
 
@@ -798,7 +798,7 @@ msgstr "Precisa de você"
 msgid "Next"
 msgstr "A seguir"
 
-#: src/download_ui.rs
+#: src/download_ui.rs src/overlay_ui.rs
 msgid "Not installed"
 msgstr "Não instalado"
 
@@ -2604,6 +2604,10 @@ msgid "In-game overlay"
 msgstr "Sobreposição no jogo"
 
 #: src/overlay_ui.rs
+msgid "Install MangoHud"
+msgstr "Instale o MangoHud"
+
+#: src/overlay_ui.rs
 msgid "Install the GNOME helper"
 msgstr "Instalar o auxiliar do GNOME"
 
@@ -2643,6 +2647,10 @@ msgstr "PS num jogo: o painel por cima · segurar PS: Início · Share: uma capt
 msgid "Pause the game while the overlay is open"
 msgstr "Pausar o jogo com a sobreposição aberta"
 
+#: src/overlay_ui.rs
+msgid "Performance overlay"
+msgstr "Sobreposição de desempenho"
+
 #. The answer to the player's own press: shown even in a game, as on a console.
 #: src/overlay_ui.rs
 msgid "Pictures → SwarmPlay → {}"
@@ -2662,8 +2670,16 @@ msgid "Screenshot saved"
 msgstr "Captura de tela salva"
 
 #: src/overlay_ui.rs
+msgid "Simple: the frame rate · Detailed: a line with the CPU, GPU and memory · Full: everything · in a game, PS → FPS changes it"
+msgstr "Simples: a taxa de quadros · Detalhada: uma linha com CPU, GPU e memória · Completa: tudo · no jogo, PS → FPS muda"
+
+#: src/overlay_ui.rs
 msgid "Steam's overlay is used"
 msgstr "Usa a sobreposição do Steam"
+
+#: src/overlay_ui.rs
+msgid "SwarmPlay shows the frame rate with MangoHud: install it from your system's software store"
+msgstr "O SwarmPlay mostra a taxa de quadros com o MangoHud: instale-o pela loja de programas do seu sistema"
 
 #: src/overlay_ui.rs
 msgid "The game stops under the panel (a few games' sound may stutter)"
@@ -2841,6 +2857,18 @@ msgstr "O manifesto deste jogo está faltando"
 #: src/pcgame.rs
 msgid "{next} isn't in the game's folder"
 msgstr "{next} não está na pasta do jogo"
+
+#: src/perf_hud.rs
+msgid "Detailed"
+msgstr "Detalhada"
+
+#: src/perf_hud.rs
+msgid "Full"
+msgstr "Completa"
+
+#: src/perf_hud.rs
+msgid "Simple"
+msgstr "Simples"
 
 #: src/pfs.rs
 msgid "Not a PFS image"
@@ -5019,7 +5047,7 @@ msgstr "−  Ocultar detalhes técnicos"
 msgid "About"
 msgstr "Sobre"
 
-#: ui/app.slint:2049 ui/app.slint:3194 ui/overlay.slint:161
+#: ui/app.slint:2049 ui/app.slint:3194 ui/overlay.slint:165
 msgid "Settings"
 msgstr "Configurações"
 
@@ -5096,15 +5124,15 @@ msgstr "OK"
 msgid "NOW PLAYING · {}"
 msgstr "JOGANDO AGORA · {}"
 
-#: ui/app.slint:3119 ui/overlay.slint:97
+#: ui/app.slint:3119 ui/overlay.slint:100
 msgid "Back to game"
 msgstr "Voltar ao jogo"
 
-#: ui/app.slint:3119 ui/overlay.slint:98
+#: ui/app.slint:3119 ui/overlay.slint:101
 msgid "Close game"
 msgstr "Fechar jogo"
 
-#: ui/app.slint:3143 ui/overlay.slint:113
+#: ui/app.slint:3143 ui/overlay.slint:116
 msgid "DOWNLOADS"
 msgstr "DOWNLOADS"
 
@@ -5120,7 +5148,7 @@ msgstr "Abrir notificações"
 msgid "Controls"
 msgstr "Controles"
 
-#: ui/app.slint:3195 ui/overlay.slint:162
+#: ui/app.slint:3195 ui/overlay.slint:166
 msgid "Power"
 msgstr "Energia"
 
@@ -5560,39 +5588,39 @@ msgctxt "Setup"
 msgid "Next"
 msgstr "Avançar"
 
-#: ui/overlay.slint:90
+#: ui/overlay.slint:93
 msgid "PLAYING"
 msgstr "JOGANDO"
 
-#: ui/overlay.slint:98
+#: ui/overlay.slint:101
 msgid "Press again to close"
 msgstr "Pressione de novo para fechar"
 
-#: ui/overlay.slint:114
+#: ui/overlay.slint:117
 msgid "CAPTURE"
 msgstr "CAPTURA"
 
-#: ui/overlay.slint:114
+#: ui/overlay.slint:117
 msgid "Take a screenshot"
 msgstr "Fazer uma captura de tela"
 
-#: ui/overlay.slint:159
+#: ui/overlay.slint:162
 msgid "Home"
 msgstr "Início"
 
-#: ui/overlay.slint:211
+#: ui/overlay.slint:232
 msgid "← → Volume   Enter Done   Esc Done"
 msgstr "← → Volume   Enter OK   Esc OK"
 
-#: ui/overlay.slint:211
+#: ui/overlay.slint:232
 msgid "◂ ▸ Volume   ✕ Done   ○ Done"
 msgstr "◂ ▸ Volume   ✕ OK   ○ OK"
 
-#: ui/overlay.slint:212
+#: ui/overlay.slint:233
 msgid "Enter Select   Esc Back to game"
 msgstr "Enter Selecionar   Esc Voltar ao jogo"
 
-#: ui/overlay.slint:212
+#: ui/overlay.slint:233
 msgid "✕ Select   ○ Back to game   PS Back to game"
 msgstr "✕ Selecionar   ○ Voltar ao jogo   PS Voltar ao jogo"
 
