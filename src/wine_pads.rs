@@ -10,7 +10,10 @@ use std::path::{Path, PathBuf};
 /// CurrentControlSet links there); prefixes made by older Wine (5.x, in Kron4ek's repacks) keep
 /// a real CurrentControlSet, which is the one their Wine reads.
 const SECTIONS: [&str; 2] = [r"[System\\ControlSet001\\Services\\winebus]", r"[System\\CurrentControlSet\\Services\\winebus]"];
-const VALUES: [(&str, &str); 2] = [("\"DisableHidraw\"", "dword:00000001"), ("\"Enable SDL\"", "dword:00000001")];
+/// DisableInput too: Proton's Wine reads evdev alongside SDL and leaves a controller to SDL only
+/// when SDL has it already. One turned on while the game runs reaches evdev first, and the game
+/// gets it twice: the second with its triggers (0 at rest) read as a stick held up.
+const VALUES: [(&str, &str); 3] = [("\"DisableHidraw\"", "dword:00000001"), ("\"DisableInput\"", "dword:00000001"), ("\"Enable SDL\"", "dword:00000001")];
 
 /// Wine prefixes in a game's folder (a repack's game/prefix, say): folders with a system.reg
 /// and a drive_c, a few levels down at most.
@@ -102,6 +105,7 @@ mod tests {
         let out = with_sdl(reg).unwrap();
         assert!(out.contains("\"Enable SDL\"=dword:00000001"));
         assert!(out.contains("\"DisableHidraw\"=dword:00000001"));
+        assert!(out.contains("\"DisableInput\"=dword:00000001"), "evdev off: a controller turned on mid-game isn't seen twice");
         assert!(!out.contains("\"Enable SDL\"=dword:00000000"));
         assert!(out.contains("[Software] 1\n\"x\"=\"y\""), "the rest stays as it was");
         assert_eq!(with_sdl(&out), None, "already set: left alone");
@@ -112,7 +116,7 @@ mod tests {
         // Wine 5.x prefixes: a real CurrentControlSet; a ControlSet001 key there is never read.
         let reg = "WINE REGISTRY Version 2\n\n[System\\\\CurrentControlSet\\\\Services\\\\winebus] 1795442974\n#time=1dd\n\"Start\"=dword:00000003\n\n[System\\\\CurrentControlSet\\\\Services\\\\winehid] 1\n\"x\"=\"y\"\n";
         let out = with_sdl(reg).unwrap();
-        assert!(out.contains("[System\\\\CurrentControlSet\\\\Services\\\\winebus] 1795442974\n#time=1dd\n\"Start\"=dword:00000003\n\"DisableHidraw\"=dword:00000001\n\"Enable SDL\"=dword:00000001"));
+        assert!(out.contains("[System\\\\CurrentControlSet\\\\Services\\\\winebus] 1795442974\n#time=1dd\n\"Start\"=dword:00000003\n\"DisableHidraw\"=dword:00000001\n\"DisableInput\"=dword:00000001\n\"Enable SDL\"=dword:00000001"));
         assert!(!out.contains("ControlSet001"));
         assert_eq!(with_sdl(&out), None);
         let fresh = with_sdl("WINE REGISTRY Version 2\n\n[System\\\\CurrentControlSet\\\\Control] 1\n").unwrap();
@@ -122,6 +126,6 @@ mod tests {
     #[test]
     fn adds_the_key_when_the_prefix_has_none() {
         let out = with_sdl("WINE REGISTRY Version 2\n").unwrap();
-        assert!(out.contains("[System\\\\ControlSet001\\\\Services\\\\winebus] 0\n\"DisableHidraw\"=dword:00000001\n\"Enable SDL\"=dword:00000001"));
+        assert!(out.contains("[System\\\\ControlSet001\\\\Services\\\\winebus] 0\n\"DisableHidraw\"=dword:00000001\n\"DisableInput\"=dword:00000001\n\"Enable SDL\"=dword:00000001"));
     }
 }
