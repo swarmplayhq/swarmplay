@@ -76,6 +76,40 @@ pub fn is_newer(candidate: &str, current: &str) -> bool {
 
 pub fn latest_release() -> Result<Release, String> {
     let repo = std::env::var("AZRAK_UPDATE_REPO").unwrap_or_else(|_| UPDATE_REPO.to_string());
+    match release_from_api(&repo) {
+        // GitHub's API answers 60 asks an hour from one address (a shared network, the emulators'
+        // checks and the catalog's count too); its release page isn't limited that way.
+        Err(e) if e.starts_with("HTTP 403") || e.starts_with("HTTP 429") => {
+            crate::log!("launcher update check: the API said {e}, asking the release page");
+            release_from_page(&repo)
+        }
+        r => r,
+    }
+}
+
+/// The latest release from its page: /releases/latest leads to /releases/tag/<tag>, and the build
+/// and its checksum are at fixed addresses under that tag.
+fn release_from_page(repo: &str) -> Result<Release, String> {
+    let landed = crate::util::http_final_url(&format!("https://github.com/{repo}/releases/latest"))?;
+    let tag = tag_of(&landed).ok_or_else(|| tr::tr!("no releases found"))?;
+    let url = format!("https://github.com/{repo}/releases/download/{tag}/{ASSET}");
+    let sum = crate::util::http_get(&format!("{url}.sha256")).map_err(|_| tr::tr!("this release has no Linux build yet"))?;
+    let sha256 = String::from_utf8_lossy(&sum).split_whitespace().next().unwrap_or("").to_string();
+    if sha256.len() != 64 || !sha256.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err(tr::tr!("this release has no Linux build yet"));
+    }
+    // The size comes with the download itself.
+    Ok(Release { version: tag.trim_start_matches('v').to_string(), url, size: 0, sha256 })
+}
+
+/// "…/releases/tag/v1.35.1" → "v1.35.1".
+fn tag_of(url: &str) -> Option<String> {
+    let (_, tag) = url.split_once("/releases/tag/")?;
+    let tag = tag.split(['?', '#']).next()?;
+    (!tag.is_empty() && !tag.contains('/')).then(|| tag.to_string())
+}
+
+fn release_from_api(repo: &str) -> Result<Release, String> {
     let v = http_json(&format!("https://api.github.com/repos/{repo}/releases/latest"))?;
     let tag = v["tag_name"].as_str().ok_or_else(|| tr::tr!("no releases found"))?;
     let assets = v["assets"].as_array().cloned().unwrap_or_default();
@@ -440,6 +474,23 @@ impl App {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// On the network: `cargo test -- --ignored release_page`.
+    #[test]
+    #[ignore]
+    fn the_release_page_gives_a_whole_release() {
+        let r = release_from_page(UPDATE_REPO).unwrap();
+        assert!(is_newer(&r.version, "1.0.0") && r.sha256.len() == 64 && r.url.ends_with(ASSET), "{r:?}");
+        let latest = latest_release().unwrap();
+        assert_eq!(latest.version, r.version);
+    }
+
+    #[test]
+    fn the_release_page_says_its_tag() {
+        assert_eq!(tag_of("https://github.com/swarmplayhq/swarmplay/releases/tag/v1.35.1").as_deref(), Some("v1.35.1"));
+        assert_eq!(tag_of("https://github.com/o/r/releases/tag/v2.0.0?x=1").as_deref(), Some("v2.0.0"));
+        assert_eq!(tag_of("https://github.com/o/r/releases"), None, "no release yet: the list, not a tag");
+    }
     #[test]
     fn versions() {
         assert!(is_newer("1.2.0", "1.1.9"));

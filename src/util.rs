@@ -182,6 +182,15 @@ pub fn http_get(url: &str) -> Result<Vec<u8>, String> {
     Ok(buf)
 }
 
+/// Where a URL ends up after its redirects (the answer itself is left unread).
+pub fn http_final_url(url: &str) -> Result<String, String> {
+    let resp = AGENT.get(&iri_to_uri(url)).call().map_err(|e| match e {
+        ureq::Error::Status(code, _) => format!("HTTP {code}"),
+        other => other.to_string(),
+    })?;
+    Ok(resp.get_url().to_string())
+}
+
 pub fn http_json(url: &str) -> Result<serde_json::Value, String> {
     let bytes = http_get(url)?;
     serde_json::from_slice(&bytes).map_err(|e| e.to_string())
