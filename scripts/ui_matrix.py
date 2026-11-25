@@ -33,7 +33,10 @@ STEPS = [
     ("00-boot", []),                                       # the start screen (held: SWARMPLAY_BOOT_HOLD_MS)
     ("01-home", ["Return", "sleep:4"]),                   # who's playing: the one highlighted, then Home
     ("01b-welcome", ["Left", "Down", "sleep:0.8"]),         # the Welcome tile's widgets
-    ("01c-top-buttons", ["Up", "Up", "Right", "Right", "sleep:0.5"]),  # Search, round, focused
+    # The run pretends to be an old version: the update island comes first in the top bar, open
+    # while chosen. Then Search, round, focused.
+    ("01c0-update-island", ["Up", "Up", "Right", "Right", "sleep:1"]),
+    ("01c-top-buttons", ["Right", "sleep:0.8"]),
     ("01d-avatar", ["Right", "Right", "sleep:0.5"]),        # past Settings: you (the avatar)
     # The first game after the Welcome (the row ends with the Game Library tile, never pressed).
     ("02-home-new-game", ["Down", "Home", "Right", "sleep:0.4"]),

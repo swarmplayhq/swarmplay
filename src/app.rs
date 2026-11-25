@@ -2163,6 +2163,7 @@ impl App {
         let clock = crate::i18n::clock(h as u32, m as u32);
         let ui = self.ui();
         ui.set_settings_dot(self.updates_need_you());
+        self.push_update();
         if clock != self.clock {
             ui.set_clock(clock.clone().into());
             self.clock = clock;
@@ -2554,13 +2555,16 @@ impl App {
         audio::play(Sound::Move);
     }
 
-    /// The top bar's buttons: 0–1 a running game's Resume and Stop, 3 Settings, 4 Downloads. (2 was
+    /// The top bar's buttons: 0–1 a running game's Resume and Stop, 3 Settings, 4 Downloads, 7 a new
+    /// SwarmPlay (src/update.rs `push_update`). (2 was
     /// a search button, which only led to the Library's own search: △ or / still gets there.)
     fn top_items(&self) -> Vec<i32> {
         // As they stand, like a console's: the running game's Resume and Stop, Search, the
         // Downloads ring (only while something's happening; otherwise Downloads is in the
         // Control Center), Settings, then you.
         let mut items = if self.live.is_empty() { vec![] } else { vec![0, 1] };
+        // A new SwarmPlay: its button, left of Search.
+        if self.ui().get_upd_kind() > 0 { items.push(7); }
         items.push(5);
         if self.ui().get_ring_kind() > 0 { items.push(4); }
         items.extend([3, 6]);
@@ -2684,6 +2688,7 @@ impl App {
                         5 => self.open_search(),
                         // You: the profile card, as on a console (the Control Center is on Guide/F1).
                         6 => self.open_profile_card(),
+                        7 => self.update_pressed(),
                         _ => self.open_settings(),
                     },
                     _ => {}
