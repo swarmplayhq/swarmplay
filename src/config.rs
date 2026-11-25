@@ -62,8 +62,10 @@ pub struct Config {
     pub overlay_pause: bool,
     /// The performance overlay over games (src/perf_hud.rs): "Off", "Simple", "Detailed", "Full".
     pub perf_hud: String,
-    /// Windows games get controllers through SDL, as XInput ones (src/wine_pads.rs).
-    pub wine_sdl_pads: bool,
+    /// Windows games get every controller through SDL, as XInput ones (src/wine_pads.rs); off,
+    /// Sony controllers reach them natively. A new name: the old `wine_sdl_pads` was on by default
+    /// and broke games made for PlayStation controllers, so it isn't carried over.
+    pub wine_xinput_pads: bool,
     /// The controller native PC games see when they could see it twice (src/pc_pads.rs):
     /// "Automatic", "PlayStation" or "Xbox".
     pub pc_pad: String,
@@ -154,7 +156,7 @@ impl Default for Config {
             overlay_toasts: true,
             overlay_pause: false,
             perf_hud: "Off".into(),
-            wine_sdl_pads: true,
+            wine_xinput_pads: false,
             pc_pad: "Automatic".into(),
             notify_popups: true,
             notify_secs: 6,
@@ -383,6 +385,12 @@ mod tests {
     fn every_present_mode_has_a_label() {
         for (key, label) in PRESENT_MODES { assert_eq!(present_text(key).as_deref(), Some(label)); }
         assert_eq!(present_label("Other"), "Other");
+    }
+
+    #[test]
+    fn the_old_sdl_controllers_switch_isnt_carried_over() {
+        let old: Config = serde_json::from_str(r#"{"wine_sdl_pads": true}"#).unwrap();
+        assert!(!old.wine_xinput_pads, "Sony controllers natively, whatever the old switch said");
     }
 
     #[test]

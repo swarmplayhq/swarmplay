@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-25 16:12+0000\n"
+"POT-Creation-Date: 2026-11-25 18:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3661,10 +3661,6 @@ msgid "Controller in PC games"
 msgstr ""
 
 #: src/settings.rs
-msgid "Controller in Windows games"
-msgstr ""
-
-#: src/settings.rs
 msgid "Couldn't change it: {error}"
 msgstr ""
 
@@ -3822,6 +3818,12 @@ msgstr ""
 msgid "Only for AMD processors"
 msgstr ""
 
+#: src/settings.rs
+msgid ""
+"Only for games that don't see your controller: shows it to them as an Xbox "
+"one · games made for PlayStation controllers work best with this off"
+msgstr ""
+
 #. No controller button opens Downloads (the top bar's icon does), so a controller player
 #. just presses this row; Ctrl+D is only worth showing to keyboard players.
 #: src/settings.rs
@@ -3931,13 +3933,11 @@ msgid "Share your game ratings"
 msgstr ""
 
 #: src/settings.rs
-msgid "Show them for"
+msgid "Show controllers as Xbox ones in Windows games"
 msgstr ""
 
 #: src/settings.rs
-msgid ""
-"Shows any controller (DualShock, DualSense…) to Windows games as an Xbox one "
-"· takes effect at the next start"
+msgid "Show them for"
 msgstr ""
 
 #: src/settings.rs
