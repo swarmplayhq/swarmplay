@@ -161,6 +161,9 @@ pub fn install(rel: &Release, exe: &Path, progress: &dyn Fn(String, f32)) -> Res
 
 // ---------------------------------------------------------------------------- in the app
 
+/// The downloads going on when SwarmPlay restarted itself, for the new one to go on with.
+const RESUME_ENV: &str = "SWARMPLAY_RESUME_DOWNLOADS";
+
 #[derive(Default)]
 pub struct AppUpdate {
     pub latest: Option<Release>,
@@ -182,7 +185,7 @@ pub struct AppUpdate {
 }
 
 /// How long the top bar's button stays open to say what's new, as a phone's island does.
-const ISLAND_OPEN: Duration = Duration::from_millis(4200);
+pub const ISLAND_OPEN: Duration = Duration::from_millis(4200);
 
 fn post(f: impl FnOnce(&mut App) + Send + 'static) {
     let _ = slint::invoke_from_event_loop(move || with_app(f));
@@ -335,7 +338,8 @@ impl App {
         // News is said where it's seen: not under the start screen or a page over the bar (it
         // waits for them to go).
         let key = format!("{kind} {version}");
-        if kind == 0 || key == self.upd.shown || self.boot.active || self.overlay != Overlay::None { return; }
+        // One island says one thing at a time: the downloads' news first, then this.
+        if kind == 0 || key == self.upd.shown || self.boot.active || self.overlay != Overlay::None || ui.get_ring_open() { return; }
         self.upd.shown = key;
         self.upd.open_seq += 1;
         let seq = self.upd.open_seq;
@@ -351,7 +355,7 @@ impl App {
             (Some(_), _) if !self.live.is_empty() => {
                 self.toast(&tr::tr!("Finish your game first"), &tr::tr!("SwarmPlay restarts into the new version once no game is running"), "alert", crate::toast::FAILED);
             }
-            (Some(_), _) => self.app_restart(),
+            (Some(_), _) => self.power_ask(crate::os::power::Power::App),
             (None, Some(rel)) if !self.upd.busy && self.app_update_available() => {
                 crate::audio::play(crate::audio::Sound::Select);
                 self.app_update_install(rel);
@@ -366,6 +370,17 @@ impl App {
             }
         }
         self.push_update();
+    }
+
+    /// Downloads the previous one was getting when it restarted into this one: on again.
+    pub fn resume_after_restart(&self) {
+        let Ok(keys) = std::env::var(RESUME_ENV) else { return };
+        for key in keys.split(',').filter(|k| !k.is_empty()) {
+            match self.downloads.action(key, "resume") {
+                Ok(()) => crate::log!("download {key} goes on after the restart"),
+                Err(e) => crate::log!("couldn't resume {key} after the restart: {e}"),
+            }
+        }
     }
 
     /// Start the new version in place of this one (keeps the same window position/flags).
@@ -388,10 +403,15 @@ impl App {
             }
         }
         crate::log!("restarting into the new version");
+        // Downloads going on now go on in the new one (a launcher opened anew leaves them paused).
+        let going: Vec<String> = self.downloads.snapshot().into_iter().filter(|j| j.state.active()).map(|j| j.key).collect();
         self.installer.shutdown();
         self.downloads.shutdown();
         use std::os::unix::process::CommandExt;
-        let err = Command::new(&exe).args(&args).env_remove("AZRAK_PRETEND_VERSION").exec();
+        let mut command = Command::new(&exe);
+        command.args(&args).env_remove("AZRAK_PRETEND_VERSION").env_remove(RESUME_ENV);
+        if !going.is_empty() { command.env(RESUME_ENV, going.join(",")); }
+        let err = command.exec();
         let (seed, vpn, upload, bases) = { let c = self.cfg.lock().unwrap(); (c.seed_after_download, c.download_vpn(), c.upload_limit_mb, crate::storage::download_bases(&c)) };
         self.downloads = crate::downloads::Manager::load(seed, vpn, upload, &bases);
         self.installer = crate::installer::Manager::load();

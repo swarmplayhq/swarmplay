@@ -359,7 +359,7 @@ impl App {
                 }
             }
             Action::File(path) => { let _ = std::process::Command::new("xdg-open").arg(path).spawn(); }
-            Action::Restart => self.app_restart(),
+            Action::Restart => self.power_ask(crate::os::power::Power::App),
             Action::Settings(header) => {
                 self.open_settings();
                 if let Some(i) = self.settings_headers.iter().position(|h| h == header) {

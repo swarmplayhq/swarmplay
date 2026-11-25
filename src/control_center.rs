@@ -99,7 +99,7 @@ impl App {
         match id {
             "power_off" => self.power_ask(crate::os::power::Power::ShutDown),
             "power_restart" => self.power_ask(crate::os::power::Power::Restart),
-            "app_restart" => self.app_restart(),
+            "app_restart" => self.power_ask(crate::os::power::Power::App),
             _ => { crate::app::quit("Power → Quit SwarmPlay"); }
         }
     }

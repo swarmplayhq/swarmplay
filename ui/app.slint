@@ -314,6 +314,10 @@ export component AppWindow inherits Window {
     in property <string> upd-text;
     in property <string> upd-ring: "M 18 3";
     in property <bool> upd-open;
+    // The downloads island open to say news (it closes again by itself), and the percentage its
+    // ring shows while closed.
+    in property <bool> ring-open;
+    in property <string> ring-pct;
     in property <int> settings-section;
     in property <string> settings-title;
     in property <string> settings-sub;
@@ -1390,83 +1394,173 @@ export component AppWindow inherits Window {
                         }
                     }
                 }
-                // As on a console: round buttons on their own (Search, Downloads, Settings), then the
-                // battery and the clock in plain text. Downloads is the ring while something's
-                // happening (what's downloading or installing, what needs you, what just got ready),
-                // its icon otherwise; either way in the same place.
+                // As on a console: round buttons on their own (Search, Settings), then the battery
+                // and the clock in plain text. Left of Search, the island, as on a phone: what's
+                // happening (what's downloading or installing, what needs you, what just got ready;
+                // a new SwarmPlay). Closed it's a ring; news opens it leftwards to say it (the bar is
+                // held to the right, so nothing right of it moves), then it closes again. Two things
+                // at once: a bubble for the new SwarmPlay beside the downloads' pill.
                 bar := HorizontalLayout {
                     property <color> ring-tint: root.ring-kind == 2 ? #c4b5fd : root.ring-kind == 3 ? #ffb547 : root.ring-kind == 4 ? #5eead4 : root.ring-kind == 5 ? Theme.ok : #8dbaff;
                     y: (20px * S.k);
                     height: (64px * S.k);
                     spacing: (16px * S.k);
-                        // A new SwarmPlay, left of Search: a pill that opens like a phone's island. News opens it
-                        // leftwards (the bar is held to the right) to say the version, with a little
-                        // overshoot; then it closes back to its icon. Chosen or hovered, it opens.
-                        if root.upd-kind > 0: upd := Rectangle {
-                            property <bool> f: root.zone == Zone.top && root.idx == 7 && root.overlay == 0;
-                            property <bool> wide: root.upd-open || self.f || ta-upd.has-hover;
-                            property <length> icon: (56px * S.k);
-                            // The Downloads ring's colours: its blue while out or coming, green once ready.
-                            property <color> tone: root.upd-kind == 3 ? Theme.ok : #8dbaff;
-                            height: (56px * S.k);
-                            y: (4px * S.k);
-                            width: self.wide ? upd-words.preferred-width + self.icon + (26px * S.k) : self.icon;
-                            animate width { duration: 560ms; easing: cubic-bezier(0.32, 1.32, 0.56, 1); }
-                            border-radius: self.height / 2;
-                            // The Downloads ring's own look, so the bar's live things read as one family.
-                            background: self.f ? #f5f7fb : ta-upd.has-hover ? #ffffff2e : #0a0f1d80;
-                            border-width: self.f ? 0 : 1px;
-                            border-color: #ffffff1f;
-                            animate background { duration: 120ms; }
-                            clip: true;
-                            upd-words := Text {
-                                x: (24px * S.k);
-                                height: parent.height;
-                                text: root.upd-text;
-                                font-size: (20px * S.k); font-weight: 600;
-                                color: upd.f ? #05070f : #f5f7fb;
-                                vertical-alignment: center;
-                                // In once the island has room, out at once as it closes.
-                                opacity: upd.wide ? 1 : 0;
-                                animate opacity { duration: upd.wide ? 260ms : 120ms; delay: upd.wide ? 180ms : 0ms; }
-                            }
-                            // The icon, against the island's right end: download, the ring while it
-                            // comes, a tick once it's ready.
-                            Rectangle {
-                                x: parent.width - self.width;
-                                width: upd.icon; height: upd.icon;
-                                if root.upd-kind == 2: Rectangle {
-                                    width: (32px * S.k); height: self.width;
-                                    Path {
-                                        width: parent.width; height: parent.height;
-                                        viewbox-width: 36; viewbox-height: 36;
-                                        commands: "M 18 3 A 15 15 0 0 1 18 33 A 15 15 0 0 1 18 3";
-                                        stroke: upd.f ? #05070f24 : #ffffff2e;
-                                        stroke-width: (3.2px * S.k);
+                        if root.upd-kind > 0 || root.ring-kind > 0: HorizontalLayout {
+                            spacing: (8px * S.k);
+                            // A new SwarmPlay: a pill that opens like a phone's island. News opens it
+                            // leftwards (the bar is held to the right) to say the version, with a little
+                            // overshoot; then it closes back to its icon. Chosen or hovered, it opens.
+                            if root.upd-kind > 0: upd := Rectangle {
+                                property <bool> f: root.zone == Zone.top && root.idx == 7 && root.overlay == 0;
+                                property <bool> wide: root.upd-open || self.f || ta-upd.has-hover;
+                                property <length> icon: (56px * S.k);
+                                // The Downloads ring's colours: its blue while out or coming, green once ready.
+                                property <color> tone: root.upd-kind == 3 ? Theme.ok : #8dbaff;
+                                height: (56px * S.k);
+                                y: (4px * S.k);
+                                width: self.wide ? upd-words.preferred-width + self.icon + (26px * S.k) : self.icon;
+                                animate width { duration: 560ms; easing: cubic-bezier(0.32, 1.32, 0.56, 1); }
+                                border-radius: self.height / 2;
+                                // The Downloads ring's own look, so the bar's live things read as one family.
+                                background: self.f ? #f5f7fb : ta-upd.has-hover ? #ffffff2e : #0a0f1d80;
+                                border-width: self.f ? 0 : 1px;
+                                border-color: #ffffff1f;
+                                animate background { duration: 120ms; }
+                                clip: true;
+                                upd-words := Text {
+                                    x: (24px * S.k);
+                                    height: parent.height;
+                                    text: root.upd-text;
+                                    font-size: (20px * S.k); font-weight: 600;
+                                    color: upd.f ? #05070f : #f5f7fb;
+                                    vertical-alignment: center;
+                                    // In once the island has room, out at once as it closes.
+                                    opacity: upd.wide ? 1 : 0;
+                                    animate opacity { duration: upd.wide ? 260ms : 120ms; delay: upd.wide ? 180ms : 0ms; }
+                                }
+                                // The icon, against the island's right end: download, the ring while it
+                                // comes, a tick once it's ready.
+                                Rectangle {
+                                    x: parent.width - self.width;
+                                    width: upd.icon; height: upd.icon;
+                                    if root.upd-kind == 2: Rectangle {
+                                        width: (32px * S.k); height: self.width;
+                                        Path {
+                                            width: parent.width; height: parent.height;
+                                            viewbox-width: 36; viewbox-height: 36;
+                                            commands: "M 18 3 A 15 15 0 0 1 18 33 A 15 15 0 0 1 18 3";
+                                            stroke: upd.f ? #05070f24 : #ffffff2e;
+                                            stroke-width: (3.2px * S.k);
+                                        }
+                                        Path {
+                                            width: parent.width; height: parent.height;
+                                            viewbox-width: 36; viewbox-height: 36;
+                                            commands: root.upd-ring;
+                                            stroke: upd.f ? Theme.accent : upd.tone;
+                                            stroke-width: (3.2px * S.k);
+                                            stroke-line-cap: round;
+                                        }
                                     }
-                                    Path {
-                                        width: parent.width; height: parent.height;
-                                        viewbox-width: 36; viewbox-height: 36;
-                                        commands: root.upd-ring;
-                                        stroke: upd.f ? Theme.accent : upd.tone;
-                                        stroke-width: (3.2px * S.k);
-                                        stroke-line-cap: round;
+                                    Image {
+                                        source: root.upd-kind == 3 ? Icons.check : Icons.download;
+                                        colorize: upd.f ? #0a0d18 : upd.tone;
+                                        width: root.upd-kind == 2 ? (16px * S.k) : (28px * S.k); height: self.width;
+                                    }
+                                    // A dot while it waits for you (out, or ready), as a badge would.
+                                    if root.upd-kind != 2 && !upd.wide: Rectangle {
+                                        x: parent.width / 2 + (9px * S.k); y: parent.height / 2 - (17px * S.k);
+                                        width: (11px * S.k); height: self.width;
+                                        border-radius: self.width / 2;
+                                        background: upd.tone;
                                     }
                                 }
-                                Image {
-                                    source: root.upd-kind == 3 ? Icons.check : Icons.download;
-                                    colorize: upd.f ? #0a0d18 : upd.tone;
-                                    width: root.upd-kind == 2 ? (16px * S.k) : (28px * S.k); height: self.width;
-                                }
-                                // A dot while it waits for you (out, or ready), as a badge would.
-                                if root.upd-kind != 2 && !upd.wide: Rectangle {
-                                    x: parent.width / 2 + (9px * S.k); y: parent.height / 2 - (17px * S.k);
-                                    width: (11px * S.k); height: self.width;
-                                    border-radius: self.width / 2;
-                                    background: upd.tone;
-                                }
+                                ta-upd := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.top, 7); } }
                             }
-                            ta-upd := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.top, 7); } }
+                            // What's downloading or installing: its ring (the percentage in it), and
+                            // its words once open.
+                            if root.ring-kind > 0: dl := Rectangle {
+                                property <bool> f: root.zone == Zone.top && root.idx == 4 && root.overlay == 0;
+                                property <bool> wide: root.ring-open || self.f || ta-dl.has-hover;
+                                width: self.wide ? dl-row.preferred-width : self.height;
+                                animate width { duration: 560ms; easing: cubic-bezier(0.32, 1.32, 0.56, 1); }
+                                border-radius: self.height / 2;
+                                height: (56px * S.k);
+                                y: (4px * S.k);
+                                background: self.f ? #f5f7fb : ta-dl.has-hover ? #ffffff2e : #0a0f1d80;
+                                border-width: self.f ? 0 : 1px;
+                                border-color: #ffffff1f;
+                                animate background { duration: 120ms; }
+                                clip: true;
+                                dl-row := HorizontalLayout {
+                                    x: 0;
+                                    width: self.preferred-width;
+                                    height: parent.height;
+                                    // Closed, the ring sits in the middle of a circle.
+                                    padding-left: (12px * S.k);
+                                    padding-right: (22px * S.k);
+                                    spacing: (12px * S.k);
+                                    Rectangle {
+                                        width: (32px * S.k); height: self.width; y: (parent.height - self.height) / 2;
+                                        Path {
+                                            width: parent.width; height: parent.height;
+                                            viewbox-width: 36; viewbox-height: 36;
+                                            commands: "M 18 3 A 15 15 0 0 1 18 33 A 15 15 0 0 1 18 3";
+                                            stroke: dl.f ? #05070f24 : #ffffff2e;
+                                            stroke-width: (3.2px * S.k);
+                                        }
+                                        Path {
+                                            width: parent.width; height: parent.height;
+                                            viewbox-width: 36; viewbox-height: 36;
+                                            commands: root.ring-path;
+                                            stroke: dl.f ? (root.ring-kind == 2 ? #7c5cff : root.ring-kind == 3 ? #d98a00 : root.ring-kind == 4 ? #0f9e8e : root.ring-kind == 5 ? #12a366 : Theme.accent) : bar.ring-tint;
+                                            stroke-width: (3.2px * S.k);
+                                            stroke-line-cap: round;
+                                        }
+                                        // Closed: how far, in the ring; or what it is, when it has no percentage.
+                                        if root.ring-pct != "": Text {
+                                            text: root.ring-pct;
+                                            font-size: (11px * S.k); font-weight: 700;
+                                            color: dl.f ? #05070f : #f5f7fb;
+                                            horizontal-alignment: center; vertical-alignment: center;
+                                            opacity: dl.wide ? 0 : 1;
+                                            animate opacity { duration: 160ms; }
+                                        }
+                                        if root.ring-pct == "": Image {
+                                            source: root.ring-kind == 3 ? Icons.alert : root.ring-kind == 5 ? Icons.check : Icons.download;
+                                            colorize: dl.f ? #0a0d18 : bar.ring-tint;
+                                            width: (16px * S.k); height: self.width;
+                                        }
+                                    }
+                                    // The words (a long name is cut short, never the percentage), then the
+                                    // percentage, as wide as with every digit a 0 so the ring stays put.
+                                    // (Together: the suffix starts with its own space.) In once the island
+                                    // has room, out at once as it closes.
+                                    HorizontalLayout {
+                                        Text {
+                                            text: root.ring-label;
+                                            max-width: (300px * S.k); overflow: elide;
+                                            font-size: (22px * S.k); font-weight: 600;
+                                            color: dl.f ? #05070f : #f5f7fb;
+                                            vertical-alignment: center;
+                                            opacity: dl.wide ? 1 : 0;
+                                            animate opacity { duration: dl.wide ? 260ms : 120ms; delay: dl.wide ? 180ms : 0ms; }
+                                        }
+                                        if root.ring-suffix != "": Rectangle {
+                                            width: max(ring-text.preferred-width, ring-sizer.preferred-width);
+                                            ring-text := Text {
+                                                x: 0; text: root.ring-suffix;
+                                                font-size: (22px * S.k); font-weight: 600;
+                                                color: dl.f ? #05070f : #f5f7fb;
+                                                vertical-alignment: center;
+                                                opacity: dl.wide ? 1 : 0;
+                                                animate opacity { duration: dl.wide ? 260ms : 120ms; delay: dl.wide ? 180ms : 0ms; }
+                                            }
+                                            ring-sizer := Text { text: root.ring-sizer; font-size: (22px * S.k); font-weight: 600; visible: false; }
+                                        }
+                                    }
+                                }
+                                ta-dl := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.top, 4); } }
+                            }
                         }
                         // Search (the Library's, from anywhere).
                         srch := Rectangle {
@@ -1480,70 +1574,6 @@ export component AppWindow inherits Window {
                             animate background { duration: 120ms; }
                             Image { source: Icons.search; colorize: srch.f ? #0a0d18 : Theme.text; width: (30px * S.k); height: self.width; }
                             ta-srch := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.top, 5); } }
-                        }
-                        // Downloads: the ring, only while something's happening (the Control Center
-                        // has Downloads always).
-                        if root.ring-kind > 0: dl := Rectangle {
-                            property <bool> f: root.zone == Zone.top && root.idx == 4 && root.overlay == 0;
-                            width: max((56px * S.k), dl-row.preferred-width);
-                            border-radius: self.height / 2;
-                            height: (56px * S.k);
-                            y: (4px * S.k);
-                            background: self.f ? #f5f7fb : ta-dl.has-hover ? #ffffff2e : #0a0f1d80;
-                            border-width: self.f ? 0 : 1px;
-                            border-color: #ffffff1f;
-                            animate background { duration: 120ms; }
-                            dl-row := HorizontalLayout {
-                                padding-left: root.ring-kind > 0 ? (14px * S.k) : (16px * S.k);
-                                padding-right: root.ring-kind > 0 ? (20px * S.k) : (16px * S.k);
-                                spacing: (12px * S.k);
-                                if root.ring-kind > 0: Rectangle {
-                                    width: (32px * S.k); height: self.width; y: (parent.height - self.height) / 2;
-                                    Path {
-                                        width: parent.width; height: parent.height;
-                                        viewbox-width: 36; viewbox-height: 36;
-                                        commands: "M 18 3 A 15 15 0 0 1 18 33 A 15 15 0 0 1 18 3";
-                                        stroke: dl.f ? #05070f24 : #ffffff2e;
-                                        stroke-width: (3.2px * S.k);
-                                    }
-                                    Path {
-                                        width: parent.width; height: parent.height;
-                                        viewbox-width: 36; viewbox-height: 36;
-                                        commands: root.ring-path;
-                                        stroke: dl.f ? (root.ring-kind == 2 ? #7c5cff : root.ring-kind == 3 ? #d98a00 : root.ring-kind == 4 ? #0f9e8e : root.ring-kind == 5 ? #12a366 : Theme.accent) : bar.ring-tint;
-                                        stroke-width: (3.2px * S.k);
-                                        stroke-line-cap: round;
-                                    }
-                                }
-                                // The words (a long name is cut short, never the percentage), then the
-                                // percentage, as wide as with every digit a 0 so the ring stays put.
-                                // (Together: the suffix starts with its own space.)
-                                if root.ring-kind > 0: HorizontalLayout {
-                                    Text {
-                                        text: root.ring-label;
-                                        max-width: (300px * S.k); overflow: elide;
-                                        font-size: (22px * S.k); font-weight: 600;
-                                        color: dl.f ? #05070f : #f5f7fb;
-                                        vertical-alignment: center;
-                                    }
-                                    if root.ring-suffix != "": Rectangle {
-                                        width: max(ring-text.preferred-width, ring-sizer.preferred-width);
-                                        ring-text := Text {
-                                            x: 0; text: root.ring-suffix;
-                                            font-size: (22px * S.k); font-weight: 600;
-                                            color: dl.f ? #05070f : #f5f7fb;
-                                            vertical-alignment: center;
-                                        }
-                                        ring-sizer := Text { text: root.ring-sizer; font-size: (22px * S.k); font-weight: 600; visible: false; }
-                                    }
-                                }
-                                if root.ring-kind == 0: Image {
-                                    y: (parent.height - self.height) / 2;
-                                    source: Icons.download; colorize: dl.f ? #0a0d18 : Theme.text2;
-                                    width: (28px * S.k); height: self.width;
-                                }
-                            }
-                            ta-dl := TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.top, 4); } }
                         }
                         gear := Rectangle {
                             property <bool> f: root.zone == Zone.top && root.idx == 3 && root.overlay == 0;
