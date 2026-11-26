@@ -13,6 +13,8 @@
 //!   as soon as they're unpacked, with the libraries they load beside them (`mpz` needs
 //!   `MpzSlimmer.dll` for a repack's MP3s), and taken out again after.
 //! - It opens its maker's site at the end: Wine's browser is switched off for it.
+//! - It plays music while it works (FitGirl's has a soundtrack, silent mode or not): its sound is
+//!   muted as soon as it starts playing.
 //! - It reports success even when unpacking failed (it deletes what it wrote): the result is checked
 //!   by its size, and progress is how far its processes have read into the `.bin` files.
 
@@ -210,6 +212,7 @@ pub fn install(r: &Repack, dest: &Path, prefix: &Path, topic: i64, progress: &dy
     let mut copied: Vec<PathBuf> = Vec::new();
     let mut last_move = Instant::now();
     let mut last_done = 0u64;
+    let mut ticks = 0u32;
     let status = loop {
         if let Some(status) = child.try_wait().map_err(|e| e.to_string())? { break status; }
         if cancel.load(Ordering::Relaxed) {
@@ -218,7 +221,10 @@ pub fn install(r: &Repack, dest: &Path, prefix: &Path, topic: i64, progress: &dy
             return Err(tr!("Cancelled"));
         }
         copied.extend(place_helpers(prefix));
-        for (bin, pos) in reading(prefix, r) {
+        let (open, pids) = reading(prefix, r);
+        if ticks % 4 == 0 { mute(&pids); }
+        ticks += 1;
+        for (bin, pos) in open {
             let seen = read.entry(bin).or_default();
             *seen = (*seen).max(pos);
         }
@@ -304,27 +310,56 @@ fn cleanup(copied: &[PathBuf]) {
 }
 
 /// How far the installer's processes are into each archive: the read position of every open
-/// `.bin` of this repack, in processes running in this prefix.
-fn reading(prefix: &Path, r: &Repack) -> Vec<(PathBuf, u64)> {
-    let want = format!("WINEPREFIX={}", prefix.display());
+/// `.bin` of this repack, in processes running in this prefix (and those processes).
+fn reading(prefix: &Path, r: &Repack) -> (Vec<(PathBuf, u64)>, Vec<u32>) {
+    use std::os::unix::fs::MetadataExt;
+    let want = std::fs::canonicalize(prefix).unwrap_or_else(|_| prefix.to_path_buf());
+    // The archives by their file, not their path: inside umu's container paths can read otherwise.
+    let bins: HashMap<(u64, u64), &PathBuf> = r.bins.iter()
+        .filter_map(|(b, _)| std::fs::metadata(b).ok().map(|m| ((m.dev(), m.ino()), b))).collect();
     let mut out = Vec::new();
-    let Ok(procs) = std::fs::read_dir("/proc") else { return out };
+    let mut pids = Vec::new();
+    let Ok(procs) = std::fs::read_dir("/proc") else { return (out, pids) };
     for p in procs.flatten() {
-        let pid = p.file_name();
-        if !pid.to_string_lossy().bytes().all(|b| b.is_ascii_digit()) { continue; }
+        let Ok(pid) = p.file_name().to_string_lossy().parse::<u32>() else { continue };
         let base = p.path();
         let Ok(env) = std::fs::read(base.join("environ")) else { continue };
-        if !env.split(|b| *b == 0).any(|v| v == want.as_bytes()) { continue; }
+        if !env.split(|b| *b == 0).any(|v| v.strip_prefix(b"WINEPREFIX=").is_some_and(|v| same_prefix(v, &want))) { continue; }
+        pids.push(pid);
         let Ok(fds) = std::fs::read_dir(base.join("fd")) else { continue };
         for fd in fds.flatten() {
-            let Ok(target) = std::fs::read_link(fd.path()) else { continue };
-            if !r.bins.iter().any(|(b, _)| *b == target) { continue; }
+            let Ok(meta) = std::fs::metadata(fd.path()) else { continue };
+            let Some(target) = bins.get(&(meta.dev(), meta.ino())).map(|b| (*b).clone()) else { continue };
             let pos = std::fs::read_to_string(base.join("fdinfo").join(fd.file_name())).ok()
                 .and_then(|t| t.lines().find_map(|l| l.strip_prefix("pos:").map(|v| v.trim().parse::<u64>().ok())).flatten());
             if let Some(pos) = pos { out.push((target, pos)); }
         }
     }
-    out
+    (out, pids)
+}
+
+/// A process's WINEPREFIX is this prefix: umu hands Wine `<prefix>/pfx/` (a link to the prefix
+/// itself), with links in the path resolved (/home → /var/home on Fedora Atomic).
+fn same_prefix(value: &[u8], want: &Path) -> bool {
+    let value = String::from_utf8_lossy(value);
+    let value = value.trim_end_matches('/');
+    let value = value.strip_suffix("/pfx").unwrap_or(value);
+    std::fs::canonicalize(value).is_ok_and(|v| v == want) || Path::new(value) == want
+}
+
+/// Mute what the installer's processes play (PulseAudio or PipeWire, through pactl).
+fn mute(pids: &[u32]) {
+    if pids.is_empty() { return; }
+    let Ok(out) = Command::new("pactl").args(["-f", "json", "list", "sink-inputs"]).output() else { return };
+    let Ok(streams) = serde_json::from_slice::<serde_json::Value>(&out.stdout) else { return };
+    for s in streams.as_array().into_iter().flatten() {
+        let pid = s["properties"]["application.process.id"].as_str().and_then(|p| p.parse::<u32>().ok());
+        let (Some(index), Some(pid)) = (s["index"].as_u64(), pid) else { continue };
+        if pids.contains(&pid) && s["mute"] != serde_json::Value::Bool(true) {
+            let _ = Command::new("pactl").args(["set-sink-input-mute", &index.to_string(), "1"]).status();
+            crate::log!("repack: its installer's music muted");
+        }
+    }
 }
 
 /// End the installer and everything it started in its prefix.
@@ -416,6 +451,17 @@ mod tests {
         assert_eq!(md5(b"The quick brown fox jumps over the lazy dog"), "9e107d9d372bb6826bd81d3542a419d6");
     }
 
+    /// On a repack installing now: `REPACK` its folder, `PREFIX` the prefix SwarmPlay gave it.
+    #[test]
+    #[ignore]
+    fn a_running_install_is_seen() {
+        let (Ok(dir), Ok(prefix)) = (std::env::var("REPACK"), std::env::var("PREFIX")) else { return };
+        let r = find(Path::new(&dir)).unwrap();
+        let (open, pids) = reading(Path::new(&prefix), &r);
+        eprintln!("processes {pids:?}, reading {open:?}");
+        assert!(!pids.is_empty(), "its processes are found");
+    }
+
     #[test]
     fn names_come_from_the_folder() {
         assert_eq!(repack_name("God of War [FitGirl Repack]"), ("God of War".into(), "FitGirl".into()));
@@ -448,6 +494,13 @@ mod tests {
         assert!(verify(rp, &|_, _| {}, &AtomicBool::new(false)).is_ok());
         std::fs::write(r.join("fg-selective-brazilian.bin"), b"PT").unwrap();
         assert!(verify(rp, &|_, _| {}, &AtomicBool::new(false)).unwrap_err().contains("fg-selective-brazilian.bin"));
+        // Its installer's processes, as umu runs them: WINEPREFIX=<prefix>/pfx/.
+        std::fs::create_dir_all(dir.join("prefix")).unwrap();
+        std::os::unix::fs::symlink(".", dir.join("prefix/pfx")).unwrap();
+        let want = std::fs::canonicalize(dir.join("prefix")).unwrap();
+        assert!(same_prefix(format!("{}/pfx/", dir.join("prefix").display()).as_bytes(), &want));
+        assert!(same_prefix(dir.join("prefix").to_string_lossy().as_bytes(), &want));
+        assert!(!same_prefix(dir.join("other").to_string_lossy().as_bytes(), &want));
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
