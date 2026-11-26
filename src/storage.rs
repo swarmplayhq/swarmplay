@@ -140,7 +140,7 @@ fn space(path: &Path) -> Option<(u64, u64)> {
 }
 
 /// Where the drive holding `path` is mounted (the longest mount point above it).
-fn mount_point(path: &Path) -> String {
+pub fn mount_point(path: &Path) -> String {
     let path = existing(path).and_then(|p| p.canonicalize().ok()).unwrap_or_else(|| path.to_path_buf());
     let mounts = std::fs::read_to_string("/proc/self/mountinfo").unwrap_or_default();
     mounts.lines().filter_map(|l| l.split(' ').nth(4)).map(|m| m.replace("\\040", " "))

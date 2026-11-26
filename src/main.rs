@@ -18,6 +18,8 @@ mod vpn;
 mod pc;
 mod pc_ui;
 mod pcgame;
+mod repack;
+mod repack_ui;
 mod os;
 mod exfat;
 mod control_center;

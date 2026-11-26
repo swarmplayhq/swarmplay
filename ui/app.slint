@@ -397,6 +397,8 @@ export component AppWindow inherits Window {
     in property <string> power-icon;
     in property <int> power-sel;
     in property <bool> power-busy;
+    // Its buttons one under another, full width (a choice of drives to install a repack to).
+    in property <bool> power-stack;
 
     in property <string> menu-title;
     // The gallery's picture shown, by its place among the Hub's screenshots.
@@ -600,6 +602,55 @@ export component AppWindow inherits Window {
                     animate width { duration: 320ms; easing: ease-out-back; }
                     animate opacity { duration: 220ms; easing: ease-out-quad; }
                     FocusRing { w: parent.width; h: parent.height; on: i == root.sel && root.zone == Zone.row && root.overlay == 0; radius: (22px * S.k); }
+                    // A repack on a drive: its disc peeks out from behind the cover, further when
+                    // chosen, and spins while it installs.
+                    if t.disc: Rectangle {
+                        property <bool> chosen: i == root.sel;
+                        property <bool> spinning: t.progress >= 0;
+                        width: parent.width * (chosen || spinning ? 0.52 : 0.44);
+                        height: self.width;
+                        // Its middle stays just inside the cover's corner; most of it shows.
+                        x: parent.width - self.width * (chosen || spinning ? 0.6 : 0.5);
+                        y: -self.height * (chosen || spinning ? 0.4 : 0.3);
+                        animate x, y, width { duration: 520ms; easing: cubic-bezier(0.32, 1.32, 0.56, 1); }
+                        border-radius: self.width / 2;
+                        background: @radial-gradient(circle, #1a2233 0%, #1a2233 14%, #c3ccd9 15%, #8995a8 32%, #d9e0ea 50%, #9aa6b8 72%, #e4e9f0 90%, #7d8a9e 100%);
+                        border-width: 1px;
+                        border-color: #ffffff66;
+                        drop-shadow-blur: (18px * S.k);
+                        drop-shadow-color: #000000a0;
+                        transform-rotation: spinning ? animation-tick() / 1ms * 0.42deg : 0deg;
+                        // Its grooves.
+                        for ring in [0.86, 0.68, 0.5]: Rectangle {
+                            width: parent.width * ring; height: self.width;
+                            border-radius: self.width / 2;
+                            border-width: 1px;
+                            border-color: #ffffff38;
+                        }
+                        // Its sheen: iridescent arcs that show it turning.
+                        for arc[k] in [
+                            { c: #ff6fd8aa, d: "M 50 9 A 41 41 0 0 1 91 50", w: 9 },
+                            { c: #5fd4ffaa, d: "M 50 91 A 41 41 0 0 1 9 50", w: 9 },
+                            { c: #fff27a8c, d: "M 79 21 A 41 41 0 0 1 91 50", w: 9 },
+                            { c: #ffffffcc, d: "M 50 24 A 26 26 0 0 1 72 37", w: 4 },
+                            { c: #a68bff88, d: "M 50 76 A 26 26 0 0 1 28 63", w: 4 },
+                        ]: Path {
+                            width: parent.width; height: parent.height;
+                            viewbox-width: 100; viewbox-height: 100;
+                            commands: arc.d;
+                            stroke: arc.c;
+                            stroke-width: arc.w * 1px * S.k * parent.width / (100px * S.k);
+                            stroke-line-cap: round;
+                        }
+                        // The hole.
+                        Rectangle {
+                            width: parent.width * 0.16; height: self.width;
+                            border-radius: self.width / 2;
+                            background: #05070f;
+                            border-width: (2px * S.k);
+                            border-color: #ffffff4d;
+                        }
+                    }
                     Rectangle {
                         border-radius: (22px * S.k);
                         clip: true;
@@ -627,6 +678,25 @@ export component AppWindow inherits Window {
                             colorize: Theme.text;
                             width: parent.width * 0.42;
                             height: self.width;
+                        }
+                        // Installing: the cover dims a little and a bar fills along its foot.
+                        if t.progress >= 0: Rectangle {
+                            background: @linear-gradient(180deg, #00000000 55%, #000000a6 100%);
+                        }
+                        if t.progress >= 0: Rectangle {
+                            x: (12px * S.k);
+                            y: parent.height - (18px * S.k);
+                            width: parent.width - (24px * S.k);
+                            height: (6px * S.k);
+                            border-radius: self.height / 2;
+                            background: #ffffff33;
+                            Rectangle {
+                                x: 0;
+                                width: parent.width * clamp(t.progress, 0, 1);
+                                border-radius: parent.border-radius;
+                                background: @linear-gradient(90deg, Theme.accent 0%, #8fd3ff 100%);
+                                animate width { duration: 900ms; easing: ease-out-quad; }
+                            }
                         }
                     }
                     if t.badge != "": Badge {
@@ -4447,7 +4517,30 @@ export component AppWindow inherits Window {
                             Rectangle { height: (10px * S.k); }
                             Text { text: root.power-text; font-size: (20px * S.k); color: Theme.text2; horizontal-alignment: center; wrap: word-wrap; }
                             if !root.power-busy: Rectangle { height: (34px * S.k); }
-                            if !root.power-busy: HorizontalLayout {
+                            if !root.power-busy && root.power-stack: VerticalLayout {
+                                spacing: (12px * S.k);
+                                for b[i] in root.power-buttons: Rectangle {
+                                    property <bool> f: i == root.power-sel;
+                                    height: (58px * S.k);
+                                    border-radius: (29px * S.k);
+                                    background: f ? #ffffff : #ffffff14;
+                                    border-width: 1px;
+                                    border-color: #ffffff2e;
+                                    drop-shadow-blur: f ? (26px * S.k) : 0;
+                                    drop-shadow-color: #8cb9ffaa;
+                                    transform-scale: f ? 1.0 : 0.98;
+                                    animate background { duration: 200ms; }
+                                    animate transform-scale { duration: 300ms; easing: ease-out-back; }
+                                    HorizontalLayout {
+                                        alignment: center;
+                                        spacing: (12px * S.k);
+                                        if f: KeyCap { text: root.pad-hints ? "✕" : "Enter"; round: root.pad-hints; fg: #ffffff; bg: #0a0d18; y: (14px * S.k); }
+                                        Text { text: b; font-size: (19px * S.k); font-weight: 600; color: f ? #0a0d18 : Theme.text; vertical-alignment: center; overflow: elide; }
+                                    }
+                                    TouchArea { mouse-cursor: pointer; clicked => { root.click(Zone.power, i); } }
+                                }
+                            }
+                            if !root.power-busy && !root.power-stack: HorizontalLayout {
                                 alignment: center;
                                 spacing: (16px * S.k);
                                 for b[i] in root.power-buttons: Rectangle {

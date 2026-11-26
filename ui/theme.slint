@@ -193,6 +193,10 @@ export struct TileData {
     // Home's first tile: SwarmPlay's Welcome (its widgets in place of a game's hero).
     welcome: bool,
     badge: string,      // "", "Installed", "Playing", "New"
+    // A repack waiting on a drive, shown as a console shows a disc put in (src/repack_ui.rs); and
+    // how far its install is (0..1, below 0: not installing).
+    disc: bool,
+    progress: float,
 }
 
 // One of the Welcome tile's widgets: an icon, what it is, the figure that matters and a line
