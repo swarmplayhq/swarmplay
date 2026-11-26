@@ -54,6 +54,11 @@ impl App {
         let platform = game.map(|game| game.g.platform).or(job.platform).unwrap_or_default();
         // PC games are named after the game (their folder and Library name), not the release.
         let name = match game { Some(game) if platform == crate::platform::Platform::Pc => game.name.clone(), _ => job.name };
+        // A repack (FitGirl's): its own installer, run like a disc's copy (src/repack_ui.rs).
+        let cat = self.games.iter().position(|g| g.g.id == job.topic);
+        if game.is_some_and(|g| !g.g.maker.is_empty()) && self.repack_from_download(&job.folder, cat, destination.clone()) {
+            return Ok(());
+        }
         let skip = self.downloads.left_out(key)?;
         let request = installer::Request { key: key.into(), topic: job.topic, name,
             source: job.folder, destination, expected_ids: ids, platform, skip };

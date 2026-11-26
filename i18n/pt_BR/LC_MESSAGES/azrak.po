@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SwarmPlay\n"
-"POT-Creation-Date: 2026-11-26 00:12+0000\n"
+"POT-Creation-Date: 2026-11-26 02:06+0000\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1552,6 +1552,10 @@ msgid "Waiting to install: it starts once the game installing now is done"
 msgstr "Aguardando para instalar: começa quando o jogo que está sendo instalado terminar"
 
 #: src/installer.rs
+msgid "A game of this download wasn't installed: {}"
+msgstr "Um jogo deste download não foi instalado: {}"
+
+#: src/installer.rs
 msgid "Absolute or drive-qualified archive path is forbidden"
 msgstr "Caminhos absolutos ou com unidade no arquivo compactado não são permitidos"
 
@@ -1845,12 +1849,12 @@ msgid "This download has no game PKG, only an update; install the game itself fi
 msgstr "Este download não tem o PKG do jogo, só uma atualização; instale o jogo primeiro"
 
 #: src/installer.rs
-msgid "This download has {} disk images; install supports one game image at a time"
-msgstr "Este download tem {} imagens de disco; a instalação aceita uma imagem de jogo por vez"
+msgid "This download has two game PKGs of {id}; install one at a time"
+msgstr "Este download tem dois PKGs de jogo de {id}; instale um por vez"
 
 #: src/installer.rs
-msgid "This download has {} game PKGs; install one game at a time"
-msgstr "Este download tem {} PKGs de jogo; instale um jogo por vez"
+msgid "This download has {} disk images; install supports one game image at a time"
+msgstr "Este download tem {} imagens de disco; a instalação aceita uma imagem de jogo por vez"
 
 #: src/installer.rs
 msgid "This download is already installed; existing games are never overwritten"
@@ -1907,6 +1911,10 @@ msgstr "formato sem suporte ou volume ausente"
 #: src/installer.rs
 msgid "{action}: {error} [{version}]; verify all volumes, format support and that the archive is not password-protected"
 msgstr "{action}: {error} [{version}]; confira se todos os volumes estão presentes, se o formato tem suporte e se o arquivo não tem senha"
+
+#: src/installer.rs
+msgid "{path}: no title ID in its PKG header"
+msgstr "{path}: sem ID do jogo no cabeçalho do PKG"
 
 #: src/kyty.rs src/words.rs
 msgid "Downloading KytyPS5 {} · {}%"
@@ -2968,6 +2976,10 @@ msgstr "DISPONIBILIDADE"
 msgid "Add game folder"
 msgstr "Adicionar pasta de jogos"
 
+#: src/present.rs src/repack_ui.rs
+msgid "Brazilian Portuguese"
+msgstr "Português do Brasil"
+
 #: src/present.rs
 msgid "Browse games"
 msgstr "Explorar jogos"
@@ -3339,6 +3351,11 @@ msgstr "{observed} · não é ao vivo"
 msgid "{} h played"
 msgstr "{} h jogadas"
 
+#. A repack says whose.
+#: src/present.rs src/repack_ui.rs
+msgid "{} repack"
+msgstr "Repack {}"
+
 #: src/present.rs
 msgid "{} · files and paths"
 msgstr "{} · arquivos e caminhos"
@@ -3477,10 +3494,6 @@ msgid "Already installed"
 msgstr "Já instalado"
 
 #: src/repack_ui.rs
-msgid "Brazilian Portuguese"
-msgstr "Português do Brasil"
-
-#: src/repack_ui.rs
 msgid "Brazilian Portuguese included."
 msgstr "Português do Brasil incluído."
 
@@ -3551,10 +3564,6 @@ msgstr "{} está pronto para instalar"
 #: src/repack_ui.rs
 msgid "{} is ready to play"
 msgstr "{} está pronto para jogar"
-
-#: src/repack_ui.rs
-msgid "{} repack"
-msgstr "Repack {}"
 
 #: src/search_keys.rs
 msgid "Best matches"
@@ -5797,6 +5806,9 @@ msgstr "NOVO"
 #: ui/widgets.slint:269
 msgid "● PLAYING"
 msgstr "● JOGANDO"
+
+#~ msgid "This download has {} game PKGs; install one game at a time"
+#~ msgstr "Este download tem {} PKGs de jogo; instale um jogo por vez"
 
 #~ msgid "Controller in Windows games"
 #~ msgstr "Controle em jogos de Windows"

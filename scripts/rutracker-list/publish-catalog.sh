@@ -22,13 +22,16 @@ for p in ps5 ps4 linux wine; do
   fi
 done
 gzip -9nc "$src/english-translations.json" >"$out/english-translations.json.gz"
-node - "$src" >"$out/catalog.json" <<'JS'
+# FitGirl's repacks (scripts/repacks/fitgirl.mjs), beside the RuTracker catalogs.
+repacks=$(dirname "$src")/repacks
+[ -f "$repacks/fitgirl-topics.json" ] && gzip -9nc "$repacks/fitgirl-topics.json" >"$out/fitgirl-topics.json.gz"
+node - "$src" "$repacks" >"$out/catalog.json" <<'JS'
 const { createHash } = require('node:crypto');
 const { readFileSync } = require('node:fs');
 const files = {};
-for (const name of ['ps5-topics.json', 'ps4-topics.json', 'linux-topics.json', 'wine-topics.json']) {
+for (const name of ['ps5-topics.json', 'ps4-topics.json', 'linux-topics.json', 'wine-topics.json', 'fitgirl-topics.json']) {
   let bytes;
-  try { bytes = readFileSync(`${process.argv[2]}/${name}`); } catch { continue; }
+  try { bytes = readFileSync(`${process.argv[name.startsWith('fitgirl') ? 3 : 2]}/${name}`); } catch { continue; }
   if (JSON.parse(bytes).translation?.language !== 'en') continue;
   files[name] = { sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length,
     topics: JSON.parse(bytes).topic_count };

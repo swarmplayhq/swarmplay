@@ -13,6 +13,8 @@
 //!   as soon as they're unpacked, with the libraries they load beside them (`mpz` needs
 //!   `MpzSlimmer.dll` for a repack's MP3s), and taken out again after.
 //! - It opens its maker's site at the end: Wine's browser is switched off for it.
+//! - Once installed, FitGirl's checks every installed file again with QuickSFV, in a window of
+//!   its own, for minutes: the archives were checked before (`verify`), so it's ended.
 //! - It plays music while it works (FitGirl's has a soundtrack, silent mode or not): its sound is
 //!   muted as soon as it starts playing.
 //! - It reports success even when unpacking failed (it deletes what it wrote): the result is checked
@@ -53,6 +55,16 @@ impl Repack {
     pub fn brazilian(&self) -> bool {
         self.languages.iter().any(|l| l == "brazilian")
     }
+}
+
+/// A repack's file a download leaves out unless asked: another language's (FitGirl's
+/// `fg-selective-<language>.bin`; English and the interface's language stay) and the optional extras
+/// (`fg-optional-*`: soundtracks, bonus videos).
+pub fn left_out_by_default(path: &str, brazilian: bool) -> bool {
+    let name = path.rsplit('/').next().unwrap_or(path).to_ascii_lowercase();
+    if name.starts_with("fg-optional-") { return true; }
+    let Some(language) = name.strip_prefix("fg-selective-").and_then(|n| n.strip_suffix(".bin")) else { return false };
+    !(language == "english" || (brazilian && language == "brazilian"))
 }
 
 /// The folder's repack, if it is one: a `setup.exe` made with Inno Setup and `.bin` files beside it.
@@ -223,6 +235,7 @@ pub fn install(r: &Repack, dest: &Path, prefix: &Path, topic: i64, progress: &dy
         copied.extend(place_helpers(prefix));
         let (open, pids) = reading(prefix, r);
         if ticks % 4 == 0 { mute(&pids); }
+        end_checker(&pids);
         ticks += 1;
         for (bin, pos) in open {
             let seen = read.entry(bin).or_default();
@@ -347,6 +360,17 @@ fn same_prefix(value: &[u8], want: &Path) -> bool {
     std::fs::canonicalize(value).is_ok_and(|v| v == want) || Path::new(value) == want
 }
 
+/// The after-install check (QuickSFV), ended: the installed game stays as it is.
+fn end_checker(pids: &[u32]) {
+    for pid in pids {
+        let comm = std::fs::read_to_string(format!("/proc/{pid}/comm")).unwrap_or_default();
+        if comm.trim().eq_ignore_ascii_case("QuickSFV.exe") {
+            unsafe { libc::kill(*pid as i32, libc::SIGTERM); }
+            crate::log!("repack: its after-install check (QuickSFV) ended");
+        }
+    }
+}
+
 /// Mute what the installer's processes play (PulseAudio or PipeWire, through pactl).
 fn mute(pids: &[u32]) {
     if pids.is_empty() { return; }
@@ -460,6 +484,17 @@ mod tests {
         let (open, pids) = reading(Path::new(&prefix), &r);
         eprintln!("processes {pids:?}, reading {open:?}");
         assert!(!pids.is_empty(), "its processes are found");
+    }
+
+    #[test]
+    fn other_languages_and_extras_are_left_out_of_a_download() {
+        assert!(!left_out_by_default("God of War [FitGirl Repack]/fg-01.bin", true));
+        assert!(!left_out_by_default("x/fg-selective-english.bin", false));
+        assert!(!left_out_by_default("x/fg-selective-brazilian.bin", true));
+        assert!(left_out_by_default("x/fg-selective-brazilian.bin", false));
+        assert!(left_out_by_default("x/fg-selective-russian.bin", true));
+        assert!(left_out_by_default("x/fg-optional-bonus-ost.bin", true));
+        assert!(!left_out_by_default("x/setup.exe", true));
     }
 
     #[test]

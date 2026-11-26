@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-11-26 00:12+0000\n"
+"POT-Creation-Date: 2026-11-26 02:06+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1590,6 +1590,10 @@ msgid "Waiting to install: it starts once the game installing now is done"
 msgstr ""
 
 #: src/installer.rs
+msgid "A game of this download wasn't installed: {}"
+msgstr ""
+
+#: src/installer.rs
 msgid "Absolute or drive-qualified archive path is forbidden"
 msgstr ""
 
@@ -1898,12 +1902,12 @@ msgid ""
 msgstr ""
 
 #: src/installer.rs
-msgid ""
-"This download has {} disk images; install supports one game image at a time"
+msgid "This download has two game PKGs of {id}; install one at a time"
 msgstr ""
 
 #: src/installer.rs
-msgid "This download has {} game PKGs; install one game at a time"
+msgid ""
+"This download has {} disk images; install supports one game image at a time"
 msgstr ""
 
 #: src/installer.rs
@@ -1965,6 +1969,10 @@ msgstr ""
 msgid ""
 "{action}: {error} [{version}]; verify all volumes, format support and that "
 "the archive is not password-protected"
+msgstr ""
+
+#: src/installer.rs
+msgid "{path}: no title ID in its PKG header"
 msgstr ""
 
 #: src/kyty.rs src/words.rs
@@ -3071,6 +3079,10 @@ msgstr ""
 msgid "Add game folder"
 msgstr ""
 
+#: src/present.rs src/repack_ui.rs
+msgid "Brazilian Portuguese"
+msgstr ""
+
 #: src/present.rs
 msgid "Browse games"
 msgstr ""
@@ -3444,6 +3456,11 @@ msgstr ""
 msgid "{} h played"
 msgstr ""
 
+#. A repack says whose.
+#: src/present.rs src/repack_ui.rs
+msgid "{} repack"
+msgstr ""
+
 #: src/present.rs
 msgid "{} · files and paths"
 msgstr ""
@@ -3586,10 +3603,6 @@ msgid "Already installed"
 msgstr ""
 
 #: src/repack_ui.rs
-msgid "Brazilian Portuguese"
-msgstr ""
-
-#: src/repack_ui.rs
 msgid "Brazilian Portuguese included."
 msgstr ""
 
@@ -3663,10 +3676,6 @@ msgstr ""
 
 #: src/repack_ui.rs
 msgid "{} is ready to play"
-msgstr ""
-
-#: src/repack_ui.rs
-msgid "{} repack"
 msgstr ""
 
 #: src/search_keys.rs

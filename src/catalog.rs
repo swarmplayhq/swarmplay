@@ -10,12 +10,14 @@ use std::path::PathBuf;
 use std::sync::LazyLock;
 
 pub const CATALOG_TTL: f64 = 6.0 * 3600.0;
-pub const CATALOG_SCHEMA: u32 = 6;
+pub const CATALOG_SCHEMA: u32 = 7;
 pub const SOURCE: &str = "https://rutracker.net/forum/viewforum.php?f=546";
 pub const PS4_SOURCE: &str = "https://rutracker.net/forum/viewforum.php?f=973";
 /// PC games: native Linux games, and Windows games packed with Wine, DOSBox and the like.
 pub const LINUX_SOURCE: &str = "https://rutracker.net/forum/viewforum.php?f=1992";
 pub const WINE_SOURCE: &str = "https://rutracker.net/forum/viewforum.php?f=2059";
+/// FitGirl's repacks (scripts/repacks/fitgirl.mjs), published by SwarmPlay's own catalog workflow.
+pub const FITGIRL_SOURCE: &str = "https://fitgirl-repacks.site/";
 const BUNDLED: &[u8] = include_bytes!("../assets/rutracker/ps5-topics.json");
 /// Empty until the PS4 snapshot is collected and bundled (see build.rs).
 const BUNDLED_PS4: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/ps4-topics.json"));
@@ -28,14 +30,17 @@ struct Source {
     cache: &'static str,
     env: &'static str,
     bundled: &'static [u8],
+    /// Published on SwarmPlay's own catalog branch, not upstream's.
+    own: bool,
 }
 
 // The PC catalogs aren't built in: they arrive with the daily published catalog.
-const SOURCES: [Source; 4] = [
-    Source { platform: Platform::Ps5, url: SOURCE, file: "ps5-topics.json", cache: "catalog-rutracker.json", env: "AZRAK_CATALOG_PATH", bundled: BUNDLED },
-    Source { platform: Platform::Ps4, url: PS4_SOURCE, file: "ps4-topics.json", cache: "catalog-rutracker-ps4.json", env: "AZRAK_PS4_CATALOG_PATH", bundled: BUNDLED_PS4 },
-    Source { platform: Platform::Pc, url: LINUX_SOURCE, file: "linux-topics.json", cache: "catalog-rutracker-linux.json", env: "AZRAK_LINUX_CATALOG_PATH", bundled: &[] },
-    Source { platform: Platform::Pc, url: WINE_SOURCE, file: "wine-topics.json", cache: "catalog-rutracker-wine.json", env: "AZRAK_WINE_CATALOG_PATH", bundled: &[] },
+const SOURCES: [Source; 5] = [
+    Source { platform: Platform::Ps5, url: SOURCE, file: "ps5-topics.json", cache: "catalog-rutracker.json", env: "AZRAK_CATALOG_PATH", bundled: BUNDLED, own: false },
+    Source { platform: Platform::Ps4, url: PS4_SOURCE, file: "ps4-topics.json", cache: "catalog-rutracker-ps4.json", env: "AZRAK_PS4_CATALOG_PATH", bundled: BUNDLED_PS4, own: false },
+    Source { platform: Platform::Pc, url: LINUX_SOURCE, file: "linux-topics.json", cache: "catalog-rutracker-linux.json", env: "AZRAK_LINUX_CATALOG_PATH", bundled: &[], own: false },
+    Source { platform: Platform::Pc, url: WINE_SOURCE, file: "wine-topics.json", cache: "catalog-rutracker-wine.json", env: "AZRAK_WINE_CATALOG_PATH", bundled: &[], own: false },
+    Source { platform: Platform::Pc, url: FITGIRL_SOURCE, file: "fitgirl-topics.json", cache: "catalog-fitgirl.json", env: "AZRAK_FITGIRL_CATALOG_PATH", bundled: &[], own: true },
 ];
 
 /// A PC release's Steam app (from the published catalog: scripts/rutracker-list/steam.mjs).
@@ -143,6 +148,14 @@ pub struct Game {
     /// Why the launcher can't install it, judged from its file list (scripts/rutracker-list/
     /// files.mjs) when that list belongs to the torrent its magnet names.
     pub unsupported: Option<String>,
+    /// A repack's maker ("FitGirl"): its download is the repack's installer and archives, which
+    /// install like a disc (src/repack.rs). Empty for RuTracker's releases.
+    pub maker: String,
+}
+
+/// A release with Brazilian Portuguese: a repack's own language file for it.
+pub fn has_brazilian(game: &Game) -> bool {
+    game.game_info["selective_languages"].as_array().is_some_and(|l| l.iter().any(|v| v == "brazilian"))
 }
 
 impl Game {
@@ -255,16 +268,29 @@ fn remote_base() -> String {
     std::env::var("AZRAK_CATALOG_URL").unwrap_or_else(|_| format!("https://raw.githubusercontent.com/{}/catalog/", crate::update::REPO))
 }
 
+/// SwarmPlay's own catalog branch (FitGirl's repacks), beside upstream's.
+fn own_base() -> String {
+    std::env::var("SWARMPLAY_CATALOG_URL").unwrap_or_else(|_| format!("https://raw.githubusercontent.com/{}/catalog/", crate::update::UPDATE_REPO))
+}
+
+/// The published manifests: upstream's, and SwarmPlay's own (missing until its first publish,
+/// which never holds back upstream's).
+fn manifests() -> Result<(Value, Value), String> {
+    let upstream = crate::util::http_json(&format!("{}catalog.json", remote_base()))?;
+    let own = crate::util::http_json(&format!("{}catalog.json", own_base())).unwrap_or(Value::Null);
+    Ok((upstream, own))
+}
+
 /// Download published catalogs that differ from the local ones, into the data folder. A file is
 /// only replaced by one that matches the published checksum and imports cleanly; any failure
 /// leaves the local catalog as it was. Returns how many catalogs changed.
 fn fetch_remote(progress: &dyn Fn(String)) -> Result<usize, String> {
     use sha2::{Digest, Sha256};
-    let base = remote_base();
-    let manifest = crate::util::http_json(&format!("{base}catalog.json"))?;
+    let (upstream, own) = manifests()?;
     let _ = atomic_write(&cache_dir().join("catalog-checked"), now_secs().to_string().as_bytes());
     let mut changed = 0;
     for src in SOURCES.iter().filter(|src| override_path(src).is_none()) {
+        let (manifest, base) = if src.own { (&own, own_base()) } else { (&upstream, remote_base()) };
         let Some(sha) = manifest["files"][src.file]["sha256"].as_str() else { continue };
         let path = data_path(src);
         let local = std::fs::read(&path).ok().map(|bytes| format!("{:x}", Sha256::digest(&bytes)));
@@ -291,8 +317,9 @@ fn fetch_remote(progress: &dyn Fn(String)) -> Result<usize, String> {
 /// when it says so. A new catalog is then in the Library minutes after it's published.
 pub fn published_changed() -> Result<bool, String> {
     use sha2::{Digest, Sha256};
-    let manifest = crate::util::http_json(&format!("{}catalog.json", remote_base()))?;
+    let (upstream, own) = manifests()?;
     Ok(SOURCES.iter().filter(|src| override_path(src).is_none()).any(|src| {
+        let manifest = if src.own { &own } else { &upstream };
         manifest["files"][src.file]["sha256"].as_str().is_some_and(|sha| {
             std::fs::read(data_path(src)).ok().map(|bytes| format!("{:x}", Sha256::digest(&bytes))).as_deref() != Some(sha)
         })
@@ -427,7 +454,10 @@ fn import_for(src: &Source, bytes: &[u8]) -> Result<CatalogFile, String> {
         // Release dates are not posting dates: do not invent "added" timestamps.
         let release_date = text(&info, "release_date");
         games.push(Game {
-            id, name, title, date: text(topic, "published_at"), link: format!("https://rutracker.net/forum/viewtopic.php?t={id}"),
+            id, name, title, date: text(topic, "published_at"),
+            // FitGirl's post, or RuTracker's topic.
+            link: Some(text(topic, "url")).filter(|u| u.starts_with("https://") && src.own).unwrap_or_else(|| format!("https://rutracker.net/forum/viewtopic.php?t={id}")),
+            maker: text(topic, "maker"),
             cover: images.first().cloned().unwrap_or_default(), trailer: String::new(),
             genres: genre.split([',', '/', '|']).map(str::trim).filter(|genre| !genre.is_empty()).map(str::to_string).collect(),
             mode, release: if release_date.is_empty() { text(&info, "release_year") } else { release_date },
@@ -497,6 +527,25 @@ mod tests {
             "translation": { "language": "en" }, "collected_at": "2026-09-30T00:56:18Z",
             "topic_count": topics.as_array().unwrap().len(), "topics": topics })).unwrap()
     }
+    #[test]
+    fn fitgirl_repacks_import_as_pc_repacks_with_their_own_page() {
+        let report = serde_json::to_vec(&serde_json::json!({ "source": FITGIRL_SOURCE, "complete": true,
+            "translation": { "language": "en" }, "collected_at": "2026-11-25T00:00:00Z", "topic_count": 1,
+            "topics": [{ "id": "9000024272", "title": "God of War [FitGirl Repack] [v1.0.12 + Bonus OST]",
+                "url": "https://fitgirl-repacks.site/god-of-war/", "size": "26 GB", "seeders": 120, "leechers": 9,
+                "maker": "FitGirl", "magnet": "magnet:?xt=urn:btih:049a8fa63c3a6bf00c474857c02810a649003e02&dn=God",
+                "game_info": { "name": "God of War", "version": "v1.0.12 + Bonus OST", "genre": "Action",
+                    "selective_languages": ["brazilian", "english"], "image_urls": ["https://example.org/c.jpg"] } }] })).unwrap();
+        let file = import_for(&SOURCES[4], &report).unwrap();
+        let g = &file.games[0];
+        assert_eq!((g.id, g.name.as_str(), g.platform, g.maker.as_str()), (9000024272, "God of War", Platform::Pc, "FitGirl"));
+        assert_eq!(g.link, "https://fitgirl-repacks.site/god-of-war/", "its post, not a RuTracker topic");
+        assert!(!g.wine, "a Windows game run with Proton or Wine here, not packed with Wine");
+        assert_eq!((g.seeders, g.size_gb), (Some(120), Some(26.0)));
+        assert!(has_brazilian(g));
+        assert!(SOURCES[4].own && !SOURCES[3].own, "published on SwarmPlay's own branch");
+    }
+
     #[test]
     fn ps4_snapshot_imports_as_ps4_and_merges() {
         let ps4 = serde_json::to_vec(&serde_json::json!({ "source": PS4_SOURCE, "complete": true,

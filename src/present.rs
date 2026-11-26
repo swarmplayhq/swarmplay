@@ -472,6 +472,11 @@ impl App {
         if let Some(g) = g.filter(|g| !g.g.size.is_empty()) {
             c.push(chip("disk", g.g.size.clone(), false));
         }
+        // A repack: whose, and Brazilian Portuguese when it has its language file.
+        if let Some(g) = g.filter(|g| !g.g.maker.is_empty()) {
+            c.push(chip("tag", tr!("{} repack", g.g.maker), false));
+            if crate::catalog::has_brazilian(&g.g) { c.push(chip("sound", tr!("Brazilian Portuguese"), true)); }
+        }
         let rel = g.map(|g| g.g.release.clone()).filter(|r| !r.is_empty()).or_else(|| info.as_ref().map(|i| util::fmt_date(util::parse_iso_date(&i.release)))).unwrap_or_default();
         if !rel.is_empty() {
             c.push(chip("cal", rel, false));
@@ -1336,6 +1341,11 @@ impl App {
         for g in genres.into_iter().take(3) {
             chips.push(chip("", g, false));
         }
+        // A repack: whose, and Brazilian Portuguese when its language file is in it.
+        if let Some(g) = t.game.map(|g| &self.games[g].g).filter(|g| !g.maker.is_empty()) {
+            chips.push(chip("", tr!("{} repack", g.maker), false));
+            if crate::catalog::has_brazilian(g) { chips.push(chip("", tr!("Brazilian Portuguese"), true)); }
+        }
         h.chips = model(chips);
 
         self.hub_actions = self.actions_for(t, true);
@@ -1380,7 +1390,7 @@ impl App {
                 ("CONSOLE FIRMWARE NOTE", game.detail("minimum_firmware")),
                 ("INTERFACE LANGUAGES", game.detail("interface_languages")),
                 ("AUDIO LANGUAGES", game.detail("audio_languages")),
-                ("SOURCE", "RuTracker".to_string()),
+                ("SOURCE", if game.maker.is_empty() { "RuTracker".to_string() } else { tr!("{} repack", game.maker) }),
             ]);
         }
         if let Some(l) = t.local {
@@ -1416,9 +1426,12 @@ impl App {
                 String::new()
             };
             let count = members.len();
-            h.release_label = format!("{}{newest}", tr!("Release {position} of {count}", position, count)).into();
             let game = &self.games[index].g;
-            h.release_detail = [game.version.clone(), game.region.clone(), size_label(game).unwrap_or_default(), game.name.clone()].into_iter()
+            // A repack says whose.
+            let maker = if game.maker.is_empty() { String::new() } else { format!(" · {}", tr!("{} repack", game.maker)) };
+            h.release_label = format!("{}{maker}{newest}", tr!("Release {position} of {count}", position, count)).into();
+            h.release_detail = [game.version.clone(), game.region.clone(), size_label(game).unwrap_or_default(),
+                if crate::catalog::has_brazilian(game) { tr!("Brazilian Portuguese") } else { String::new() }, game.name.clone()].into_iter()
                 .filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" · ").into();
         }
 
