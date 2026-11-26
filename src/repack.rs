@@ -14,7 +14,10 @@
 //!   `MpzSlimmer.dll` for a repack's MP3s), and taken out again after.
 //! - It opens its maker's site at the end: Wine's browser is switched off for it.
 //! - Once installed, FitGirl's checks every installed file again with QuickSFV, in a window of
-//!   its own, for minutes: the archives were checked before (`verify`), so it's ended.
+//!   its own, for minutes: the archives were checked before (`verify`), so it's ended. Then it
+//!   starts Microsoft's DirectX and Visual C++ setups with no options, wizards waiting for clicks:
+//!   they're ended too (Proton brings DirectX), and the Visual C++ runtimes are installed after,
+//!   quietly. And its Wine session can outlive it: once the installer itself is gone, it's done.
 //! - It plays music while it works (FitGirl's has a soundtrack, silent mode or not): its sound is
 //!   muted as soon as it starts playing.
 //! - It reports success even when unpacking failed (it deletes what it wrote): the result is checked
@@ -225,8 +228,9 @@ pub fn install(r: &Repack, dest: &Path, prefix: &Path, topic: i64, progress: &dy
     let mut last_move = Instant::now();
     let mut last_done = 0u64;
     let mut ticks = 0u32;
+    let (mut saw_setup, mut setup_gone) = (false, None::<Instant>);
     let status = loop {
-        if let Some(status) = child.try_wait().map_err(|e| e.to_string())? { break status; }
+        if let Some(status) = child.try_wait().map_err(|e| e.to_string())? { break Some(status); }
         if cancel.load(Ordering::Relaxed) {
             stop(&runner, label, prefix, &mut child);
             cleanup(&copied);
@@ -235,7 +239,13 @@ pub fn install(r: &Repack, dest: &Path, prefix: &Path, topic: i64, progress: &dy
         copied.extend(place_helpers(prefix));
         let (open, pids) = reading(prefix, r);
         if ticks % 4 == 0 { mute(&pids); }
-        end_checker(&pids);
+        end_wizards(&pids);
+        // The installer gone but its Wine session still up (a helper it left behind): done.
+        if pids.iter().any(|p| matches!(comm(*p).as_str(), "setup.tmp" | "setup.exe")) { saw_setup = true; setup_gone = None; }
+        else if saw_setup && setup_gone.get_or_insert_with(Instant::now).elapsed() > Duration::from_secs(20) {
+            stop(&runner, label, prefix, &mut child);
+            break None;
+        }
         ticks += 1;
         for (bin, pos) in open {
             let seen = read.entry(bin).or_default();
@@ -253,14 +263,48 @@ pub fn install(r: &Repack, dest: &Path, prefix: &Path, topic: i64, progress: &dy
         std::thread::sleep(Duration::from_millis(500));
     };
     cleanup(&copied);
-    crate::log!("repack: installer for {} exited ({status})", r.name);
+    crate::log!("repack: installer for {} exited ({})", r.name, status.map(|s| s.to_string()).unwrap_or_else(|| "its session ended".into()));
     // It says it succeeded either way: what's there tells. (Unpacked games are bigger than their
     // compressed archives; a failed unpack leaves a few MB, or nothing.)
     let size = dir_size(dest);
     if size < total / 2 {
         return Err(tr!("The repack couldn't be unpacked (see {})", log.display()));
     }
+    runtimes(&runner, label, prefix, dest);
     write_manifest(r, dest, topic)
+}
+
+/// The Visual C++ runtimes the repack brings (its setup's wizards were ended), installed quietly
+/// into the game's prefix.
+fn runtimes(runner: &Path, label: &str, prefix: &Path, dest: &Path) {
+    let mut found = Vec::new();
+    let mut look = |dir: &Path| for e in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        let name = e.file_name().to_string_lossy().to_ascii_lowercase();
+        if (name.starts_with("vc_redist") || name.starts_with("vcredist")) && name.ends_with(".exe") { found.push(e.path()); }
+    };
+    look(dest);
+    for sub in ["_Redist", "_CommonRedist", "Redist", "_redist"] { look(&dest.join(sub)); }
+    found.sort();
+    found.dedup();
+    for exe in found {
+        let mut c = Command::new(runner);
+        c.arg(&exe).args(["/install", "/quiet", "/norestart"]).env("WINEPREFIX", prefix).env("WINEDEBUG", "-all")
+            .stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
+        if label == "Proton" { c.env("GAMEID", "umu-default").env("PROTONPATH", "GE-Proton"); }
+        let Ok(mut child) = c.spawn() else { continue };
+        let started = Instant::now();
+        while child.try_wait().ok().flatten().is_none() {
+            if started.elapsed() > Duration::from_secs(300) { let _ = child.kill(); break; }
+            std::thread::sleep(Duration::from_millis(500));
+        }
+        let _ = child.wait();
+        crate::log!("repack: {} installed", exe.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default());
+    }
+}
+
+/// A process's name (as /proc has it, at most 15 characters), lower-case.
+fn comm(pid: u32) -> String {
+    std::fs::read_to_string(format!("/proc/{pid}/comm")).unwrap_or_default().trim().to_ascii_lowercase()
 }
 
 /// The game's manifest, so the Library lists it and Play starts the right program.
@@ -360,13 +404,14 @@ fn same_prefix(value: &[u8], want: &Path) -> bool {
     std::fs::canonicalize(value).is_ok_and(|v| v == want) || Path::new(value) == want
 }
 
-/// The after-install check (QuickSFV), ended: the installed game stays as it is.
-fn end_checker(pids: &[u32]) {
+/// The windows a repack opens after installing, ended: its after-install check (QuickSFV) and
+/// Microsoft's DirectX and Visual C++ setups started without options (see the module's notes).
+fn end_wizards(pids: &[u32]) {
     for pid in pids {
-        let comm = std::fs::read_to_string(format!("/proc/{pid}/comm")).unwrap_or_default();
-        if comm.trim().eq_ignore_ascii_case("QuickSFV.exe") {
+        let name = comm(*pid);
+        if ["quicksfv", "dxwebsetup", "dxsetup", "vc_redist", "vcredist"].iter().any(|w| name.starts_with(w)) {
             unsafe { libc::kill(*pid as i32, libc::SIGTERM); }
-            crate::log!("repack: its after-install check (QuickSFV) ended");
+            crate::log!("repack: ended {name}");
         }
     }
 }
