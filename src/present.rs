@@ -205,6 +205,11 @@ impl App {
         let (info, local, cover) = match item {
             RowItem::Local(l) => (self.locals[l].info.as_ref(), Some(&self.locals[l].l), self.locals[l].cat.map(|c| self.games[c].g.cover.clone())),
             RowItem::Cat(g) => (self.games[g].info.as_ref(), None, Some(self.games[g].g.cover.clone())),
+            // A repack: its catalog release's art, when it has one.
+            RowItem::Repack(r) => match self.repacks.get(r).and_then(|v| v.cat) {
+                Some(g) => (self.games[g].info.as_ref(), None, Some(self.games[g].g.cover.clone())),
+                None => return None,
+            },
             RowItem::All | RowItem::Welcome => return None,
         };
         // Steam's games: its library cover (a sharp box cover, the title on it), cut to the square
@@ -217,7 +222,7 @@ impl App {
         if let Some(p) = local.and_then(|l| l.icon0.as_ref()) {
             return Some(req_file(p, 256));
         }
-        let crop = self.cover_crop(match item { RowItem::Local(l) => Target { game: self.locals[l].cat, local: Some(l) }, RowItem::Cat(g) => Target { game: Some(g), local: None }, RowItem::All | RowItem::Welcome => Target { game: None, local: None } });
+        let crop = self.cover_crop(match item { RowItem::Local(l) => Target { game: self.locals[l].cat, local: Some(l) }, RowItem::Cat(g) => Target { game: Some(g), local: None }, RowItem::Repack(r) => Target { game: self.repacks.get(r).and_then(|v| v.cat), local: None }, RowItem::All | RowItem::Welcome => Target { game: None, local: None } });
         if let Some(r) = cover.and_then(|c| req_url(&c, 256, crop)) {
             return Some(r);
         }
@@ -328,7 +333,8 @@ impl App {
             let p = if i.abs_diff(self.sel) < 12 { prio::TILE } else { prio::PREFETCH };
             let img = self.get_img(&req, p);
             keys.push(req.map(|r| r.key).unwrap_or_default());
-            tiles.push(TileData { loaded: img.is_some(), image: img.unwrap_or_default(), special: *it == RowItem::All, welcome: *it == RowItem::Welcome, badge: self.tile_badge_label(*it).into() });
+            let (disc, progress) = match it { RowItem::Repack(r) => (true, self.repack_progress(*r)), _ => (false, -1.0) };
+            tiles.push(TileData { loaded: img.is_some(), image: img.unwrap_or_default(), special: *it == RowItem::All, welcome: *it == RowItem::Welcome, badge: self.tile_badge_label(*it).into(), disc, progress });
         }
         self.tile_keys = keys;
         self.tile_model.set_vec(tiles);
@@ -358,6 +364,7 @@ impl App {
             None => (String::new(), String::new()),
             Some(RowItem::All) => (tr!("Game Library"), tr!("{n} game installed" | "{n} games installed" % self.locals.len())),
             Some(RowItem::Welcome) => (tr!("Welcome"), tr!("Your SwarmPlay at a glance")),
+            Some(RowItem::Repack(r)) => (self.repacks.get(r).map(|v| v.r.name.clone()).unwrap_or_default(), self.repack_sub(r)),
             Some(RowItem::Local(l)) => {
                 let lv = &self.locals[l];
                 let sub = if let Some(s) = self.session_for_local(l) {
@@ -524,6 +531,21 @@ impl App {
             }
             // Its widgets show in place of a hero (src/welcome.rs); nothing to press but them.
             Some(RowItem::Welcome) => self.hero_actions.clear(),
+            Some(RowItem::Repack(r)) => {
+                let t = self.row_target(self.sel);
+                let info = self.target_info(t);
+                h.title = self.repacks.get(r).map(|v| v.r.name.clone()).unwrap_or_default().into();
+                let lr = Self::logo_req(info.as_ref());
+                if let Some(rq) = &lr {
+                    self.hero_logo_key = rq.key.clone();
+                    if let Some(img) = self.get_img(&lr, prio::HERO) {
+                        let (w, hh) = logo_size(&img, 520.0, 170.0);
+                        (h.logo, h.has_logo, h.logo_w, h.logo_h) = (img, true, w * self.scale, hh * self.scale);
+                    }
+                }
+                self.repack_hero(r, &mut h);
+                self.hero_actions = self.repack_actions(r);
+            }
             Some(_) => {
                 let t = self.row_target(self.sel);
                 let info = self.target_info(t);

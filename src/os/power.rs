@@ -22,6 +22,9 @@ pub enum Power {
     /// Not the PC's either: SwarmPlay closes and opens again (into the update it installed). The
     /// card says what stops meanwhile.
     App,
+    /// Install a repack (src/repack_ui.rs): a button per drive (`power_choices`), then Cancel. It
+    /// opens on the first drive: nothing is lost by pressing it.
+    Repack,
 }
 
 /// The Settings row that asks for it.
@@ -32,6 +35,7 @@ fn power_row(what: Power) -> SId {
         Power::Update => SId::SystemUpdate,
         Power::Delete => SId::Rescan,
         Power::App => SId::AppUpdate,
+        Power::Repack => SId::Rescan,
     }
 }
 
@@ -46,19 +50,22 @@ pub struct PowerAsk {
     pub busy: bool,
 }
 
-/// The card's two buttons, in order.
-const CANCEL: usize = 1;
+/// Where Cancel is: last, after the one button (two buttons), or after every drive (a repack).
+fn cancel_at(app: &App) -> usize {
+    if app.power.what == Some(Power::Repack) { app.power_choices.len() } else { 1 }
+}
 
 impl App {
     /// Ask before restarting or shutting down. A running game is closed first, so its progress
     /// is saved: the card doesn't open while one runs.
     pub fn power_ask(&mut self, what: Power) {
-        if what != Power::Delete && !self.live.is_empty() {
+        if !matches!(what, Power::Delete | Power::Repack) && !self.live.is_empty() {
             return self.note_setting(power_row(what), &tr!("A game is running: close it first, so its progress is saved"), 2);
         }
         audio::play(Sound::Select);
         let next = if what == Power::App { self.upd.installed.clone() } else { self.sys.update.as_ref().and_then(|u| u.staged.clone()) }.unwrap_or_default();
-        self.power = PowerAsk { what: Some(what), next, sel: CANCEL, busy: false };
+        self.power = PowerAsk { what: Some(what), next, sel: 0, busy: false };
+        self.power.sel = if what == Power::Repack { 0 } else { cancel_at(self) };
         self.push_overlay(Overlay::Power, Z_POWER, 0);
         self.power_push();
     }
@@ -69,7 +76,7 @@ impl App {
         }
         match a {
             Act::Left | Act::Up if self.power.sel > 0 => self.power.sel -= 1,
-            Act::Right | Act::Down if self.power.sel < CANCEL => self.power.sel += 1,
+            Act::Right | Act::Down if self.power.sel < cancel_at(self) => self.power.sel += 1,
             Act::Confirm => return self.power_choose(self.power.sel),
             Act::Back => return self.back(),
             _ => return,
@@ -86,14 +93,20 @@ impl App {
         if idx < 0 {
             return self.back();
         }
-        self.power.sel = (idx as usize).min(CANCEL);
+        self.power.sel = (idx as usize).min(cancel_at(self));
         self.power_choose(self.power.sel);
     }
 
     fn power_choose(&mut self, sel: usize) {
         let Some(what) = self.power.what else { return self.back() };
-        if sel == CANCEL {
+        if sel == cancel_at(self) {
             return self.back();
+        }
+        if what == Power::Repack {
+            let base = self.power_choices.get(sel).map(|(p, _)| p.clone());
+            self.back();
+            if let Some(base) = base { self.repack_start(base); }
+            return;
         }
         if what == Power::Delete {
             self.back();
@@ -152,6 +165,7 @@ impl App {
         let delete = (p.what == Some(Power::Delete)).then(|| self.delete_words());
         let (title, text, yes) = match (p.what, p.busy) {
             (Some(Power::Delete), _) => { let (t, x) = delete.unwrap_or_default(); (t, x, tr!("Delete")) }
+            (Some(Power::Repack), _) => { let (t, x) = self.repack_card_words(); (t, x, String::new()) }
             (Some(Power::App), false) => (tr!("Restart SwarmPlay?"), self.app_restart_words(), tr!("Restart")),
             (Some(Power::App), true) => (tr!("Restarting SwarmPlay…"), tr!("It's back in a moment."), String::new()),
             (Some(Power::ShutDown), false) => (tr!("Shut down now?"), tr!("The PC turns off. Its power button turns it on again."), tr!("Shut down")),
@@ -163,10 +177,14 @@ impl App {
         };
         ui.set_power_title(title.into());
         ui.set_power_text(text.into());
-        ui.set_power_buttons(std::rc::Rc::new(slint::VecModel::from(vec![yes.into(), tr!("Cancel").into()])).into());
+        let buttons: Vec<slint::SharedString> = if p.what == Some(Power::Repack) {
+            self.power_choices.iter().map(|(_, words)| words.into()).chain(std::iter::once(tr!("Cancel").into())).collect()
+        } else { vec![yes.into(), tr!("Cancel").into()] };
+        ui.set_power_buttons(std::rc::Rc::new(slint::VecModel::from(buttons)).into());
+        ui.set_power_stack(p.what == Some(Power::Repack));
         let installing = p.what == Some(Power::App) && self.installer.snapshot().iter().any(|r| r.state.active());
         ui.set_power_danger(matches!(p.what, Some(Power::ShutDown | Power::Delete)) || installing);
-        ui.set_power_icon(match p.what { Some(Power::Delete) => "trash", Some(Power::App) => "retry", _ => "" }.into());
+        ui.set_power_icon(match p.what { Some(Power::Delete) => "trash", Some(Power::App) => "retry", Some(Power::Repack) => "download", _ => "" }.into());
         ui.set_power_sel(p.sel as i32);
         ui.set_power_busy(p.busy);
     }

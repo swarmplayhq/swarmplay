@@ -923,6 +923,11 @@ impl App {
                 else if active[0].state == State::Resolving { (tr!("Getting the file list"), String::new()) }
                 else { (short_name(&active[0].name), suffix) };
             (if verifying { 4 } else { 1 }, words, suffix, frac, one)
+        } else if let Some(job) = &self.repack_job {
+            // A repack installing (src/repack_ui.rs): checking its files, then copying.
+            let r = self.repacks.iter().position(|v| v.r.dir == job.dir);
+            let frac = r.map(|r| self.repack_progress(r)).unwrap_or(job.frac).max(0.0);
+            (if job.phase == 0 { 4 } else { 2 }, short_name(&job.name), format!(" · {}%", pct(frac)), frac, None)
         } else if let Some(record) = installs.iter().find(|r| r.state.active()) {
             (2, tr!("Installing"), format!(" · {}%", pct(record.progress())), record.progress(), Some(record.key.clone()))
         } else if let Some(job) = jobs.iter().find(|job| job.waiting_vpn && job.state != State::Complete) {

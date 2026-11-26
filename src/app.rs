@@ -247,6 +247,8 @@ pub enum RowItem {
     All,
     /// Home's first tile: SwarmPlay's Welcome, with its widgets (src/welcome.rs).
     Welcome,
+    /// A repack on a drive, ready to install (src/repack_ui.rs): `repacks`' index.
+    Repack(usize),
 }
 
 impl RowItem {
@@ -474,6 +476,15 @@ pub struct App {
     pub ring_seen: HashSet<String>,
     /// The download the ring is about, when it's about one.
     pub ring_key: Option<String>,
+    /// Repacks on the drives, ready to install, and the one installing (src/repack_ui.rs); those
+    /// already announced, and whether the first look (at start: announces nothing) is still to come.
+    pub repacks: Vec<crate::repack_ui::RepackV>,
+    pub repack_job: Option<crate::repack_ui::RepackJob>,
+    pub repack_told: HashSet<std::path::PathBuf>,
+    pub boot_first_scan: bool,
+    /// The install card's drives (where, and its button's words) and the repack it's for.
+    pub power_choices: Vec<(std::path::PathBuf, String)>,
+    pub power_repack: usize,
     /// What the island last opened to say about downloads, and its opening (a newer one's timer
     /// closes it, not an older one's).
     pub ring_shown: String,
@@ -860,6 +871,12 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         ring_busy: HashSet::new(),
         ring_done: Vec::new(),
         ring_key: None,
+        repacks: Vec::new(),
+        repack_job: None,
+        repack_told: HashSet::new(),
+        boot_first_scan: true,
+        power_choices: Vec::new(),
+        power_repack: 0,
         ring_shown: String::new(),
         ring_open_seq: 0,
         vpn_busy: String::new(),
@@ -952,6 +969,7 @@ pub fn run(ui: AppWindow, monitors: Vec<Monitor>, target_monitor: Option<Monitor
         cfg.lock().unwrap().save(); // remember detected defaults
     }
     app.resume_after_restart();
+    app.repack_scan();
     APP.with(|a| *a.borrow_mut() = Some(app));
     with_app(move |app| {
         // From the AzrakOS USB stick: first the choice to try AzrakOS or install it. The launcher
@@ -1344,6 +1362,7 @@ impl App {
         if !self.boot.active {
             self.keep_grid_focus(&anchor);
         }
+        self.repack_relink();
     }
 
     fn playtime_key(l: &LocalGame) -> String {
@@ -1379,7 +1398,10 @@ impl App {
         // games, the Welcome comes first, as on a console, and the Game Library last (every game
         // of yours, src/game_library.rs); Home opens on the last game played.
         let first = prev.is_none();
-        self.row = if row.is_empty() { row } else { std::iter::once(RowItem::Welcome).chain(row).chain(std::iter::once(RowItem::All)).collect() };
+        // Repacks waiting on a drive come right after the Welcome, as a disc just put in would.
+        let repacks: Vec<RowItem> = (0..self.repacks.len()).map(RowItem::Repack).collect();
+        self.row = if row.is_empty() && repacks.is_empty() { row }
+            else { std::iter::once(RowItem::Welcome).chain(repacks).chain(row).chain(std::iter::once(RowItem::All)).collect() };
         self.sel = prev.and_then(|p| self.row.iter().position(|r| *r == p))
             .unwrap_or(if first && self.row.len() > 1 { 1 } else { self.sel.min(self.row.len().saturating_sub(1)) });
     }
@@ -2071,6 +2093,7 @@ impl App {
         *self.library.lock().unwrap() = library::scan(&dirs);
         self.refresh_locals();
         self.push_all();
+        self.repack_scan();
     }
 
     // ------------------------------------------------------------------ events
@@ -3275,6 +3298,8 @@ impl App {
         match self.row.get(i) {
             Some(RowItem::Local(l)) => Target { game: self.locals[*l].cat, local: Some(*l) },
             Some(RowItem::Cat(g)) => Target { game: Some(*g), local: self.games[*g].local },
+            // Its catalog release (for its art); never a game to play.
+            Some(RowItem::Repack(r)) => Target { game: self.repacks.get(*r).and_then(|v| v.cat), local: None },
             _ => Target { game: None, local: None },
         }
     }
@@ -3308,6 +3333,9 @@ impl App {
                 audio::play(Sound::Select);
                 self.open_hub(Target { game: Some(g), local: self.games[g].local });
             }
+            // Installing: its button is Cancel install, on purpose (not a ✕ pressed by habit).
+            Some(RowItem::Repack(r)) if self.repack_progress(r) < 0.0 => self.repack_ask(r),
+            Some(RowItem::Repack(_)) => self.set_focus(Z_ACTIONS, 0),
             None => {}
         }
     }
@@ -3409,6 +3437,8 @@ impl App {
                     self.launch(l);
                 }
             }
+            "repack_install" => { if let Some(r) = self.row_repack(self.sel) { self.repack_ask(r); } }
+            "repack_cancel" => self.repack_cancel(),
             "resume" => {
                 let key = self.game_key(t);
                 self.resume_game(Some(&key));
@@ -4117,7 +4147,7 @@ fn listed(g: &Game, downloaded: &HashSet<i64>) -> bool {
 /// Finds the catalog release an installed game is: a PC game by the topic it was installed from,
 /// a PlayStation game by title ID, else by name, on the same platform only (a PC and a PS5
 /// game of the same name are different games).
-struct CatalogIndex {
+pub(crate) struct CatalogIndex {
     by_topic: HashMap<i64, usize>,
     by_tid: HashMap<String, usize>,
     by_name: HashMap<(crate::platform::Platform, String), usize>,
@@ -4125,7 +4155,7 @@ struct CatalogIndex {
 
 impl CatalogIndex {
     /// `games`: each release with its display name.
-    fn new<'a>(games: impl Iterator<Item = (&'a crate::catalog::Game, &'a str)>) -> Self {
+    pub(crate) fn new<'a>(games: impl Iterator<Item = (&'a crate::catalog::Game, &'a str)>) -> Self {
         let mut index = Self { by_topic: HashMap::new(), by_tid: HashMap::new(), by_name: HashMap::new() };
         for (i, (g, display)) in games.enumerate() {
             index.by_topic.insert(g.id, i);
@@ -4138,7 +4168,7 @@ impl CatalogIndex {
         index
     }
 
-    fn find(&self, l: &LocalGame) -> Option<usize> {
+    pub(crate) fn find(&self, l: &LocalGame) -> Option<usize> {
         let topic = l.pc.as_ref().map(|m| m.topic).filter(|t| *t > 0);
         topic.and_then(|t| self.by_topic.get(&t).copied())
             .or_else(|| (!l.title_id.is_empty()).then(|| self.by_tid.get(&l.title_id).copied()).flatten())
