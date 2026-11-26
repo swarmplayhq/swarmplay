@@ -294,7 +294,11 @@ impl App {
                     let mut picked = vec![job.selected.is_none(); entries.len()];
                     for &i in job.selected.iter().flatten() { if let Some(p) = picked.get_mut(i) { *p = true; } }
                     let shown: Vec<(usize, downloads::Entry)> = entries.into_iter().enumerate().filter(|(_, e)| !e.padding).collect();
-                    setup.on = shown.iter().map(|(i, e)| !e.blocked && picked[*i]).collect();
+                    // A repack's other languages and extras start unticked (only on a first choice).
+                    let brazilian = crate::i18n::current() == crate::i18n::Lang::PtBr;
+                    let fresh = job.selected.is_none();
+                    setup.on = shown.iter().map(|(i, e)| !e.blocked && picked[*i]
+                        && !(fresh && crate::repack::left_out_by_default(&e.path, brazilian))).collect();
                     (setup.indices, setup.entries) = shown.into_iter().unzip();
                     // Why it couldn't start last time, until the player changes something.
                     setup.begin_error = downloads::error_text(&job.error);

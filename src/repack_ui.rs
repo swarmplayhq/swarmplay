@@ -205,6 +205,28 @@ impl App {
     /// A drive chosen on the card: install there.
     pub fn repack_start(&mut self, base: PathBuf) {
         let Some(v) = self.repacks.get(self.power_repack).cloned() else { return };
+        self.repack_begin(v, base);
+    }
+
+    /// A repack downloaded from the catalog (FitGirl's), installed like one found on a drive: its
+    /// folder is the download's, or the one folder in it.
+    pub fn repack_from_download(&mut self, folder: &std::path::Path, cat: Option<usize>, base: PathBuf) -> bool {
+        let found = crate::repack::find(folder).or_else(|| {
+            let dirs: Vec<PathBuf> = std::fs::read_dir(folder).ok()?.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+            (dirs.len() == 1).then(|| crate::repack::find(&dirs[0])).flatten()
+        });
+        let Some(mut r) = found else { return false };
+        // Named as the catalog names the game (the folder may be the torrent's).
+        if let Some(c) = cat { r.name = self.games[c].name.clone(); }
+        if self.repack_job.is_some() {
+            self.toast(&tr!("One install at a time"), &tr!("{} is installing", self.repack_job.as_ref().map(|j| j.name.clone()).unwrap_or_default()), "alert", crate::toast::FAILED);
+            return true;
+        }
+        self.repack_begin(RepackV { r, cat }, base);
+        true
+    }
+
+    fn repack_begin(&mut self, v: RepackV, base: PathBuf) {
         let dest = base.join(crate::pcgame::folder_name(&v.r.name));
         if crate::pcgame::Manifest::read(&dest).is_some() {
             return self.toast(&tr!("Already installed"), &dest.display().to_string(), "alert", crate::toast::FAILED);

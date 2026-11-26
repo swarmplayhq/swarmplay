@@ -42,6 +42,9 @@ jobs:
             [ -f previous/$p-topics.json.gz ] && gunzip -c previous/$p-topics.json.gz >dist/rutracker/$p-topics.json
           done
           gunzip -c previous/english-translations.json.gz >dist/rutracker/english-translations.json
+          # FitGirl's repacks: only new or changed posts are read again.
+          mkdir -p dist/repacks
+          [ -f previous/fitgirl-topics.json.gz ] && gunzip -c previous/fitgirl-topics.json.gz >dist/repacks/fitgirl-topics.json || true
       - name: Refresh and translate
         working-directory: scripts/rutracker-list
         run: |
@@ -62,5 +65,14 @@ jobs:
             node steam.mjs --platform $p --limit 900 --minutes 40 ${{ inputs.retry && '--retry' || '' }} || echo "::warning::$p Steam lookup failed"
             node translate.mjs --platform $p --from-original || echo "::warning::$p translation failed; yesterday's stays"
           done
+      - name: FitGirl repacks
+        # Never holds back the RuTracker catalogs: yesterday's stays on any failure.
+        continue-on-error: true
+        run: |
+          node scripts/repacks/fitgirl.mjs --minutes 50 --limit 9000
+          # Today's seeders, for every repack (a public tracker's scrape).
+          node scripts/repacks/seeders.mjs || echo "::warning::FitGirl seeder counts failed; yesterday's stay"
+          cd scripts/rutracker-list
+          node steam.mjs --platform wine --catalog ../../dist/repacks/fitgirl-topics.json --limit 900 --minutes 25 || echo "::warning::FitGirl Steam lookup failed"
       - name: Publish
         run: scripts/rutracker-list/publish-catalog.sh dist/rutracker "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
