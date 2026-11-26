@@ -47,6 +47,9 @@ pub struct Record {
     pub key: String, pub topic: i64, pub name: String, pub state: State,
     pub done: u64, pub total: u64, pub error: String, pub path: Option<PathBuf>,
     #[serde(default)] pub title_id: String,
+    /// The other games of a download that holds several ("Unravel One & Two"): their folders,
+    /// installed after the first (`path`) and deleted with it.
+    #[serde(default)] pub more: Vec<PathBuf>,
 }
 
 impl Record {
@@ -80,7 +83,12 @@ impl Manager {
         let mut jobs = load_records(&store).unwrap_or_default();
         let mut changed = false;
         for job in &mut jobs {
-            if job.state.active() {
+            // A bundle stopped after a game of it was published: that game is installed.
+            if job.state.active() && job.path.is_some() {
+                job.state = State::Installed;
+                job.done = job.total;
+                changed = true;
+            } else if job.state.active() {
                 job.state = State::Failed;
                 job.error = tr!("Interrupted; retry");
                 changed = true;
@@ -119,8 +127,11 @@ impl Manager {
                             let job = jobs.iter_mut().find(|j| j.key == req.key).unwrap();
                             job.state = State::Installed;
                             job.done = job.total;
-                            job.path = Some(req.destination.join(leaf));
-                            job.title_id = title.into();
+                            // A bundle's next game: the first stays the record's own.
+                            match &job.path {
+                                Some(_) => job.more.push(req.destination.join(leaf)),
+                                None => { job.path = Some(req.destination.join(leaf)); job.title_id = title.into(); }
+                            }
                             if let Err(e) = core.save(&jobs) {
                                 jobs.iter_mut().find(|j| j.key == req.key).unwrap().error =
                                     tr!("Installed, but could not persist record: {}", format!("{e:#}"));
@@ -136,11 +147,17 @@ impl Manager {
                     if let Some(error) = error {
                         let mut jobs = core.jobs.lock().unwrap();
                         if let Some(job) = jobs.iter_mut().find(|j| j.key == req.key) {
-                            // Publication is irreversible; never claim a published game failed.
-                            if job.state != State::Installed {
+                            // Publication is irreversible; never claim a published game failed
+                            // (nor a bundle with a game of it published).
+                            if job.state != State::Installed && job.path.is_none() {
                                 job.state = if flag.load(Ordering::Acquire) { State::Cancelled } else { State::Failed };
                                 job.error = error;
                                 job.path = None;
+                            } else if job.state.active() {
+                                // A bundle's later game failed: the ones published stay installed.
+                                job.state = State::Installed;
+                                job.done = job.total;
+                                job.error = tr!("A game of this download wasn't installed: {}", error);
                             }
                         }
                         let _ = core.save(&jobs);
@@ -152,7 +169,7 @@ impl Manager {
         let old = jobs.clone();
         jobs.retain(|j| j.key != request.key);
         jobs.push(Record { key: request.key.clone(), topic: request.topic, name: request.name.clone(),
-            state: State::Inspecting, done: 0, total: 0, error: String::new(), path: None, title_id: String::new() });
+            state: State::Inspecting, done: 0, total: 0, error: String::new(), path: None, title_id: String::new(), more: Vec::new() });
         if let Err(e) = self.core.save(&jobs) { *jobs = old; return Err(e); }
         let w = worker.as_ref().unwrap();
         w.cancel.store(false, Ordering::Release);
@@ -173,18 +190,19 @@ impl Manager {
         let job = jobs.iter().find(|j| j.key == key && j.state == State::Installed).with_context(|| tr!("This game wasn't installed by SwarmPlay"))?;
         let path = job.path.clone().with_context(|| tr!("Its install folder wasn't recorded"))?;
         let home = std::env::var_os("HOME").map(PathBuf::from);
-        ensure!(path.is_absolute() && path.components().count() >= 3 && Some(&path) != home.as_ref()
-            && path.components().all(|c| matches!(c, Component::RootDir | Component::Normal(_))),
-            tr!("Refusing to delete {}", path.display()));
-        // The game, then its update beside it (`<game>-patch`, see place_update) if it has one.
-        // Its DLC stays: shadPS4's add-on folder is shared, and add-ons there are never replaced.
-        let mut patch = path.file_name().context("No folder name")?.to_os_string();
-        patch.push("-patch");
-        let hide = |folder: &Path| -> Result<()> {
+        // The game, and a bundle's other games (`more`), each checked the same way.
+        let folders: Vec<PathBuf> = std::iter::once(path.clone()).chain(job.more.iter().cloned()).collect();
+        for folder in &folders {
+            ensure!(folder.is_absolute() && folder.components().count() >= 3 && Some(folder) != home.as_ref()
+                && folder.components().all(|c| matches!(c, Component::RootDir | Component::Normal(_))),
+                tr!("Refusing to delete {}", folder.display()));
+        }
+        let ps4 = job.title_id.starts_with("CUSA") || !job.more.is_empty();
+        let hide = |folder: &Path, n: usize| -> Result<()> {
             let parent = Dir::absolute(folder.parent().context("No parent folder")?, false)?;
             let leaf = component(folder.file_name().context("No folder name")?.as_bytes())?;
             // Hidden, so the library never lists it while it goes.
-            let doomed = crate::util::deleting_name(key);
+            let doomed = crate::util::deleting_name(&format!("{key}-{n}"));
             let hidden = component(doomed.as_bytes())?;
             let r = unsafe { libc::renameat2(parent.0.as_raw_fd(), leaf.as_ptr(), parent.0.as_raw_fd(), hidden.as_ptr(), libc::RENAME_NOREPLACE) };
             ensure!(r == 0, tr!("Delete {}: {}", folder.display(), std::io::Error::last_os_error()));
@@ -196,19 +214,35 @@ impl Manager {
             });
             Ok(())
         };
-        match fs::symlink_metadata(&path) {
-            Ok(meta) => {
-                ensure!(meta.is_dir() && !meta.file_type().is_symlink(), "{} isn't the installed game's folder", path.display());
-                hide(&path)?;
+        let mut n = 0;
+        for (i, folder) in folders.iter().enumerate() {
+            // The game, then its update beside it (`<game>-patch`, see place_update) if it has one.
+            // Its DLC stays: shadPS4's add-on folder is shared, and add-ons there are never replaced.
+            match fs::symlink_metadata(folder) {
+                Ok(meta) => {
+                    ensure!(meta.is_dir() && !meta.file_type().is_symlink(), "{} isn't the installed game's folder", folder.display());
+                    // The first one's failure stops it all; a bundle's later one is only logged.
+                    match hide(folder, n) {
+                        Ok(()) => n += 1,
+                        Err(e) if i == 0 => return Err(e),
+                        Err(e) => crate::log!("{} wasn't deleted: {e:#}", folder.display()),
+                    }
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) if i == 0 => return Err(e.into()),
+                Err(e) => crate::log!("{} wasn't deleted: {e:#}", folder.display()),
             }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-            Err(e) => return Err(e.into()),
-        }
-        // Only a PS4 game's, and only if it is one (a PS4 update's param.sfo inside).
-        let patch = path.with_file_name(patch);
-        let update = job.title_id.starts_with("CUSA") && fs::symlink_metadata(patch.join("sce_sys/param.sfo")).is_ok_and(|meta| meta.is_file());
-        if update && fs::symlink_metadata(&patch).is_ok_and(|meta| meta.is_dir() && !meta.file_type().is_symlink()) {
-            if let Err(e) = hide(&patch) { crate::log!("The update beside {} wasn't deleted: {e:#}", path.display()); }
+            // Only a PS4 game's, and only if it is one (a PS4 update's param.sfo inside).
+            let mut patch = folder.file_name().context("No folder name")?.to_os_string();
+            patch.push("-patch");
+            let patch = folder.with_file_name(patch);
+            let update = ps4 && fs::symlink_metadata(patch.join("sce_sys/param.sfo")).is_ok_and(|meta| meta.is_file());
+            if update && fs::symlink_metadata(&patch).is_ok_and(|meta| meta.is_dir() && !meta.file_type().is_symlink()) {
+                match hide(&patch, n) {
+                    Ok(()) => n += 1,
+                    Err(e) => crate::log!("The update beside {} wasn't deleted: {e:#}", folder.display()),
+                }
+            }
         }
         jobs.retain(|j| j.key != key);
         // The game is already going: an error now would read as if it weren't.
@@ -1443,8 +1477,55 @@ fn install_pkgs(req: &Request, source: &Source, pkgs: &[String], cancel: &Atomic
     } else {
         tr!("This download has no game PKG, only an update; install the game itself first")
     });
-    ensure!(games.len() == 1, tr!("This download has {} game PKGs; install one game at a time", games.len()));
     check_cancel(cancel)?;
+    // Several games in one download ("Unravel One & Two"): each installs on its own, with the
+    // updates and add-ons of its title ID, one after the other.
+    if games.len() > 1 {
+        let tid = |path: &String| -> Result<String> { pkg_title_id(source.file(path)?).with_context(|| tr!("{path}: no title ID in its PKG header", path)) };
+        let all: u64 = games.iter().chain(&updates).chain(&dlc).map(size).sum();
+        let mut before = 0u64;
+        let mut ids = Vec::new();
+        for game in &games {
+            let id = tid(game)?;
+            ensure!(!ids.contains(&id), tr!("This download has two game PKGs of {id}; install one at a time", id));
+            ids.push(id);
+        }
+        let mine = |list: &[String], id: &str| -> Result<Vec<String>> {
+            let mut out = Vec::new();
+            for p in list { if tid(p)? == id { out.push(p.clone()); } }
+            Ok(out)
+        };
+        for (game, id) in games.iter().zip(&ids) {
+            let (u, d) = (mine(&updates, id)?, mine(&dlc, id)?);
+            let part: u64 = std::iter::once(game).chain(&u).chain(&d).map(size).sum();
+            let expected: Vec<String> = if req.expected_ids.is_empty() { Vec::new() } else { vec![id.clone()] };
+            ensure!(req.expected_ids.is_empty() || req.expected_ids.contains(id), tr!("Title ID mismatch: extracted {tid}, expected {}", req.expected_ids.join(", "), tid = id));
+            let one = Request { expected_ids: expected, ..req.clone() };
+            install_pkg_set(&one, source, &tool, std::slice::from_ref(game), &u, &d, cancel,
+                &|state, done, _| progress(state, before + done, all), commit)?;
+            before += part;
+        }
+        return Ok(());
+    }
+    install_pkg_set(req, source, &tool, &games, &updates, &dlc, cancel, progress, commit)
+}
+
+/// A PS4 PKG's title ID, from its header: the content ID ("EP0006-CUSA02532_00-…") at 0x40.
+fn pkg_title_id(mut file: File) -> Option<String> {
+    let mut head = [0u8; 0x64];
+    file.read_exact(&mut head).ok()?;
+    if &head[..4] != b"\x7fCNT" { return None; }
+    let id = std::str::from_utf8(&head[0x47..0x50]).ok()?;
+    crate::psn::valid_title_id(id).then(|| id.to_string())
+}
+
+/// Install one game's PKGs (its updates and add-ons with it).
+#[allow(clippy::too_many_arguments)]
+fn install_pkg_set(req: &Request, source: &Source, tool: &Path, games: &[String], updates: &[String], dlc: &[String], cancel: &AtomicBool, progress: Progress<'_>, commit: &dyn Fn(&Stage, &str, &str, &str) -> Result<()>) -> Result<()> {
+    use crate::pkgx;
+    let size = |path: &String| source.plan.entries.iter().find(|e| &e.path == path).map_or(0, |e| e.size);
+    let (games, updates, dlc) = (games.to_vec(), updates.to_vec(), dlc.to_vec());
+    let tool = tool.to_path_buf();
     let destination = Dir::absolute(&req.destination, true).with_context(|| tr!("Open explicit installation destination"))?;
     let actual_dest = fs::canonicalize(format!("/proc/self/fd/{}", destination.0.as_raw_fd()))?;
     let actual_source = fs::canonicalize(format!("/proc/self/fd/{}", source.dir.0.as_raw_fd()))?;
@@ -1579,7 +1660,7 @@ mod uninstall_tests {
         fs::create_dir_all(temp.path().join("library").join("Other-patch")).unwrap();
         let store = temp.path().join("installs");
         save_records(&store, &[Record { key: "k".repeat(40), topic: 1, name: "Game".into(), state: State::Installed, done: 1, total: 1,
-            error: String::new(), path: Some(game.clone()), title_id: "CUSA00001".into() }]).unwrap();
+            error: String::new(), path: Some(game.clone()), title_id: "CUSA00001".into(), more: Vec::new() }]).unwrap();
         let manager = Manager::at(store.clone());
         assert!(manager.uninstall("other").is_err());
         assert_eq!(manager.uninstall(&"k".repeat(40)).unwrap(), game);
@@ -1597,12 +1678,58 @@ mod uninstall_tests {
     }
 
     #[test]
+    fn a_bundle_uninstalls_every_game_and_update_it_installed() {
+        let temp = tempfile::tempdir().unwrap();
+        let library = temp.path().join("library");
+        let (one, two) = (library.join("CUSA02532-k"), library.join("CUSA10416-k"));
+        for g in [&one, &two] { fs::create_dir_all(g.join("sce_sys")).unwrap(); fs::write(g.join("eboot.bin"), b"x").unwrap(); }
+        let patch = library.join("CUSA10416-k-patch");
+        fs::create_dir_all(patch.join("sce_sys")).unwrap();
+        fs::write(patch.join("sce_sys/param.sfo"), b"update").unwrap();
+        let store = temp.path().join("installs");
+        save_records(&store, &[Record { key: "k".repeat(40), topic: 1, name: "Unravel One & Two".into(), state: State::Installed, done: 1, total: 1,
+            error: String::new(), path: Some(one.clone()), title_id: "CUSA02532".into(), more: vec![two.clone()] }]).unwrap();
+        Manager::at(store.clone()).uninstall(&"k".repeat(40)).unwrap();
+        assert!(!one.exists() && !two.exists() && !patch.exists(), "both games and the second's update");
+        let start = std::time::Instant::now();
+        while fs::read_dir(&library).unwrap().count() > 0 {
+            assert!(start.elapsed() < std::time::Duration::from_secs(10), "deleted in the background");
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+    }
+
+    #[test]
+    fn a_bundle_stopped_after_a_game_keeps_that_game_installed() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = temp.path().join("installs");
+        let game = temp.path().join("CUSA02532-k");
+        save_records(&store, &[Record { key: "k".repeat(40), topic: 1, name: "Bundle".into(), state: State::Extracting, done: 5, total: 10,
+            error: String::new(), path: Some(game.clone()), title_id: "CUSA02532".into(), more: Vec::new() }]).unwrap();
+        let job = Manager::at(store).snapshot().pop().unwrap();
+        assert_eq!((job.state, job.path), (State::Installed, Some(game)));
+    }
+
+    #[test]
+    fn a_pkg_says_its_title_id_in_its_header() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut head = vec![0u8; 0x100];
+        head[..4].copy_from_slice(b"\x7fCNT");
+        head[0x40..0x64].copy_from_slice(b"EP0006-CUSA02532_00-UNRAVELUNRAVEL09");
+        let path = temp.path().join("game.pkg");
+        fs::write(&path, &head).unwrap();
+        assert_eq!(pkg_title_id(File::open(&path).unwrap()).as_deref(), Some("CUSA02532"));
+        head[0] = b'X';
+        fs::write(&path, &head).unwrap();
+        assert_eq!(pkg_title_id(File::open(&path).unwrap()), None, "not a PKG");
+    }
+
+    #[test]
     fn uninstall_refuses_a_record_that_points_somewhere_it_shouldnt() {
         let temp = tempfile::tempdir().unwrap();
         let store = temp.path().join("installs");
         for path in [PathBuf::from("/"), PathBuf::from("/home"), temp.path().join("a/../b")] {
             save_records(&store, &[Record { key: "k".repeat(40), topic: 1, name: "Game".into(), state: State::Installed, done: 1, total: 1,
-                error: String::new(), path: Some(path.clone()), title_id: String::new() }]).unwrap();
+                error: String::new(), path: Some(path.clone()), title_id: String::new(), more: Vec::new() }]).unwrap();
             assert!(Manager::at(store.clone()).uninstall(&"k".repeat(40)).is_err(), "{}", path.display());
         }
     }
@@ -2374,6 +2501,38 @@ mod tests {
 
     /// End to end with a real PS4 PKG and the extractor (not in the repo):
     /// AZRAK_PKG_EXTRACTOR=…/AppRun PKG_FIXTURE=…/game.pkg PKG_TITLE_ID=CUSA… cargo test -- --ignored pkg_release
+    /// A real download holding several PS4 games, installed in place (`BUNDLE` the download's
+    /// folder, `BUNDLE_DEST` an empty folder on a drive with room, `BUNDLE_IDS` its title IDs).
+    #[test]
+    #[ignore]
+    fn real_bundle_installs_every_game() {
+        let (Ok(src), Ok(dest), Ok(ids)) = (std::env::var("BUNDLE"), std::env::var("BUNDLE_DEST"), std::env::var("BUNDLE_IDS")) else { return };
+        let ids: Vec<String> = ids.split(',').map(str::to_string).collect();
+        // The download's own key (its folder is "torrent-<key>", its ownership marker says it).
+        let key = Path::new(&src).file_name().unwrap().to_string_lossy().trim_start_matches("torrent-").to_string();
+        let req = Request { key, topic: 1, name: "Bundle".into(), source: src.into(), destination: dest.clone().into(),
+            expected_ids: ids.clone(), skip: Default::default(), platform: crate::platform::Platform::Ps4 };
+        let published = Mutex::new(Vec::new());
+        let started = Instant::now();
+        install(&req, &AtomicBool::new(false), &|state, done, total| {
+            static LAST: AtomicU64 = AtomicU64::new(0);
+            let pct = done * 100 / total.max(1);
+            if LAST.swap(pct, Ordering::Relaxed) != pct && pct % 10 == 0 { eprintln!("{state:?} {pct}%"); }
+        }, &|stage, root, leaf, title| {
+            stage.publish(root, leaf)?;
+            published.lock().unwrap().push((leaf.to_string(), title.to_string()));
+            Ok(())
+        }).unwrap();
+        let published = published.into_inner().unwrap();
+        eprintln!("Installed in {:?}: {published:?}", started.elapsed());
+        assert_eq!(published.len(), ids.len());
+        for (leaf, tid) in &published {
+            assert!(ids.contains(tid));
+            let game = Path::new(&dest).join(leaf);
+            assert!(game.join("eboot.bin").is_file() && game.join("sce_sys/param.sfo").is_file(), "{}", game.display());
+        }
+    }
+
     #[test]
     #[ignore]
     fn pkg_release_installs_extracted_game() {
@@ -2550,7 +2709,7 @@ mod tests {
     fn interrupted_restore_no_worker_no_extraction_and_independent_records() {
         let (t, req) = fixture(); game(&req.source);
         let store=t.path().join("records");
-        let job=Record { key: KEY.into(), topic: 1, name: "fixture".into(), state: State::Extracting, done: 1, total: 10, error: String::new(), path: None, title_id: String::new() };
+        let job=Record { key: KEY.into(), topic: 1, name: "fixture".into(), state: State::Extracting, done: 1, total: 10, error: String::new(), path: None, title_id: String::new(), more: Vec::new() };
         save_records(&store, &[job]).unwrap();
         let manager=Manager::at(store.clone());
         assert_eq!(manager.snapshot()[0].state, State::Failed);
