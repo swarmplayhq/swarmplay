@@ -16,6 +16,8 @@ export const SITE = 'https://fitgirl-repacks.site/';
 const AGENT = 'swarmplay-catalog (github.com/swarmplayhq/swarmplay)';
 /** Topic IDs of their own (the launcher keys releases by ID): FitGirl's post ID plus this. */
 export const ID_BASE = 9_000_000_000;
+/** How pages are read: a catalog read differently is read again, whole. */
+const PARSER = 2;
 
 const option = (name, fallback) => { const i = process.argv.indexOf(name); return i < 0 ? fallback : process.argv[i + 1]; };
 
@@ -74,7 +76,13 @@ export function parsePost(html, url) {
   if (!id || !magnet || !repackSize) return null;
   const title = strip((html.match(/<h1 class="entry-title">(.*?)<\/h1>/s) || [])[1] || '');
   if (!title) return null;
-  const field = name => strip((html.match(new RegExp(`${name}:\\s*(.*?)<br`, 's')) || [])[1] || '');
+  // A field's value: the bold text right after its label, or (Genres/Tags: links) what's on its
+  // line; never more than a line's worth (a label with no line break after it would take the page).
+  const field = name => {
+    const bold = html.match(new RegExp(`${name}:\\s*<strong>([^<]{0,300})</strong>`));
+    const line = bold || html.match(new RegExp(`${name}:\\s*((?:(?!<br|</p>|</div>)[\\s\\S]){0,600})`));
+    return strip((line || [])[1] || '').slice(0, 300);
+  };
   const { name, version } = splitTitle(title);
   const languages = field('Languages');
   // Which languages come as their own optional files (the "selective" download).
@@ -118,9 +126,11 @@ async function main() {
   const deadline = Date.now() + +option('--minutes', 100) * 60_000;
   let previous = { topics: [], seen: {} };
   try { previous = JSON.parse(await readFile(path, 'utf8')); } catch { /* first run */ }
-  const byUrl = new Map(previous.topics.map(t => [t.url, t]));
+  // Read with an older parser: everything again (its fields may be wrong).
+  const fresh = previous.parser === PARSER;
+  const byUrl = new Map(previous.topics.map(t => [t.url, fresh ? t : { ...t, lastmod: '' }]));
   // Pages already read and found not to be repacks, with their date then.
-  const seen = previous.seen || {};
+  const seen = fresh ? (previous.seen || {}) : {};
   const posts = await listPosts();
   const due = [...posts].filter(([url, mod]) => (byUrl.get(url)?.lastmod || seen[url]) !== mod)
     .sort((a, b) => b[1].localeCompare(a[1])).slice(0, limit);
@@ -157,7 +167,7 @@ async function main() {
   const topics = [...byUrl.values()].sort((a, b) => a.id.localeCompare(b.id));
   const report = {
     source: SITE, platform: 'pc', collected_at: new Date().toISOString(), complete: true,
-    scope: 'fitgirl', pages_visited: done, pages_remaining: due.length, failures: failed,
+    scope: 'fitgirl', parser: PARSER, pages_visited: done, pages_remaining: due.length, failures: failed,
     topic_count: topics.length, translation: { language: 'en' }, topics, seen,
   };
   await mkdir(dirname(path), { recursive: true });
