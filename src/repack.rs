@@ -10,7 +10,8 @@
 //! - The unpacker starts helpers (`rzw`, `rz`, `mpz`…) by name alone. Windows finds them in the
 //!   installer's temporary folder (the current one); Wine doesn't look there, the unpacking fails
 //!   and the repack reports "archive data corrupted". They're copied into the prefix's `C:\windows`
-//!   as soon as they're unpacked, and taken out again after.
+//!   as soon as they're unpacked, with the libraries they load beside them (`mpz` needs
+//!   `MpzSlimmer.dll` for a repack's MP3s), and taken out again after.
 //! - It opens its maker's site at the end: Wine's browser is switched off for it.
 //! - It reports success even when unpacking failed (it deletes what it wrote): the result is checked
 //!   by its size, and progress is how far its processes have read into the `.bin` files.
@@ -268,8 +269,9 @@ fn collect_programs(dir: &Path, prefix: &str, depth: usize, out: &mut Vec<(Strin
     }
 }
 
-/// The unpacker's helpers, copied where Wine looks for programs started by name (see the module's
-/// notes). Returns what it put there, to take out after.
+/// The unpacker's helpers and their libraries, copied where Wine looks for programs started by
+/// name (see the module's notes); nothing already there is replaced. Returns what it put there, to
+/// take out after.
 fn place_helpers(prefix: &Path) -> Vec<PathBuf> {
     let temp = prefix.join("drive_c/users/steamuser/AppData/Local/Temp");
     let temp = if temp.is_dir() { temp } else { prefix.join(format!("drive_c/users/{}/AppData/Local/Temp", whoami())) };
@@ -282,7 +284,8 @@ fn place_helpers(prefix: &Path) -> Vec<PathBuf> {
         let Ok(files) = std::fs::read_dir(&dir) else { continue };
         for f in files.flatten().map(|e| e.path()) {
             let Some(name) = f.file_name() else { continue };
-            if !name.to_string_lossy().to_ascii_lowercase().ends_with(".exe") { continue; }
+            let lower = name.to_string_lossy().to_ascii_lowercase();
+            if !lower.ends_with(".exe") && !lower.ends_with(".dll") { continue; }
             let to = windows.join(name);
             if !to.exists() && std::fs::copy(&f, &to).is_ok() {
                 placed.push(to);
