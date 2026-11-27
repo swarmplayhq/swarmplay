@@ -425,6 +425,8 @@ impl App {
             }
             "install" => self.install_download(key),
             "locate" => self.open_folder_pick(crate::folder_pick::PickFor::Locate(key.to_string())),
+            // A repack's install (src/repack_ui.rs) is cancelled there.
+            "cancel_install" if self.repack_job.as_ref().is_some_and(|j| j.key.as_deref() == Some(key)) => self.repack_cancel(),
             "cancel_install" => {
                 if let Err(error) = self.installer.cancel(key) { self.note_download_quiet(key, tr!("Couldn't cancel it: {error}", error)); }
             }

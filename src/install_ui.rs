@@ -56,7 +56,7 @@ impl App {
         let name = match game { Some(game) if platform == crate::platform::Platform::Pc => game.name.clone(), _ => job.name };
         // A repack (FitGirl's): its own installer, run like a disc's copy (src/repack_ui.rs).
         let cat = self.games.iter().position(|g| g.g.id == job.topic);
-        if game.is_some_and(|g| !g.g.maker.is_empty()) && self.repack_from_download(&job.folder, cat, destination.clone()) {
+        if game.is_some_and(|g| !g.g.maker.is_empty()) && self.repack_from_download(key, &job.folder, cat, destination.clone()) {
             return Ok(());
         }
         let skip = self.downloads.left_out(key)?;
@@ -76,7 +76,8 @@ impl App {
         // Pressed in the Game Hub: what happened is said under its buttons too.
         let game = self.downloads.job(key).and_then(|job| self.games.iter().position(|game| game.g.id == job.topic))
             .map(|g| self.game_key(crate::app::Target { game: Some(g), local: self.games[g].local }));
-        if self.installer.snapshot().iter().any(|record| record.state.active()) {
+        // A repack from Home installing counts too (one from a download has a record).
+        if self.installer.snapshot().iter().any(|record| record.state.active()) || self.repack_job.is_some() {
             let _ = self.installer.forget(key);
             self.install_failures.remove(key);
             crate::audio::play(crate::audio::Sound::Select);
@@ -101,7 +102,7 @@ impl App {
     pub fn auto_install(&mut self) {
         let installs = self.installer.snapshot();
         // Not while one installs, or while the player is choosing where one goes.
-        if installs.iter().any(|record| record.state.active()) || self.install_pending.is_some() { return; }
+        if installs.iter().any(|record| record.state.active()) || self.repack_job.is_some() || self.install_pending.is_some() { return; }
         let mut jobs = self.downloads.snapshot();
         jobs.sort_by_key(|job| job.added);
         let next = jobs.into_iter().find(|job| job.state == downloads::State::Complete && job.install_to.is_some()

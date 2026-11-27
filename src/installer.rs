@@ -293,6 +293,38 @@ impl Manager {
     }
 }
 
+impl Manager {
+    /// A download installed by something else (a repack's own installer, src/repack_ui.rs): kept
+    /// as a record of its own, so Downloads shows it going and done, it's never started twice, and
+    /// Delete deletes it. One left going when SwarmPlay closed reads "Interrupted" at the next start.
+    pub fn outside_begin(&self, key: &str, topic: i64, name: &str, total: u64) -> Result<()> {
+        let mut jobs = self.core.jobs.lock().unwrap();
+        ensure!(!jobs.iter().any(|j| j.state.active()), tr!("Another installation is active"));
+        jobs.retain(|j| j.key != key);
+        jobs.push(Record { key: key.into(), topic, name: name.into(), state: State::Inspecting, done: 0, total,
+            error: String::new(), path: None, title_id: String::new(), more: Vec::new() });
+        self.core.save(&jobs)
+    }
+
+    /// How far it is (`Inspecting` while its files are checked, then `Extracting`).
+    pub fn outside_progress(&self, key: &str, state: State, done: u64) {
+        let total = self.core.jobs.lock().unwrap().iter().find(|j| j.key == key).map_or(0, |j| j.total);
+        self.core.update(key, state, done.min(total), total);
+    }
+
+    /// How it ended: installed in `path`, or why not (cancelled: not a failure).
+    pub fn outside_end(&self, key: &str, result: std::result::Result<PathBuf, String>, cancelled: bool) -> Result<()> {
+        let mut jobs = self.core.jobs.lock().unwrap();
+        let job = jobs.iter_mut().find(|j| j.key == key).context("Unknown installation")?;
+        match result {
+            Ok(path) => { job.state = State::Installed; job.done = job.total; job.path = Some(path); job.error.clear(); }
+            Err(_) if cancelled => job.state = State::Cancelled,
+            Err(error) => { job.state = State::Failed; job.error = error; }
+        }
+        self.core.save(&jobs)
+    }
+}
+
 impl Drop for Manager { fn drop(&mut self) { self.shutdown(); } }
 
 impl Core {
@@ -1675,6 +1707,24 @@ mod uninstall_tests {
         assert_eq!(fs::read(&outside).unwrap(), b"keep me");
         assert!(library.join("Other-patch").is_dir(), "not this game's");
         assert!(Manager::at(store).snapshot().is_empty(), "the record is gone");
+    }
+
+    #[test]
+    fn a_repack_installed_from_a_download_is_recorded_and_never_started_twice() {
+        let temp = tempfile::tempdir().unwrap();
+        let store = temp.path().join("installs");
+        let key = "r".repeat(40);
+        let m = Manager::at(store.clone());
+        m.outside_begin(&key, 7, "The Last of Us: Part I", 100).unwrap();
+        assert!(m.outside_begin(&"s".repeat(40), 8, "Other", 1).is_err(), "one install at a time");
+        m.outside_progress(&key, State::Extracting, 40);
+        assert_eq!(m.snapshot()[0].progress(), 0.4);
+        // Closed while going: an interrupted install at the next start, never one still going.
+        assert_eq!(Manager::at(store.clone()).snapshot()[0].state, State::Failed);
+        let game = temp.path().join("The-Last-of-Us-Part-I");
+        m.outside_end(&key, Ok(game.clone()), false).unwrap();
+        let record = Manager::at(store).snapshot().remove(0);
+        assert_eq!((record.state, record.path), (State::Installed, Some(game)));
     }
 
     #[test]
