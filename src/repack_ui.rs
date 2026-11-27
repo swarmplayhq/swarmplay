@@ -21,6 +21,10 @@ pub struct RepackV {
 /// The repack being installed.
 pub struct RepackJob {
     pub dir: PathBuf,
+    /// The download it came from, if it did: its install is recorded under it (Downloads).
+    pub key: Option<String>,
+    /// What its archives weigh (its record's total).
+    pub size: u64,
     pub name: String,
     /// 0: checking its files, 1: installing.
     pub phase: u8,
@@ -58,8 +62,12 @@ impl App {
         // One already installed (the Library has a PC game of that name) is a disc already copied.
         let installed: std::collections::HashSet<String> = self.locals.iter()
             .filter(|l| l.l.platform == crate::platform::Platform::Pc).map(|l| crate::util::norm(&l.name)).collect();
+        // A download's (FitGirl's from the Store) is installed from Downloads, by itself: not
+        // a disc on Home too, named after its torrent folder.
+        let downloads: Vec<PathBuf> = self.downloads.snapshot().into_iter().map(|j| j.folder).collect();
         let index = CatalogIndex::new(self.games.iter().map(|g| (&g.g, g.name.as_str())));
         let list: Vec<RepackV> = found.into_iter()
+            .filter(|r| !downloads.iter().any(|d| r.dir.starts_with(d)))
             .filter(|r| !installed.contains(&crate::util::norm(&r.name)) || self.repack_job.as_ref().is_some_and(|j| j.dir == r.dir))
             .map(|r| {
                 let probe = crate::library::LocalGame { name: r.name.clone(), platform: crate::platform::Platform::Pc, ..Default::default() };
@@ -113,7 +121,7 @@ impl App {
     pub fn repack_progress(&self, r: usize) -> f32 {
         match (&self.repack_job, self.repacks.get(r)) {
             // Checking the files is the first tenth, unpacking the rest.
-            (Some(j), Some(v)) if j.dir == v.r.dir => if j.phase == 0 { j.frac * 0.1 } else { 0.1 + j.frac * 0.9 },
+            (Some(j), Some(v)) if j.dir == v.r.dir => whole(j.phase, j.frac),
             _ => -1.0,
         }
     }
@@ -205,12 +213,12 @@ impl App {
     /// A drive chosen on the card: install there.
     pub fn repack_start(&mut self, base: PathBuf) {
         let Some(v) = self.repacks.get(self.power_repack).cloned() else { return };
-        self.repack_begin(v, base);
+        self.repack_begin(v, base, None);
     }
 
     /// A repack downloaded from the catalog (FitGirl's), installed like one found on a drive: its
     /// folder is the download's, or the one folder in it.
-    pub fn repack_from_download(&mut self, folder: &std::path::Path, cat: Option<usize>, base: PathBuf) -> bool {
+    pub fn repack_from_download(&mut self, key: &str, folder: &std::path::Path, cat: Option<usize>, base: PathBuf) -> bool {
         let found = crate::repack::find(folder).or_else(|| {
             let dirs: Vec<PathBuf> = std::fs::read_dir(folder).ok()?.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
             (dirs.len() == 1).then(|| crate::repack::find(&dirs[0])).flatten()
@@ -218,26 +226,44 @@ impl App {
         let Some(mut r) = found else { return false };
         // Named as the catalog names the game (the folder may be the torrent's).
         if let Some(c) = cat { r.name = self.games[c].name.clone(); }
+        // Installed already (before installs from a download were recorded): recorded now, so
+        // Downloads says so and it isn't tried again.
+        let dest = base.join(crate::pcgame::folder_name(&r.name));
+        if crate::pcgame::Manifest::read(&dest).is_some() {
+            let topic = cat.map(|c| self.games[c].g.id).unwrap_or(0);
+            let recorded = self.installer.outside_begin(key, topic, &r.name, r.size())
+                .and_then(|()| self.installer.outside_end(key, Ok(dest.clone()), false));
+            match recorded {
+                Ok(()) => crate::log!("repack: {} was already installed at {}", r.name, dest.display()),
+                Err(e) => crate::log!("repack: {} is installed at {}, but not recorded: {e:#}", r.name, dest.display()),
+            }
+            return true;
+        }
         if self.repack_job.is_some() {
             self.toast(&tr!("One install at a time"), &tr!("{} is installing", self.repack_job.as_ref().map(|j| j.name.clone()).unwrap_or_default()), "alert", crate::toast::FAILED);
             return true;
         }
-        self.repack_begin(RepackV { r, cat }, base);
+        self.repack_begin(RepackV { r, cat }, base, Some(key.to_string()));
         true
     }
 
-    fn repack_begin(&mut self, v: RepackV, base: PathBuf) {
+    fn repack_begin(&mut self, v: RepackV, base: PathBuf, key: Option<String>) {
         let dest = base.join(crate::pcgame::folder_name(&v.r.name));
         if crate::pcgame::Manifest::read(&dest).is_some() {
             return self.toast(&tr!("Already installed"), &dest.display().to_string(), "alert", crate::toast::FAILED);
+        }
+        let topic = v.cat.map(|c| self.games[c].g.id).unwrap_or(0);
+        if let Some(key) = &key {
+            if let Err(e) = self.installer.outside_begin(key, topic, &v.r.name, v.r.size()) {
+                return self.toast(&tr!("Couldn't install {}", v.r.name), &format!("{e:#}"), "alert", crate::toast::FAILED);
+            }
         }
         // The prefix it'll play in (sessions.rs: prefixes/<the game's id>), so what its installer
         // set up there is there for the game.
         let id = crate::util::sha1_hex(&dest.to_string_lossy())[..12].to_string();
         let prefix = crate::util::data_dir().join("prefixes").join(id);
-        let topic = v.cat.map(|c| self.games[c].g.id).unwrap_or(0);
         let cancel = Arc::new(AtomicBool::new(false));
-        self.repack_job = Some(RepackJob { dir: v.r.dir.clone(), name: v.r.name.clone(), phase: 0, frac: 0.0, cancel: cancel.clone() });
+        self.repack_job = Some(RepackJob { dir: v.r.dir.clone(), key, size: v.r.size(), name: v.r.name.clone(), phase: 0, frac: 0.0, cancel: cancel.clone() });
         audio::play(Sound::Select);
         self.repack_changed();
         let r = v.r.clone();
@@ -262,6 +288,10 @@ impl App {
         let Some(j) = &mut self.repack_job else { return };
         j.phase = phase;
         j.frac = frac;
+        if let Some(key) = &j.key {
+            let state = if phase == 0 { crate::installer::State::Inspecting } else { crate::installer::State::Extracting };
+            self.installer.outside_progress(key, state, (j.size as f64 * whole(phase, frac) as f64) as u64);
+        }
         self.repack_changed();
     }
 
@@ -276,6 +306,17 @@ impl App {
 
     fn repack_done(&mut self, result: Result<PathBuf, String>) {
         let Some(job) = self.repack_job.take() else { return };
+        let cancelled = job.cancel.load(Ordering::Relaxed);
+        // One from a download: its record says how it ended, and Downloads tells (push_installs).
+        if let Some(key) = &job.key {
+            if let Err(e) = self.installer.outside_end(key, result.clone(), cancelled) { crate::log!("repack: {} not recorded: {e:#}", job.name); }
+            if let Ok(dest) = &result { crate::log!("repack: {} installed at {}", job.name, dest.display()); self.rescan_library(); }
+            if let Err(e) = &result { crate::log!("repack: {} failed: {e}", job.name); }
+            self.push_installs();
+            self.push_downloads();
+            self.repack_scan();
+            return self.repack_changed();
+        }
         match result {
             Ok(dest) => {
                 crate::log!("repack: {} installed at {}", job.name, dest.display());
@@ -304,6 +345,11 @@ impl App {
             audio::play(Sound::Back);
         }
     }
+}
+
+/// How far a repack's install is, whole: checking its files is the first tenth, unpacking the rest.
+fn whole(phase: u8, frac: f32) -> f32 {
+    if phase == 0 { frac * 0.1 } else { 0.1 + frac * 0.9 }
 }
 
 #[cfg(test)]
