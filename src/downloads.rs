@@ -978,13 +978,15 @@ struct Worker {
     tasks: JoinSet<Result<Resolved>>,
     /// Completed downloads added paused while their files are checked, before seeding again.
     reseeding: std::collections::HashSet<String>,
+    /// Completed downloads waiting for their check, which runs one download at a time.
+    seed_queue: std::collections::VecDeque<String>,
     /// The VPN interface the current session is bound to.
     bound: Option<String>,
 }
 
 impl Worker {
     fn new(store: PathBuf, jobs: Arc<Mutex<Vec<Job>>>, policy: Policy) -> Self {
-        Self { store, jobs, policy, session: None, handles: HashMap::new(), peers: HashMap::new(), resolving: HashMap::new(), task_keys: HashMap::new(), tasks: JoinSet::new(), reseeding: Default::default(), bound: None }
+        Self { store, jobs, policy, session: None, handles: HashMap::new(), peers: HashMap::new(), resolving: HashMap::new(), task_keys: HashMap::new(), tasks: JoinSet::new(), reseeding: Default::default(), seed_queue: Default::default(), bound: None }
     }
     /// A copy of one download, without its file list (begin reads that in place).
     fn job(&self, key: &str) -> Option<Job> { self.jobs.lock().unwrap().iter_mut().find(|job| job.key == key).map(light) }
@@ -1018,7 +1020,9 @@ impl Worker {
         let options = |port: u16| {
             let mut opts = SessionOptions {
                 persistence: None, fastresume: false, disable_local_service_discovery: true,
-                peer_limit: Some(PEER_LIMIT), concurrent_init_limit: Some(2),
+                // Completed downloads are checked one at a time (seed_next), so a download the
+                // player starts always finds a free place instead of waiting behind their checks.
+                peer_limit: Some(PEER_LIMIT), concurrent_init_limit: Some(3),
                 ratelimits: librqbit::limits::LimitsConfig { upload_bps: self.policy.upload_bps, download_bps: self.policy.download_bps },
                 // Peers can reach this PC too (most of a swarm is behind a router and can't be
                 // reached otherwise); the router is asked to forward the port, except through a
@@ -1332,7 +1336,16 @@ impl Worker {
         let keys: Vec<String> = self.jobs.lock().unwrap().iter()
             .filter(|job| job.state == State::Complete && !self.handles.contains_key(&job.key))
             .map(|job| job.key.clone()).collect();
-        for key in keys {
+        for key in keys { if !self.seed_queue.contains(&key) { self.seed_queue.push_back(key); } }
+        self.seed_next().await;
+    }
+
+    /// Check the next waiting completed download once the one before it is done. A check reads
+    /// the whole game from disk (minutes for a big one): all of them at once would take every
+    /// place the engine has, and a download the player starts would wait behind them at 0 KB.
+    async fn seed_next(&mut self) {
+        while self.reseeding.is_empty() {
+            let Some(key) = self.seed_queue.pop_front() else { return };
             if let Err(error) = self.seed(&key).await {
                 // Shared by hand, and its files are gone: it waits for Share again (anything
                 // else may pass, and it tries again next time).
@@ -1535,6 +1548,7 @@ impl Worker {
                 self.fail(&key, anyhow::anyhow!(error));
             }
         }
+        self.seed_next().await;
         self.stop_idle_session().await;
     }
     async fn run(mut self, mut rx: mpsc::Receiver<Command>) {
@@ -2063,6 +2077,38 @@ mod tests {
                 restarted.shutdown().await;
                 source.stop().await;
             }
+        });
+    }
+
+    #[test]
+    fn loopback_restart_checks_completed_downloads_one_at_a_time_and_seeds_them_all() {
+        runtime().block_on(async {
+            let temp = tempfile::tempdir().unwrap();
+            let (mut worker, source, _, expected, key) = completed_worker(temp.path(), true).await;
+            let second_path = temp.path().join("second-fixture.bin");
+            std::fs::write(&second_path, expected.iter().map(|byte| byte ^ 0x5a).collect::<Vec<_>>()).unwrap();
+            let (torrent, _) = source.create_and_serve_torrent(&second_path, librqbit::CreateTorrentOptions {
+                name: None, trackers: vec![], piece_length: Some(65536),
+            }).await.unwrap();
+            let second_key = ready_fixture(&mut worker, &temp.path().join("downloads"), &torrent);
+            worker.start(&second_key).await.unwrap();
+            complete_worker(&mut worker, &second_key).await;
+            worker.shutdown().await;
+            let mut restarted = Worker::new(worker.store.clone(), Arc::new(Mutex::new(load_manifest(&worker.store))), worker.policy.clone());
+            restarted.seed_all().await;
+            assert_eq!(restarted.reseeding.len(), 1, "only one completed download is checked at first");
+            assert_eq!(restarted.seed_queue.len(), 1, "the other waits for its turn");
+            let mut interval = tokio::time::interval(Duration::from_millis(50));
+            tokio::time::timeout(Duration::from_secs(30), async {
+                while ![&key, &second_key].iter().all(|key| restarted.job(key).unwrap().seeding) {
+                    interval.tick().await;
+                    restarted.tick().await;
+                    assert!(restarted.reseeding.len() <= 1, "never two checks at once");
+                }
+            }).await.expect("both completed downloads seed again, one after the other");
+            assert!(restarted.seed_queue.is_empty());
+            restarted.shutdown().await;
+            source.stop().await;
         });
     }
 
