@@ -1,0 +1,30 @@
+{
+  "refreshed_at": "2026-11-28T11:19:00.719Z",
+  "files": {
+    "ps5-topics.json": {
+      "sha256": "326affe3cf304e552fe2a9eb12a3609b7782d22995f68652cbe431ce8d2a2b9c",
+      "bytes": 3308349,
+      "topics": 848
+    },
+    "ps4-topics.json": {
+      "sha256": "e1688730ba0ba117b74d0fbcd80569fc15da6c3722838f5aba1a12e6cd36861b",
+      "bytes": 10636426,
+      "topics": 3459
+    },
+    "linux-topics.json": {
+      "sha256": "9c7d4b54243fb872968aecf64620bc177b4771bdd86f3c146236d9bed8cc9247",
+      "bytes": 14391434,
+      "topics": 2692
+    },
+    "wine-topics.json": {
+      "sha256": "d7d984f49252fb9a62f5d2c2216e715213a1a10d7c417cf2b09c3f906c200e37",
+      "bytes": 7259119,
+      "topics": 1348
+    },
+    "fitgirl-topics.json": {
+      "sha256": "f746a4a932c765fc7ae5f513993aa8bd083d72efddf3074c569553219a1348f9",
+      "bytes": 18967083,
+      "topics": 7293
+    }
+  }
+}
